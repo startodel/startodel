@@ -4,12 +4,26 @@ import type { Connection } from "./index.ts";
 import { ownedId, referencedRow, type Transaction } from "./owned.ts";
 import { topics, topicMastery, reviewItems } from "./schema.ts";
 
+// ReviewItem fields returned by the agent-facing operations.
+export const reviewItemFields = {
+  id: reviewItems.id,
+  userId: reviewItems.userId,
+  createdAt: reviewItems.createdAt,
+  updatedAt: reviewItems.updatedAt,
+  topicId: reviewItems.topicId,
+  box: reviewItems.box,
+  dueAt: reviewItems.dueAt,
+  lastResult: reviewItems.lastResult,
+  reason: reviewItems.reason,
+  lastReviewedAt: reviewItems.lastReviewedAt,
+};
+
 export async function recordReview(
   tx: Transaction,
   userId: string,
   topicId: string,
   verdict: Verdict,
-  reason?: string,
+  note?: string | { correct: number; total: number },
 ) {
   // Serialize even the first two reviews, when there is no ReviewItem to lock yet.
   const [topic] = await tx
@@ -27,7 +41,12 @@ export async function recordReview(
   const values = {
     ...scheduleReview(previous ?? null, result, now),
     lastResult: result,
-    reason: reason ?? null,
+    reason:
+      typeof note === "object"
+        ? `Practice Quiz: ${note.correct} of ${note.total} correct`
+        : (note ?? null),
+    practiceCorrect: typeof note === "object" ? note.correct : null,
+    practiceTotal: typeof note === "object" ? note.total : null,
     lastReviewedAt: now,
   };
   return (
@@ -38,7 +57,7 @@ export async function recordReview(
         target: [reviewItems.userId, reviewItems.topicId],
         set: { ...values, updatedAt: now },
       })
-      .returning()
+      .returning(reviewItemFields)
   )[0];
 }
 
@@ -70,7 +89,7 @@ export function masteryForUser(db: Connection, userId: string) {
     },
     listDueReviews(now: Date, limit: number) {
       return db
-        .select()
+        .select(reviewItemFields)
         .from(reviewItems)
         .where(and(eq(reviewItems.userId, userId), lte(reviewItems.dueAt, now)))
         .orderBy(reviewItems.dueAt, reviewItems.topicId)

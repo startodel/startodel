@@ -1,7 +1,7 @@
 import { AnswerSource, DEFAULT_GRILL_SIZE, type MasteryLevel, Verdict } from "@startodel/core";
 import { and, count, desc, eq, inArray, isNotNull, isNull, lte, max, sql } from "drizzle-orm";
 import type { Connection } from "./index.ts";
-import { recordReview } from "./mastery.ts";
+import { recordReview, reviewItemFields } from "./mastery.ts";
 import { ownedId, referencedRow, referencedRows, type Transaction } from "./owned.ts";
 import {
   grillQuestions,
@@ -59,7 +59,7 @@ export function grillsForUser(db: Connection, userId: string) {
         slug: topics.slug,
         title: topics.title,
         level,
-        reviewItem: reviewItems,
+        reviewItem: reviewItemFields,
       })
       .from(topics)
       .leftJoin(
