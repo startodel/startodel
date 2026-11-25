@@ -186,12 +186,6 @@ export const BOARD_SIZES = {
   compact: { nodeWidth: 148, nodeHeight: 54, rankGap: 48, nodeGap: 14, padding: 20 },
 } satisfies Record<string, Required<BoardOptions>>;
 
-export const STATE_WORDS: Record<TopicState, string> = {
-  complete: "live",
-  ready: "ready",
-  blocked: "blocked",
-};
-
 /** Everything a renderer needs: placed parts with their state, and routed traces. */
 export function boardModel(
   topics: BoardTopic[],
