@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from "vue-router";
-import type { NavItem, NavTrack, NavUser } from "./nav";
+import type { LinkTarget, NavItem, NavTrack, NavUser } from "./nav";
 withDefaults(
   defineProps<{
     items: NavItem[];
@@ -8,11 +7,11 @@ withDefaults(
     tracks?: NavTrack[];
     currentTrack?: string;
     user?: NavUser;
-    crumbs?: { label: string; to?: RouteLocationRaw }[];
+    crumbs?: { label: string; to?: LinkTarget }[];
     /** Lets the content run edge to edge, for a canvas such as the Track board. */
     flush?: boolean;
     /** Where the logo leads. */
-    home?: RouteLocationRaw;
+    home?: LinkTarget;
   }>(),
   { home: "/" },
 );
@@ -81,9 +80,9 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
 .s-shell__skip:focus-visible {
   translate: 0;
 }
-.s-shell__rail {
+.s-shell .s-shell__rail {
   position: sticky;
-  top: 0;
+  top: var(--s-sticky-top, 0px);
   height: var(--s-shell-height, 100dvh);
 }
 .s-shell__column {
@@ -106,7 +105,7 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
   max-width: none;
   padding: 0;
 }
-.s-shell__tabs {
+.s-shell .s-shell__tabs {
   display: none;
 }
 @container s-shell (max-width: 52rem) {
@@ -115,7 +114,7 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 1fr auto;
   }
-  .s-shell__rail {
+  .s-shell .s-shell__rail {
     display: none;
   }
   .s-shell__main {
@@ -124,7 +123,7 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
   .s-shell__main--flush {
     padding: 0;
   }
-  .s-shell__tabs {
+  .s-shell .s-shell__tabs {
     display: grid;
     position: sticky;
     bottom: 0;
