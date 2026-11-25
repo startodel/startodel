@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from "vue-router";
-import type { NavItem, NavTrack, NavUser } from "./nav";
+import type { LinkTarget, NavItem, NavTrack, NavUser } from "./nav";
 withDefaults(
   defineProps<{
     items: NavItem[];
@@ -8,7 +7,7 @@ withDefaults(
     tracks?: NavTrack[];
     currentTrack?: string;
     user?: NavUser;
-    home?: RouteLocationRaw;
+    home?: LinkTarget;
   }>(),
   { home: "/" },
 );
@@ -18,9 +17,9 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
 <template>
   <aside class="s-rail" :class="{ 's-rail--collapsed': collapsed }">
     <div class="s-rail__brand">
-      <NuxtLink :to="home" class="s-rail__home" :aria-label="$t('nav.home')">
+      <NuxtLinkLocale :to="home" class="s-rail__home" :aria-label="$t('nav.home')">
         <UiLogo :variant="collapsed ? 'mark' : 'full'" :size="22" />
-      </NuxtLink>
+      </NuxtLinkLocale>
       <button
         type="button"
         class="s-rail__toggle"
@@ -34,7 +33,7 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
     <nav class="s-rail__nav" :aria-label="$t('nav.main')">
       <ul class="s-rail__list">
         <li v-for="item in items" :key="item.id">
-          <NuxtLink
+          <NuxtLinkLocale
             :to="item.to"
             class="s-rail__item"
             :class="{ 'is-current': item.id === current }"
@@ -46,14 +45,14 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
             <span v-if="item.count" class="s-rail__count"
               >{{ item.count }}<span class="s-sr">{{ " " + $t("nav.pending") }}</span></span
             >
-          </NuxtLink>
+          </NuxtLinkLocale>
         </li>
       </ul>
       <template v-if="tracks?.length">
         <p class="s-rail__heading">{{ $t("nav.tracks") }}</p>
         <ul class="s-rail__list">
           <li v-for="t in tracks" :key="t.id">
-            <NuxtLink
+            <NuxtLinkLocale
               :to="t.to"
               class="s-rail__item s-rail__item--track"
               :class="{ 'is-current': t.id === currentTrack }"
@@ -67,7 +66,7 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
               />
               <span class="s-rail__label">{{ t.title }}</span>
               <span class="s-rail__percent">{{ t.percent }}%</span>
-            </NuxtLink>
+            </NuxtLinkLocale>
           </li>
         </ul>
       </template>

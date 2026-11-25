@@ -1,15 +1,18 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from "vue-router";
-defineProps<{ items: { label: string; to?: RouteLocationRaw }[] }>();
+import type { LinkTarget } from "./nav";
+defineProps<{ items: { label: string; to?: LinkTarget }[] }>();
 </script>
 <template>
   <nav class="s-crumbs" :aria-label="$t('nav.breadcrumb')">
     <ol class="s-crumbs__list">
       <li v-for="(item, i) in items" :key="i" class="s-crumbs__item">
         <span v-if="i" class="s-crumbs__sep" aria-hidden="true">/</span>
-        <NuxtLink v-if="item.to && i < items.length - 1" class="s-crumbs__link" :to="item.to">{{
-          item.label
-        }}</NuxtLink>
+        <NuxtLinkLocale
+          v-if="item.to && i < items.length - 1"
+          class="s-crumbs__link"
+          :to="item.to"
+          >{{ item.label }}</NuxtLinkLocale
+        >
         <span
           v-else
           class="s-crumbs__here"

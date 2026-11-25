@@ -1,32 +1,31 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from "vue-router";
+import type { LinkTarget } from "./nav";
 /** The page footer: licence line, a few links, and the language and theme controls. */
 withDefaults(
   defineProps<{
-    links?: { label: string; to?: RouteLocationRaw; href?: string }[];
+    links?: { label: string; to?: LinkTarget; href?: string }[];
     note?: string;
     /** Hide the language and theme controls, for pages that show them elsewhere. */
     bare?: boolean;
   }>(),
-  { links: () => [], note: "Open source under the MIT licence." },
+  { links: () => [] },
 );
-const locale = defineModel<string>("locale", { default: "en" });
 </script>
 <template>
   <footer class="s-footer">
     <div class="s-footer__inner">
       <div class="s-footer__about">
         <UiLogo variant="mark" :size="20" />
-        <p>{{ note }}</p>
+        <p>{{ note ?? $t("ui.licence") }}</p>
       </div>
-      <nav v-if="links.length" class="s-footer__links" aria-label="Footer">
+      <nav v-if="links.length" class="s-footer__links" :aria-label="$t('nav.footer')">
         <template v-for="l in links" :key="l.label">
-          <NuxtLink v-if="l.to" :to="l.to">{{ l.label }}</NuxtLink>
+          <NuxtLinkLocale v-if="l.to" :to="l.to">{{ l.label }}</NuxtLinkLocale>
           <a v-else :href="l.href" rel="noopener">{{ l.label }}</a>
         </template>
       </nav>
       <div v-if="!bare" class="s-footer__controls">
-        <UiLanguageSwitcher v-model="locale" />
+        <UiLanguageSwitcher />
         <UiThemeToggle />
       </div>
     </div>

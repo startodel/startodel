@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from "vue-router";
-import type { NavUser } from "./nav";
+import type { LinkTarget, NavUser } from "./nav";
 withDefaults(
   defineProps<{
-    crumbs?: { label: string; to?: RouteLocationRaw }[];
+    crumbs?: { label: string; to?: LinkTarget }[];
     user?: NavUser;
-    home?: RouteLocationRaw;
+    home?: LinkTarget;
   }>(),
   { home: "/" },
 );
 </script>
 <template>
   <header class="s-topbar">
-    <NuxtLink :to="home" class="s-topbar__home" :aria-label="$t('nav.home')">
+    <NuxtLinkLocale :to="home" class="s-topbar__home" :aria-label="$t('nav.home')">
       <UiLogo variant="mark" :size="22" />
-    </NuxtLink>
+    </NuxtLinkLocale>
     <UiBreadcrumbs v-if="crumbs?.length" :items="crumbs" class="s-topbar__crumbs" />
     <div class="s-topbar__actions">
       <slot />
@@ -27,7 +26,7 @@ withDefaults(
 <style scoped>
 .s-topbar {
   position: sticky;
-  top: 0;
+  top: var(--s-sticky-top, 0px);
   z-index: var(--s-z-nav);
   display: flex;
   align-items: center;

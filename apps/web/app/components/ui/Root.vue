@@ -13,7 +13,7 @@ useHead({
 <template>
   <div class="s-root">
     <TooltipProvider :delay-duration="350" :skip-delay-duration="200">
-      <ToastProvider label="Notification" :duration="5000" swipe-direction="right">
+      <ToastProvider :label="$t('ui.notification')" :duration="5000" swipe-direction="right">
         <slot />
         <UiToaster />
       </ToastProvider>

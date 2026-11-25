@@ -54,7 +54,9 @@ const layer = useLayer();
       >
         <header class="s-modal__header">
           <DialogTitle class="s-modal__title">{{ title }}</DialogTitle>
-          <DialogClose class="s-modal__close" :aria-label="$t('ui.close')"><UiIcon name="x" /></DialogClose>
+          <DialogClose class="s-modal__close" :aria-label="$t('ui.close')"
+            ><UiIcon name="x"
+          /></DialogClose>
         </header>
         <div class="s-modal__body">
           <DialogDescription v-if="description" class="s-modal__description">{{

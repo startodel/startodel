@@ -2,7 +2,7 @@
 /** A placeholder for a list or a grid that is still loading. Match the shape of what will arrive. */
 withDefaults(
   defineProps<{ rows?: number; variant?: "rows" | "cards" | "table"; label?: string }>(),
-  { rows: 4, variant: "rows", label: "Loading" },
+  { rows: 4, variant: "rows" },
 );
 const widths = ["72%", "54%", "64%", "46%", "68%", "58%"];
 </script>
@@ -11,7 +11,7 @@ const widths = ["72%", "54%", "64%", "46%", "68%", "58%"];
     class="s-skeleton-list"
     :class="'s-skeleton-list--' + variant"
     role="status"
-    :aria-label="label"
+    :aria-label="label ?? $t('ui.loading')"
   >
     <div v-for="n in rows" :key="n" class="s-skeleton-list__row" aria-hidden="true">
       <i class="s-skeleton-list__ref" />

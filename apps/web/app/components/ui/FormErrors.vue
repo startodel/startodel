@@ -6,17 +6,13 @@
 defineProps<{ errors: { field: string; message: string }[]; title?: string }>();
 const root = ref<HTMLElement>();
 defineExpose({ focus: () => root.value?.focus() });
+const countArgs = useCountArgs();
 </script>
 <template>
   <div v-if="errors.length" ref="root" class="s-form-errors" role="alert" tabindex="-1">
     <p class="s-form-errors__title">
       <UiIcon name="alert" :size="14" />
-      {{
-        title ??
-        (errors.length === 1
-          ? "Fix 1 field to continue"
-          : `Fix ${errors.length} fields to continue`)
-      }}
+      {{ title ?? $t("ui.fixFields", countArgs(errors.length)) }}
     </p>
     <ul class="s-form-errors__list">
       <li v-for="e in errors" :key="e.field">

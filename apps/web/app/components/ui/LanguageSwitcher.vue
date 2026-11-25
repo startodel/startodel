@@ -1,52 +1,92 @@
 <script setup lang="ts">
+import { languageCookie } from "../../../shared/locale";
 /**
- * Switches the interface language. It holds no translation logic: bind the model to the locale
- * of whichever internationalisation layer the app adopts.
+ * Switches the interface language. Each option links to the current page in that language, and
+ * choosing one stores the preference in the language cookie.
  */
 withDefaults(
   defineProps<{
-    locales?: { code: string; name: string }[];
-    /** menu fits a top bar or a footer. inline shows every locale and fits settings. */
+    /** menu fits a top bar or a footer. inline shows every language and fits settings. */
     variant?: "menu" | "inline";
   }>(),
-  {
-    locales: () => [
-      { code: "ru", name: "Русский" },
-      { code: "en", name: "English" },
-    ],
-    variant: "menu",
-  },
+  { variant: "menu" },
 );
-const model = defineModel<string>({ default: "en" });
+const { locale, locales } = useI18n();
+const switchLocalePath = useSwitchLocalePath();
+const preference = useCookie(languageCookie, { sameSite: "lax", maxAge: 31536000, path: "/" });
+// A language is named in itself, so the names are not messages.
+const names: Record<string, string> = { ru: "Русский", en: "English" };
+const options = computed(() =>
+  locales.value.map(({ code }) => ({
+    code,
+    name: names[code] ?? code,
+    to: switchLocalePath(code),
+  })),
+);
 </script>
 <template>
-  <UiSegmented
-    v-if="variant === 'inline'"
-    v-model="model"
-    class="s-lang"
-    :options="locales.map((l) => ({ id: l.code, label: l.name }))"
-    label="Language"
-    size="sm"
-  />
+  <nav v-if="variant === 'inline'" class="s-lang" :aria-label="$t('nav.language')">
+    <NuxtLink
+      v-for="o in options"
+      :key="o.code"
+      :to="o.to"
+      class="s-lang__option"
+      :lang="o.code"
+      :hreflang="o.code"
+      :aria-current="o.code === locale ? 'true' : undefined"
+      @click="preference = o.code"
+      >{{ o.name }}</NuxtLink
+    >
+  </nav>
   <UiMenu
     v-else
-    label="Language"
+    :label="$t('nav.language')"
     :items="
-      locales.map((l) => ({
-        id: l.code,
-        label: l.name,
-        hint: l.code === model ? 'current' : l.code,
+      options.map((o) => ({
+        id: o.code,
+        label: o.name,
+        to: o.to,
+        locale: o.code,
+        hint: o.code === locale ? $t('nav.current') : o.code,
       }))
     "
-    @select="model = $event"
+    @select="preference = $event"
   >
-    <button type="button" class="s-lang__trigger" :aria-label="'Language: ' + model">
-      <UiIcon name="globe" :size="14" /><span lang="en">{{ model }}</span>
+    <button type="button" class="s-lang__trigger" :aria-label="$t('nav.language') + ': ' + locale">
+      <UiIcon name="globe" :size="14" /><span>{{ locale }}</span>
       <UiIcon name="chevron-down" :size="12" />
     </button>
   </UiMenu>
 </template>
 <style>
+.s-root .s-lang {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--s-line);
+  border-radius: var(--s-radius-sm);
+  background: var(--s-sunken);
+}
+.s-root .s-lang__option {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0 var(--s-2);
+  border: 1px solid transparent;
+  border-radius: var(--s-radius-xs);
+  color: var(--s-ink-3);
+  font-size: var(--s-text-sm);
+  font-weight: 600;
+}
+.s-root .s-lang__option:hover {
+  color: var(--s-ink);
+}
+.s-root .s-lang__option[aria-current] {
+  border-color: var(--s-line-strong);
+  background: var(--s-raised);
+  color: var(--s-ink);
+  box-shadow: var(--s-shadow-1);
+}
 .s-root .s-lang__trigger {
   display: inline-flex;
   align-items: center;

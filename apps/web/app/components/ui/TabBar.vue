@@ -4,7 +4,7 @@ defineProps<{ items: NavItem[]; current?: string }>();
 </script>
 <template>
   <nav class="s-tabbar" :aria-label="$t('nav.main')">
-    <NuxtLink
+    <NuxtLinkLocale
       v-for="item in items.slice(0, 5)"
       :key="item.id"
       :to="item.to"
@@ -19,7 +19,7 @@ defineProps<{ items: NavItem[]; current?: string }>();
         >
       </span>
       <span class="s-tabbar__label">{{ item.short ?? item.label }}</span>
-    </NuxtLink>
+    </NuxtLinkLocale>
   </nav>
 </template>
 <style scoped>

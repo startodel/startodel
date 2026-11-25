@@ -10,7 +10,6 @@ import {
 /** Page controls for a long list. The current page is a v-model. */
 withDefaults(defineProps<{ total: number; perPage?: number; label?: string }>(), {
   perPage: 20,
-  label: "Pages",
 });
 const page = defineModel<number>("page", { default: 1 });
 </script>
@@ -22,10 +21,10 @@ const page = defineModel<number>("page", { default: 1 });
     :items-per-page="perPage"
     :sibling-count="1"
     show-edges
-    :aria-label="label"
+    :aria-label="label ?? $t('ui.pages')"
   >
     <PaginationList v-slot="{ items }" class="s-pagination__list">
-      <PaginationPrev class="s-pagination__step" aria-label="Previous page">
+      <PaginationPrev class="s-pagination__step" :aria-label="$t('ui.pagePrevious')">
         <UiIcon name="chevron-left" :size="14" />
       </PaginationPrev>
       <template v-for="(item, i) in items" :key="i">
@@ -38,7 +37,7 @@ const page = defineModel<number>("page", { default: 1 });
         </PaginationListItem>
         <PaginationEllipsis v-else class="s-pagination__gap">…</PaginationEllipsis>
       </template>
-      <PaginationNext class="s-pagination__step" aria-label="Next page">
+      <PaginationNext class="s-pagination__step" :aria-label="$t('ui.pageNext')">
         <UiIcon name="chevron-right" :size="14" />
       </PaginationNext>
     </PaginationList>

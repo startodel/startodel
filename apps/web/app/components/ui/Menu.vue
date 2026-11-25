@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { LinkTarget } from "./nav";
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -8,14 +9,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "reka-ui";
-import type { RouteLocationRaw } from "vue-router";
+import type { UiLocale } from "../../../shared/locale";
 import type { IconName } from "./icons";
 export interface MenuItem {
   id: string;
   label: string;
   icon?: IconName;
-  /** Navigate instead of emitting select. */
-  to?: RouteLocationRaw;
+  /** Navigate instead of emitting select. The link keeps the interface language. */
+  to?: LinkTarget;
+  /** Link to the page in this language instead. */
+  locale?: UiLocale;
   danger?: boolean;
   disabled?: boolean;
   /** Draw a rule above this item. */
@@ -60,11 +63,16 @@ const layer = useLayer();
             :as-child="!!item.to"
             @select="$emit('select', item.id)"
           >
-            <NuxtLink v-if="item.to" :to="item.to" class="s-option s-menu__item">
+            <NuxtLinkLocale
+              v-if="item.to"
+              :to="item.to"
+              :locale="item.locale"
+              class="s-option s-menu__item"
+            >
               <UiIcon v-if="item.icon" :name="item.icon" :size="14" class="s-option__icon" />
               <span>{{ item.label }}</span>
               <span v-if="item.hint" class="s-menu__hint">{{ item.hint }}</span>
-            </NuxtLink>
+            </NuxtLinkLocale>
             <template v-else>
               <UiIcon v-if="item.icon" :name="item.icon" :size="14" class="s-option__icon" />
               <span>{{ item.label }}</span>
