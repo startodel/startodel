@@ -12,6 +12,9 @@
 Run from the workspace root:
 
 - `pnpm install` installs the workspace dependencies.
+- `pnpm db:generate` generates a migration after a schema change.
+- `pnpm db:migrate` applies pending migrations to `DATABASE_URL`.
+- `pnpm db:studio` opens Drizzle Studio for `DATABASE_URL`.
 - `pnpm dev` starts the web app.
 - `pnpm check` validates formatting, lint rules, and types.
 - `pnpm test` runs the unit tests.
