@@ -18,7 +18,7 @@ export const sampleNav: NavItem[] = [
   { id: "reviews", label: "Reviews", icon: "review", to: screenPath("reviews"), count: 4 },
   { id: "grills", label: "Grills", icon: "grill", to: screenPath("grill") },
   { id: "progress", label: "Progress", icon: "progress", to: screenPath("progress") },
-  { id: "settings", label: "Settings", icon: "settings", to: screenPath("connect") },
+  { id: "settings", label: "Settings", icon: "settings", to: screenPath("settings") },
 ];
 
 export const sampleNavTracks: NavTrack[] = [
@@ -619,3 +619,216 @@ setTimeout(() => order.push("timer"), 0);
 await Promise.resolve().then(() => order.push("promise job"));
 console.log(order.join(" → ")); // promise job
 `;
+
+export const sampleNextPrompt =
+  "Use the Startodel MCP server. Call get_guide, then write the first Lesson for the Topic node/streams-backpressure. Include a Quiz and one Exercise.";
+
+export const sampleStackPresets = [
+  "TypeScript",
+  "Node.js",
+  "Go",
+  "Rust",
+  "Python",
+  "PostgreSQL",
+  "Redis",
+  "Kafka",
+  "Kubernetes",
+  "React",
+  "Vue",
+];
+export const sampleGoalPresets = [
+  "Go deeper in my stack",
+  "Prepare for interviews",
+  "Move to a new stack",
+  "Lead a team",
+];
+export const sampleGrades = [
+  { value: "junior", label: "Junior", hint: "You deliver tasks with guidance." },
+  { value: "middle", label: "Middle", hint: "You deliver features on your own." },
+  { value: "senior", label: "Senior", hint: "You own systems and their trade-offs." },
+  { value: "lead", label: "Lead", hint: "You set direction for a team." },
+] as const;
+
+export const sampleMcpUrl = "https://startodel.ru/mcp";
+export const sampleToken = "stm_4f1c9a7be2d04c6f8a3b5d1e7c9f2a6b";
+export const sampleConfig = JSON.stringify(
+  {
+    mcpServers: {
+      startodel: {
+        type: "http",
+        url: sampleMcpUrl,
+        headers: { Authorization: "Bearer " + sampleToken },
+      },
+    },
+  },
+  null,
+  2,
+);
+export const sampleFirstPrompt = "Call get_guide and follow it.";
+
+export const sampleTokens = [
+  {
+    id: "k1",
+    name: "Laptop · editor agent",
+    prefix: "stm_4f1c",
+    created: "12 Nov 2026",
+    lastUsed: "2 minutes ago",
+    active: true,
+  },
+  {
+    id: "k2",
+    name: "Terminal agent",
+    prefix: "stm_9b02",
+    created: "3 Oct 2026",
+    lastUsed: "Yesterday",
+    active: true,
+  },
+  {
+    id: "k3",
+    name: "Old workstation",
+    prefix: "stm_17ae",
+    created: "8 Mar 2026",
+    lastUsed: "Never",
+    active: false,
+  },
+];
+
+export const samplePublicTrack = {
+  title: "Node.js runtime internals",
+  slug: "node-runtime-internals",
+  description:
+    "From the call stack to production profiling: how Node.js schedules work, manages memory and where latency comes from.",
+  owner: { login: "alice", name: "Alice Petrova" },
+  forkedFrom: { login: "mkarpov", slug: "node-internals" },
+  forkCount: 14,
+  topics: 12,
+  lessons: 27,
+  updated: "Updated 2 days ago",
+};
+
+export const sampleForks = [
+  {
+    login: "dmitry-s",
+    name: "Dmitry Sokolov",
+    slug: "node-runtime-internals",
+    title: "Node.js runtime internals",
+    updated: "3 days ago",
+    forks: 2,
+  },
+  {
+    login: "lena",
+    name: "Elena Orlova",
+    slug: "node-internals-for-sre",
+    title: "Node.js internals for SRE",
+    updated: "last week",
+    forks: 0,
+  },
+  {
+    login: "tkhan",
+    name: "Timur Khan",
+    slug: "node-runtime-internals",
+    title: "Node.js runtime internals",
+    updated: "2 weeks ago",
+    forks: 1,
+  },
+  {
+    login: "ana-m",
+    name: "Ana Morales",
+    slug: "event-loop-deep-dive",
+    title: "Event loop deep dive",
+    updated: "last month",
+    forks: 0,
+  },
+];
+
+export const samplePublicTracks = [
+  {
+    slug: "node-runtime-internals",
+    title: "Node.js runtime internals",
+    description: samplePublicTrack.description,
+    topics: 12,
+    lessons: 27,
+    forks: 14,
+    updated: "2 days ago",
+  },
+  {
+    slug: "postgres-for-backend",
+    title: "PostgreSQL for backend engineers",
+    description:
+      "MVCC, indexes, the planner and what to check before a migration reaches production.",
+    topics: 9,
+    lessons: 18,
+    forks: 6,
+    updated: "last week",
+  },
+  {
+    slug: "go-concurrency",
+    title: "Go concurrency",
+    description:
+      "Goroutines, channels and the scheduler, with the failure modes that reach production.",
+    topics: 6,
+    lessons: 4,
+    forks: 0,
+    updated: "last month",
+  },
+];
+
+export const sampleGrills = [
+  {
+    id: "g3",
+    title: "Node.js runtime internals · round 3",
+    open: true,
+    answered: 7,
+    judged: 5,
+    total: 15,
+    when: "Started today",
+    verdicts: { strong: 3, partial: 2, weak: 0 },
+  },
+  {
+    id: "g2",
+    title: "Node.js runtime internals · round 2",
+    open: false,
+    answered: 15,
+    judged: 15,
+    total: 15,
+    when: "18 Nov",
+    verdicts: { strong: 9, partial: 4, weak: 2 },
+  },
+  {
+    id: "g1",
+    title: "PostgreSQL · MVCC",
+    open: false,
+    answered: 12,
+    judged: 12,
+    total: 12,
+    when: "9 Nov",
+    verdicts: { strong: 5, partial: 5, weak: 2 },
+  },
+];
+
+export const sampleLegal = {
+  title: "Publishing rules",
+  version: "2026-11-01",
+  updated: "1 November 2026",
+  body: `These rules apply to every Public Track. By publishing you confirm that you have read them.
+
+## What you may publish
+
+Publish lawful learning materials. Share copyrighted work only when you hold the necessary rights. Keep other people’s personal data out of titles, sources and Lessons. Spam and advertising are prohibited.
+
+## Who can read a Public Track
+
+Anyone with the link can read a Public Track, including the Lessons of every member Topic. Your Mastery, your reviews and your GrillSessions stay private.
+
+## Forks
+
+Any signed-in learner can create a Fork. A Fork is a one-time copy. Later changes to your Track do not reach it, and unpublishing your Track does not remove it.
+
+## Moderation and reports
+
+The platform moderates published material. The operator may remove content and restrict publishing. To report a problem, [open an issue](https://github.com/startodel/startodel/issues/new) with the Public Track URL and a brief description.
+
+## Changes to these rules
+
+When the rules change, you accept the new version before you publish again. Tracks that are already public stay public.`,
+};
