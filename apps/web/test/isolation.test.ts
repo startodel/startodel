@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 
 import { createDatabase, forUser } from "@startodel/db";
 import { localGitHub } from "./github";
+import { practiceHttpTests } from "./practice-http";
 import { learningMcpTests } from "./learning-mcp";
 
 const url = process.env.DATABASE_URL_TEST;
@@ -28,6 +29,8 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       body: JSON.stringify(body),
     });
   }
+
+  practiceHttpTests(() => ({ db, origin }), request, signIn);
 
   async function signIn(login: string) {
     const start = await request("/auth/github");
@@ -269,7 +272,12 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       prerequisites: [],
       dependents: [],
     });
-    expect(await (await request(own[2][0], b)).json()).toMatchObject({
+    const lessonView = await (await request(own[2][0], b)).json();
+    expect(lessonView.lesson.blocks[0].questions[0]).toEqual({
+      prompt: "Pick",
+      options: ["A", "B"],
+    });
+    expect(lessonView).toMatchObject({
       lesson: { id: lesson.id },
       readAt: null,
       mastery: 0,
@@ -280,6 +288,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       correct: 1,
       total: 1,
       perQuestion: [true],
+      feedback: [{ correctIndex: 1 }],
       mastery: 2,
     });
     expect((await bob.getProgress()).recentQuizAttempts[0]).toMatchObject({ source: "ui" });
