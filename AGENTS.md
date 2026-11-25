@@ -25,5 +25,6 @@ Run from the workspace root:
 - `pnpm check` validates formatting, lint rules, and types.
 - `pnpm test` runs the unit tests.
 - `pnpm build` builds the web app for production.
+- `docker build -t startodel:local .` builds the production image.
 
 Run `pnpm check` and `pnpm test` before submitting changes.
