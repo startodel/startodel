@@ -1,5 +1,11 @@
 export default defineNuxtRouteMiddleware(async (to) => {
   if (/^\/api(?:\/|$)/i.test(to.path)) return;
+  // The design showcase holds no learner data. It is served only in development or behind a flag.
+  if (
+    isDesignShowcasePath(to.path) &&
+    designShowcaseEnabled(import.meta.dev, useRuntimeConfig().public.designShowcase)
+  )
+    return;
   const me = useMe();
   if (!useUserSession().loggedIn.value) {
     me.value = undefined;
