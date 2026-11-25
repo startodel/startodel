@@ -1,5 +1,5 @@
 import { expect, test } from "vite-plus/test";
-import { lessonMastery, scheduleReview } from "@startodel/core";
+import { lessonMastery, scheduleReview, practiceVerdict } from "@startodel/core";
 
 test("a first weak result schedules tomorrow at the same instant", () => {
   expect(scheduleReview(null, "weak", new Date("2026-03-28T12:00:00Z"))).toEqual({
@@ -46,3 +46,12 @@ test.each([
     expect(lessonMastery(lessons!, read!, quizzes!, passed!)).toBe(level);
   },
 );
+
+test("Practice Quiz scores every question equally, including the halfway boundary", () => {
+  expect(practiceVerdict(1, 1)).toBe("strong");
+  expect(practiceVerdict(2, 4)).toBe("partial");
+  expect(practiceVerdict(2, 3)).toBe("partial");
+  expect(practiceVerdict(1, 3)).toBe("weak");
+  expect(practiceVerdict(0, 1)).toBe("weak");
+  expect(() => practiceVerdict(0, 0)).toThrow();
+});

@@ -1,4 +1,4 @@
-import { AnswerSource, lessonMastery, LessonBlocks } from "@startodel/core";
+import { type Block, AnswerSource, lessonMastery, LessonBlocks } from "@startodel/core";
 import { and, desc, eq, max, sql } from "drizzle-orm";
 import type { Database } from "./index.ts";
 import { ownedId, referencedRow, type Transaction } from "./owned.ts";
@@ -29,7 +29,7 @@ async function lockLessonTopic(tx: Transaction, userId: string, lessonId: string
   return row?.topicId;
 }
 
-async function raiseMastery(tx: Transaction, userId: string, topicId: string) {
+export async function raiseMastery(tx: Transaction, userId: string, topicId: string) {
   const inTopic = and(eq(lessons.userId, userId), eq(lessons.topicId, topicId));
   const rows = await tx
     .select({
@@ -84,6 +84,50 @@ async function raiseMastery(tx: Transaction, userId: string, topicId: string) {
     .where(and(eq(topicMastery.userId, userId), eq(topicMastery.topicId, topicId)));
   return assessment?.level ?? 0;
 }
+export async function recordQuizAttempt(
+  tx: Transaction,
+  userId: string,
+  lessonId: string,
+  quiz: Extract<Block, { type: "quiz" }>,
+  answers: number[],
+  source: AnswerSource,
+) {
+  const total = quiz.questions.length;
+  if (
+    answers.length !== total ||
+    !quiz.questions.every((q, i) => {
+      const index = answers[i];
+      return (
+        index !== undefined && Number.isInteger(index) && index >= 0 && index < q.options.length
+      );
+    })
+  )
+    throw new RangeError("Expected one valid option index per Quiz question");
+  const perQuestion = quiz.questions.map((q, i) => q.correctIndex === answers[i]);
+  const correct = perQuestion.filter(Boolean).length;
+  const [attempt] = await tx
+    .insert(quizAttempts)
+    .values({
+      userId,
+      lessonId,
+      blockId: quiz.id,
+      answers,
+      source: AnswerSource.parse(source),
+      createdAt: sql`clock_timestamp()`,
+      correct,
+      total,
+    })
+    .returning();
+  return {
+    ...attempt!,
+    perQuestion,
+    feedback: quiz.questions.map(({ correctIndex, explanation }) => ({
+      correctIndex,
+      explanation,
+    })),
+  };
+}
+
 export function lessonsForUser(db: Database, userId: string) {
   return {
     async createLesson(input: LessonInput & { topicId: string }) {
@@ -208,36 +252,8 @@ export function lessonsForUser(db: Database, userId: string) {
           .for("share");
         const quiz = lesson?.blocks.find((b) => b.id === blockId);
         if (quiz?.type !== "quiz") return undefined;
-        const total = quiz.questions.length;
-        if (
-          answers.length !== total ||
-          !quiz.questions.every((q, i) => {
-            const index = answers[i];
-            return (
-              index !== undefined &&
-              Number.isInteger(index) &&
-              index >= 0 &&
-              index < q.options.length
-            );
-          })
-        )
-          throw new RangeError("Expected one valid option index per Quiz question");
-        const perQuestion = quiz.questions.map((q, i) => q.correctIndex === answers[i]);
-        const correct = perQuestion.filter(Boolean).length;
-        const [attempt] = await tx
-          .insert(quizAttempts)
-          .values({
-            userId,
-            lessonId,
-            blockId,
-            answers,
-            source: AnswerSource.parse(source),
-            createdAt: sql`clock_timestamp()`,
-            correct,
-            total,
-          })
-          .returning();
-        return { ...attempt!, perQuestion, mastery: await raiseMastery(tx, userId, topicId) };
+        const result = await recordQuizAttempt(tx, userId, lessonId, quiz, answers, source);
+        return { ...result, mastery: await raiseMastery(tx, userId, topicId) };
       });
     },
   };

@@ -1,3 +1,4 @@
+import { practiceForUser } from "./practice.ts";
 import { progressForUser } from "./progress.ts";
 import { grillsForUser } from "./grills.ts";
 import { lessonsForUser } from "./lessons.ts";
@@ -43,6 +44,7 @@ export function forUser(db: Database, userId: string) {
         ...related,
       };
     },
+    ...practiceForUser(db, userId),
     ...progressForUser(db, userId),
     ...grillsForUser(db, userId),
     ...lessons,

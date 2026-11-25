@@ -36,3 +36,13 @@ test("Video Blocks embed only exact YouTube video IDs on the privacy-enhanced ho
   ])
     expect(youtubeEmbed(url)).toBeUndefined();
 });
+test("Markdown images show escaped alt text as a safe outbound link", () => {
+  const html = renderMarkdown(
+    "![<diagram>](https://example.org/p.png) ![x](data:image/png;base64,AA) ![x](javascript:alert)",
+  );
+  expect(html).toContain('href="https://example.org/p.png"');
+  expect(html).toContain("Image: &lt;diagram&gt;");
+  expect(html).toContain('rel="noopener noreferrer"');
+  expect(html).toContain('target="_blank"');
+  expect(html).not.toMatch(/<img|href="(?:javascript|data):/i);
+});

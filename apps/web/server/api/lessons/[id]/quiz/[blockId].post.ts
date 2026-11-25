@@ -9,7 +9,7 @@ export default defineHandler(async (event) => {
   if (!input.success)
     throw createError({ status: 400, message: "Expected an option index for each question" });
   try {
-    const { correct, total, perQuestion, mastery } = found(
+    const { correct, total, perQuestion, feedback, mastery } = found(
       await data.recordQuizAttempt(
         rowId(event),
         getRouterParam(event, "blockId")!,
@@ -17,7 +17,7 @@ export default defineHandler(async (event) => {
         "ui",
       ),
     );
-    return { correct, total, perQuestion, mastery };
+    return { correct, total, perQuestion, feedback, mastery };
   } catch (error) {
     if (error instanceof RangeError) throw createError({ status: 400, message: error.message });
     throw error;

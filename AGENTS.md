@@ -15,7 +15,7 @@ Reference user-owned parents with composite foreign keys from `(user_id, parent_
 
 Validate Lesson Block payloads on every write through the Zod schemas in `@startodel/core`. See [ADR 0008](docs/adr/0008-lesson-blocks.md).
 
-Treat agent-authored Lesson content as untrusted. Escape HTML in Markdown, allow only HTTP(S) resource URLs, and embed videos only through a validated 11-character YouTube ID on youtube-nocookie.com. Render highlighted code as text tokens.
+Treat agent-authored Lesson content as untrusted. Escape HTML in Markdown, allow only HTTP(S) resource URLs, and embed videos only through a validated 11-character YouTube ID on youtube-nocookie.com. Render highlighted code as text tokens. Render Markdown images as outbound links. Session Lesson and Practice Quiz reads expose questions and options. Return Quiz feedback on submission and Exercise solutions on explicit reveal. See [ADR 0014](docs/adr/0014-review-practice-and-ui-answers.md).
 
 Every MCP Tool uses the request’s `forUser(db, userId)`, bound to the Owner of the MCP Token. Never accept a `userId`, `ownerId`, or equivalent Tool argument. For every new Tool, add two-User HTTP isolation tests and describe when to call it in the [agent guide](docs/agent-guide/README.md). Regenerate the bundled guide with `pnpm guide:build` after editing its Markdown. See [ADR 0005](docs/adr/0005-mcp-transport-and-token-model.md).
 
