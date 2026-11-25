@@ -102,7 +102,24 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
 
   test("the landing page requires sign-in and logout expires the sealed Session", async () => {
     expect((await request("/")).headers.get("location")).toBe("/login");
-    expect(await (await request("/login")).text()).toContain("Sign in with GitHub");
+    expect(await (await request("/login")).text()).toContain("Войти через GitHub");
+    expect(await (await request("/en/login")).text()).toContain("Sign in with GitHub");
+    expect((await request("/", "startodel_language=en")).headers.get("location")).toBe("/en/login");
+    for (const prefix of ["", "/en"]) {
+      for (const path of [
+        "/settings",
+        "/progress",
+        "/grills",
+        "/onboarding",
+        "/reviews",
+        "/tracks/unknown",
+      ]) {
+        const response = await request(prefix + path);
+        expect(response.headers.get("location"), prefix + path).toBe(prefix + "/login");
+        expect(response.headers.get("cache-control")).toContain("no-store");
+      }
+      expect((await request(prefix + "/api/profile")).status).toBe(401);
+    }
     const cookie = await signIn("alice");
     const page = await request("/", cookie);
     expect(page.headers.get("location")).toBe("/onboarding");
@@ -117,7 +134,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
     expect((await request("/onboarding", cookie)).status).toBe(200);
     const html = await (await request("/onboarding", cookie)).text();
     expect(html).toContain("Alice");
-    expect(html).toContain("stack");
+    expect(html).toContain("С какими технологиями вы работаете?");
     const { user } = await (await request("/api/_auth/session", cookie)).json();
     expect(user).toEqual({
       id: expect.any(String),

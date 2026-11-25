@@ -19,7 +19,7 @@ test("HTTP handlers and MCP Tools access the database only through its public en
       if (
         isPublic &&
         !["nuxt/server", "@startodel/core"].includes(fileName) &&
-        !/^(?:\.\.\/)+(?:lib\/public-reader|utils\/input)$/.test(fileName)
+        !/^(?:\.\.\/)+(?:lib\/public-reader|utils\/input|shared\/locale)$/.test(fileName)
       ) {
         violations.push(route + " imports " + fileName);
       }

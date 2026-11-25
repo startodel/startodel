@@ -5,6 +5,7 @@ import { httpUrl, youtubeEmbed } from "../app/utils/links";
 test("Lesson Markdown escapes HTML and admits only HTTP(S) links", () => {
   const html = renderMarkdown(
     "<b>example</b> [bad](javascript:alert) [relative](/here) https://example.org/path",
+    "Image:",
   );
   expect(html).toContain("&lt;b&gt;example&lt;/b&gt;");
   expect(html).not.toContain('href="javascript:');
@@ -39,9 +40,10 @@ test("Video Blocks embed only exact YouTube video IDs on the privacy-enhanced ho
 test("Markdown images show escaped alt text as a safe outbound link", () => {
   const html = renderMarkdown(
     "![<diagram>](https://example.org/p.png) ![x](data:image/png;base64,AA) ![x](javascript:alert)",
+    "Изображение:",
   );
   expect(html).toContain('href="https://example.org/p.png"');
-  expect(html).toContain("Image: &lt;diagram&gt;");
+  expect(html).toContain("Изображение: &lt;diagram&gt;");
   expect(html).toContain('rel="noopener noreferrer"');
   expect(html).toContain('target="_blank"');
   expect(html).not.toMatch(/<img|href="(?:javascript|data):/i);
