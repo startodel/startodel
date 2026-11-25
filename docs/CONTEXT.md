@@ -2,6 +2,9 @@
 
 | Term         | Definition                                                                             |
 | ------------ | -------------------------------------------------------------------------------------- |
+| User         | A learner identified by their GitHub account.                                          |
+| Session      | A signed-in browser's association with one User.                                       |
+| Owner        | The User to whom a learning record belongs.                                            |
 | Profile      | A learner's record of their goals and assessed level.                                  |
 | Topic        | A concept or skill a learner can study.                                                |
 | TopicEdge    | A directed link from a prerequisite Topic to the Topic that builds on it.              |

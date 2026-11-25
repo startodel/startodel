@@ -7,6 +7,10 @@
 - Keep PRs small and focused. Keep secrets out of source, configuration examples, and logs.
 - Use Conventional Commits for commits and PR titles, for example `feat(core): add Lesson type` or `ci: run workspace checks`. See [CONTRIBUTING.md](CONTRIBUTING.md) for allowed types and the branch workflow.
 
+## Per-user isolation
+
+Access user-owned learning data only through `forUser(db, userId)` in `@startodel/db`. In HTTP handlers, use `userData(event)` to bind the Owner from the Session. Assign that Owner on insert and include it in every SQL read, update, and delete, joining through the owning Track for child rows. Return 404 for both missing and foreign rows. Never import raw schema tables into the web server. See [ADR 0004](docs/adr/0004-authentication-and-per-user-isolation.md).
+
 ## Commands
 
 Run from the workspace root:
