@@ -1,0 +1,30 @@
+{
+  "rules": {
+    "en": {
+      "title": "Publishing rules",
+      "version": "2026-11-25",
+      "updated": "2026-11-25",
+      "body": "## What you may publish\n\nPublish lawful learning materials. Share copyrighted work only when you hold the necessary rights. Keep other people’s personal data out of titles, sources and lessons. Consider carefully before including your own personal information. Spam and advertising are prohibited.\n\n## Moderation and reports\n\nThe platform moderates published material. The operator may remove content and restrict publishing. To report a problem, [open an issue](https://github.com/startodel/startodel/issues/new) with the public Track URL and a brief description. Keep personal or confidential information out of public reports.\n"
+    },
+    "ru": {
+      "title": "Правила публикации",
+      "version": "2026-11-25",
+      "updated": "2026-11-25",
+      "body": "## Что можно публиковать\n\nПубликуйте только законные учебные материалы. Размещайте произведения, защищённые авторским правом, только если у вас есть необходимые права. Не включайте чужие персональные данные в названия, источники и уроки. Внимательно подумайте, прежде чем публиковать собственные персональные данные. Спам и реклама запрещены.\n\n## Модерация и обращения\n\nПлатформа модерирует опубликованные материалы. Оператор может удалить материалы и ограничить возможность публикации. Чтобы сообщить о проблеме, [создайте обращение](https://github.com/startodel/startodel/issues/new), укажите ссылку на публичный трек и кратко опишите проблему. Не включайте персональные или конфиденциальные сведения в публичное обращение.\n"
+    }
+  },
+  "terms": {
+    "en": {
+      "title": "Terms of Use",
+      "version": "2026-11-25",
+      "updated": "2026-11-25",
+      "body": "## Who operates the service\n\nIndividual Entrepreneur N. N. Kosarev operates the cloud service at startodel.ru. Each self-hosted instance is operated by its own operator and is governed by that operator’s terms.\n\n## Publishing your work\n\nWhen you make a Track public on the cloud service, you grant Startodel, acting through its operator, a worldwide, perpetual, irrevocable, royalty-free, non-exclusive, sublicensable license to host, store, display, reproduce, modify, adapt, translate and distribute the published content and create derivative works of it. You also grant other users of the service the right to fork, copy, modify and use your Public Tracks within the service.\n\nUnpublishing removes public access to the source Track. The license survives unpublishing and account deletion with respect to forks and copies that already exist. You represent and warrant that you hold all rights needed to publish the content and grant these permissions, and that the content does not infringe third-party rights.\n\n## Private data and moderation\n\nPrivate data stays private and is processed only to provide the service. The operator may remove content and suspend or terminate accounts.\n\n## Availability and liability\n\nThe service is provided “as is”, without warranties. To the extent permitted by law, the operator is not liable for losses arising from use of, or inability to use, the service.\n\n## Changes and contact\n\nEach change to these terms carries a new version. You must accept the current version before you next publish a Track. Contact the operator through [the project’s issue tracker](https://github.com/startodel/startodel/issues/new).\n"
+    },
+    "ru": {
+      "title": "Условия использования",
+      "version": "2026-11-25",
+      "updated": "2026-11-25",
+      "body": "## Кто управляет сервисом\n\nОператор облачного сервиса startodel.ru — ИП Косарев Н.Н. У каждого самостоятельно размещённого экземпляра свой оператор, который устанавливает собственные условия использования.\n\n## Публикация материалов\n\nДелая трек публичным в облачном сервисе, вы предоставляете Startodel в лице оператора действующую во всём мире, бессрочную, безотзывную, безвозмездную, неисключительную лицензию с правом сублицензирования на размещение, хранение, показ, воспроизведение, изменение, адаптацию, перевод и распространение опубликованных материалов, а также на создание производных произведений. Вы также предоставляете другим пользователям сервиса право создавать форки ваших публичных треков, копировать, изменять и использовать их в пределах сервиса.\n\nСнятие трека с публикации закрывает публичный доступ к исходному треку. В отношении уже созданных форков и копий лицензия сохраняет силу после снятия с публикации или удаления учётной записи. Вы подтверждаете и гарантируете, что обладаете всеми правами, необходимыми для публикации материалов и предоставления этих разрешений, и что материалы не нарушают права третьих лиц.\n\n## Закрытые данные и модерация\n\nЗакрытые данные остаются закрытыми и обрабатываются только для предоставления сервиса. Оператор вправе удалять материалы, приостанавливать действие учётных записей или прекращать их действие.\n\n## Доступность и ответственность\n\nСервис предоставляется «как есть», без гарантий. В пределах, допускаемых законом, оператор не несёт ответственности за убытки, связанные с использованием сервиса или невозможностью его использования.\n\n## Изменения и связь\n\nКаждое изменение условий получает новый номер версии. Перед следующей публикацией трека необходимо принять действующую версию. Связаться с оператором можно через [обращение в репозитории проекта](https://github.com/startodel/startodel/issues/new).\n"
+    }
+  }
+}
