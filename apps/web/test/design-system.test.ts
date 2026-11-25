@@ -85,6 +85,10 @@ test("Mastery fills get steadily stronger so the scale reads without hue", () =>
   }
 });
 
+test("tokens are declared on every theme scope so a nested theme survives the production build", () => {
+  expect(css).toMatch(/:root,\s*\[data-theme\]\s*\{\s*\/\*[^*]*\*\/\s*--s-bg:/);
+});
+
 test("the design showcase is served only in development or behind its flag", () => {
   expect(designShowcaseEnabled(true, false)).toBe(true);
   expect(designShowcaseEnabled(false, true)).toBe(true);

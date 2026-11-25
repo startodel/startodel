@@ -14,7 +14,7 @@ The existing pages keep their current look until each one is migrated separately
 
 **Components live in the web app.** They are in `apps/web/app/components/ui/` and Nuxt registers them with the `Ui` prefix. A `packages/ui` workspace package was rejected: the app is the only consumer, a package would need its own build and type setup, and the image build copies each package manifest by name. Move the components into a package when a second consumer appears.
 
-**Tokens are CSS custom properties.** `apps/web/app/assets/design/tokens.css` is the single source. Each colour is declared once with `light-dark()`. A `data-theme` attribute sets `color-scheme`, so a theme can be applied to the page or to any subtree. The choice is stored in the `startodel-theme` cookie so the server renders the right theme. A test reads the file and checks WCAG contrast for the documented pairs in both themes.
+**Tokens are CSS custom properties.** `apps/web/app/assets/design/tokens.css` is the single source. Each colour is declared once with `light-dark()`. A `data-theme` attribute sets `color-scheme`, so a theme can be applied to the page or to any subtree. The tokens are declared on the root and on every `data-theme` element, because the production build lowers `light-dark()` to variables that resolve where a token is declared. The choice is stored in the `startodel-theme` cookie so the server renders the right theme. A test reads the file and checks WCAG contrast for the documented pairs in both themes.
 
 **No CSS or component framework.** Components use scoped styles and the tokens. The library is small, and a utility framework or a vendor kit would bring a second visual language and a larger dependency surface.
 
