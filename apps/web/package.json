@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@startodel/core": "workspace:*",
+    "@startodel/db": "workspace:*",
     "nuxt": "4.7.0"
   },
   "devDependencies": {
