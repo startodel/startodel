@@ -159,6 +159,7 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
       alice.createLesson({ ...input, blocks: [...blocks, ...blocks] }),
     ).rejects.toThrow();
     const read = await alice.markLessonRead(lesson.id);
+    expect(read).toMatchObject({ mastery: 1 });
     expect(await alice.markLessonRead(lesson.id)).toMatchObject({ id: read!.id });
     expect(await alice.recordQuizAttempt(lesson.id, "absent", [1], "ui")).toBeUndefined();
     expect(await alice.recordQuizAttempt(lesson.id, "intro", [0], "ui")).toBeUndefined();
@@ -181,6 +182,37 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
       expect(await alice.getTrackGraph(track.id)).toMatchObject({
         topics: [{ id: topic.id, lessonCount: 1, level: 3 }],
       });
+    }
+  });
+
+  test("only complete Topic evidence auto-raises Mastery, using the latest attempt for each Lesson and Block", async () => {
+    const topic = await alice.upsertTopic({ slug: "queues", title: "Queues" });
+    const blocks: LessonBlocks = [
+      {
+        type: "quiz",
+        id: "check",
+        questions: [{ prompt: "First?", options: ["A", "B"], correctIndex: 0 }],
+      },
+    ];
+    const first = (await alice.createLesson({ topicId: topic.id, title: "First", blocks }))!;
+    const second = (await alice.createLesson({ topicId: topic.id, title: "Second", blocks }))!;
+    const reads = await Promise.all([
+      alice.markLessonRead(first.id),
+      alice.markLessonRead(second.id),
+    ]);
+    expect(reads.map((r) => r?.mastery).sort()).toEqual([0, 1]);
+    const attempt = (id: string, answer: number) =>
+      alice.recordQuizAttempt(id, "check", [answer], "ui");
+    expect(await attempt(first.id, 0)).toMatchObject({ mastery: 1 });
+    await attempt(first.id, 1);
+    expect(await attempt(second.id, 0)).toMatchObject({ mastery: 1 });
+    expect(await attempt(first.id, 0)).toMatchObject({ mastery: 2 });
+    expect(await attempt(first.id, 1)).toMatchObject({ mastery: 2 });
+    for (const level of [3, 4] as const) {
+      await alice.setMastery(topic.id, level, "Explained");
+      expect(await alice.markLessonRead(first.id)).toMatchObject({ mastery: level });
+      expect(await attempt(first.id, 0)).toMatchObject({ mastery: level });
+      expect(await alice.getMastery(topic.id)).toMatchObject({ level, evidence: "Explained" });
     }
   });
 

@@ -25,3 +25,10 @@ export function scheduleReview(
   if (result === "weak") box = 0;
   return { box, dueAt: new Date(now.getTime() + REVIEW_INTERVAL_DAYS[box] * 86_400_000) };
 }
+
+/** The highest level supported by the Topic's current reading and Quiz evidence. */
+export function lessonMastery(lessons: number, read: number, quizzes: number, passed: number) {
+  if (quizzes > 0 && passed === quizzes) return 2;
+  if (lessons > 0 && read === lessons) return 1;
+  return 0;
+}

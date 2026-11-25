@@ -32,7 +32,7 @@ export function registerPractice(register: Register, data: UserData) {
   );
   register(
     "record_quiz_result",
-    "Submit one zero-based option index per Quiz question (1–3). Returns the stored scored Quiz Attempt with MCP Answer Source.",
+    "Submit one zero-based option index per Quiz question (1–3). Returns the stored scored Quiz Attempt with MCP Answer Source and the resulting Topic Mastery.",
     lessonId.extend({
       blockId: z.string().min(1).max(64),
       answers: z.array(z.int().nonnegative()).min(1).max(3),
@@ -41,7 +41,7 @@ export function registerPractice(register: Register, data: UserData) {
   );
   register(
     "mark_lesson_read",
-    "Mark a Lesson as read when the learner confirms. Returns Lesson Progress with the read time.",
+    "Mark a Lesson as read when the learner confirms. Returns Lesson Progress with the read time and resulting Topic Mastery.",
     lessonId,
     ({ lessonId }) => data.markLessonRead(lessonId),
   );
@@ -107,7 +107,7 @@ export function registerPractice(register: Register, data: UserData) {
   );
   register(
     "submit_grill_answer",
-    "Save the learner's voice or chat answer to an open Grill Question with MCP Answer Source. Returns the question ready for judgment.",
+    "Save the learner's voice or chat answer to an open Grill Question with MCP Answer Source and the resulting Topic Mastery. Returns the question ready for judgment.",
     questionId.extend({ answer: title }),
     ({ questionId, answer }) => data.answerGrillQuestion(questionId, answer, "mcp"),
   );

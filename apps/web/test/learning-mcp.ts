@@ -154,18 +154,18 @@ export function learningMcpTests(environment: () => { origin: string; db: Databa
       expect(await call("list_lessons", { topic: "js/tasks" })).toMatchObject([
         { id: lessonId, readAt: null },
       ]);
-      await call("mark_lesson_read", { lessonId });
+      expect(await call("mark_lesson_read", { lessonId })).toMatchObject({ mastery: 1 });
       const graph = await call("get_track_graph", { trackId });
       expect(graph).toMatchObject({
         topics: [
-          { slug: "js/tasks", lessonCount: 1, readCount: 1, level: 0 },
+          { slug: "js/tasks", lessonCount: 1, readCount: 1, level: 1 },
           { slug: "js/timers", lessonCount: 0, readCount: 0 },
         ],
         edges: [{ fromTopicId: ids["js/tasks"], toTopicId: ids["js/timers"] }],
         suggestedNextTopics: [{ slug: "js/tasks" }],
       });
       expect(await call("get_topic", { id: ids["js/tasks"] })).toMatchObject({
-        mastery: { level: 0 },
+        mastery: { level: 1 },
         lessons: [{ id: lessonId }],
         prerequisites: [{ slug: "system" }],
         dependents: [{ slug: "js/timers" }],
@@ -173,8 +173,7 @@ export function learningMcpTests(environment: () => { origin: string; db: Databa
       expect((await step("agent-workflow")).nextSteps[0].why).toContain("js/tasks");
       expect(
         await call("record_quiz_result", { lessonId, blockId: "timers", answers: [1] }),
-      ).toMatchObject({ correct: 1, total: 1, source: "mcp" });
-      await call("set_mastery", { topic: "js/tasks", level: 2 });
+      ).toMatchObject({ correct: 1, total: 1, source: "mcp", mastery: 2 });
       expect(await call("get_progress")).toMatchObject({
         masteryDistribution: [1, 0, 2, 0, 0],
         perTrack: [{ trackId, completed: 1, total: 2 }],
