@@ -14,7 +14,11 @@
     "skip": "Skip to content",
     "expand": "Expand navigation",
     "collapse": "Collapse navigation",
-    "pending": "pending"
+    "pending": "pending",
+    "signIn": "Sign in",
+    "site": "Site",
+    "footer": "Footer",
+    "current": "current"
   },
   "legal": {
     "terms": "Terms",
@@ -47,7 +51,26 @@
     "theme": "Theme",
     "themeAuto": "System theme",
     "themeLight": "Light theme",
-    "themeDark": "Dark theme"
+    "themeDark": "Dark theme",
+    "showOptions": "Show options",
+    "noMatch": "No match",
+    "choose": "Choose",
+    "on": "on",
+    "off": "off",
+    "add": "Add",
+    "pages": "Pages",
+    "pagePrevious": "Previous page",
+    "pageNext": "Next page",
+    "notification": "Notification",
+    "steps": "Steps",
+    "stepDone": "done",
+    "stepCurrent": "current step",
+    "fixFields": "Fix {n} field to continue | Fix {n} fields to continue",
+    "sections": "Sections",
+    "updated": "Updated {date}",
+    "licence": "Open source under the MIT licence.",
+    "linkUnavailable": "Link unavailable",
+    "today": "Today"
   },
   "dashboard": {
     "load": "Could not load your Tracks.",
@@ -64,7 +87,10 @@
     "lessons": "{n} Lesson | {n} Lessons",
     "reviews": "{n} review due | {n} reviews due",
     "forks": "{n} fork | {n} forks",
-    "questions": "{n} question | {n} questions"
+    "questions": "{n} question | {n} questions",
+    "topics": "{n} Topic | {n} Topics",
+    "blocks": "{n} Block | {n} Blocks",
+    "words": "{n} word | {n} words"
   },
   "login": {
     "signIn": "Sign in with GitHub",
@@ -88,7 +114,8 @@
     "read": "Lessons read",
     "last": "Last activity",
     "history": "Recent activity",
-    "emptyHistory": "No learning activity yet."
+    "emptyHistory": "No learning activity yet.",
+    "share": "{percent}% of Topics"
   },
   "track": {
     "topics": "Topics",
@@ -116,7 +143,9 @@
     "forkError": "Could not fork this Track. Reload and try again.",
     "trackTitle": "{title} · Public Track",
     "profileTitle": "{name} · Public Profile",
-    "lessonTitle": "{title} · Lesson"
+    "lessonTitle": "{title} · Lesson",
+    "openFork": "Open your Fork",
+    "sourceGone": "The source is no longer public"
   },
   "topic": {
     "lessons": "Topic Lessons",
@@ -126,7 +155,8 @@
     "prerequisites": "Prerequisites",
     "dependents": "Dependents",
     "level": "Mastery {level}",
-    "node": "{title}, Mastery {level}"
+    "node": "{title}, Mastery {level}",
+    "lessonsRead": "{read} of {total} read"
   },
   "lesson": {
     "empty": "This Lesson has no Blocks yet.",
@@ -142,7 +172,17 @@
     "solution": "Show solution",
     "loading": "Loading solution…",
     "loadError": "Could not load the solution. Close and reopen to retry.",
-    "image": "Image:"
+    "image": "Image:",
+    "yourTurn": "Your turn",
+    "showHint": "Show a hint",
+    "nextHint": "Another hint",
+    "solutionTitle": "Solution",
+    "tryFirst": "Try it first. The solution stays hidden until you ask.",
+    "contents": "In this Lesson",
+    "minutes": "{n} min",
+    "unread": "Not read",
+    "videoLazy": "YouTube · loads when you press play",
+    "videoOff": "This video link cannot be embedded"
   },
   "review": {
     "load": "Could not load your reviews.",
@@ -162,7 +202,14 @@
     "stale": "This review has changed. Load the current questions to practice again.",
     "saveError": "Could not save this Practice Quiz. Try again.",
     "score": "Practice Quiz: {correct} of {total} correct",
-    "invalid": "Choose one of the available answers for each question."
+    "invalid": "Choose one of the available answers for each question.",
+    "boxes": "Review Boxes",
+    "box": "Box {box}",
+    "boxFull": "Review Box {box}",
+    "boxSummary": "Box {box}: {topics}, reviewed every {days} days",
+    "days": "{n} d",
+    "week": "Reviews in the next seven days",
+    "dueOn": "{day}: {count} due"
   },
   "agent": {
     "connect": "Connect your agent",
@@ -174,7 +221,9 @@
     "first": "First prompt",
     "guide": "Call get_guide and follow it.",
     "copy": "Copy prompt",
-    "manual": "Select and copy the prompt above."
+    "manual": "Select and copy the prompt above.",
+    "prompt": "Prompt for your agent",
+    "paste": "Paste it into your agent"
   },
   "onboarding": {
     "title": "Onboarding",
@@ -228,7 +277,18 @@
     "prompt": "Call start_grill for my next round, then use add_grill_questions to add questions for me.",
     "judgePrompt": "Judge my answers in grill {title} ({id}) with judge_grill_answer.",
     "addPrompt": "Use add_grill_questions to add questions to {title} ({id}).",
-    "error": "Could not save your answer. Check the current question and try again."
+    "error": "Could not save your answer. Check the current question and try again.",
+    "placeholder": "Explain it as you would to a colleague who will push back.",
+    "submitKeys": "{keys} to submit",
+    "once": "You submit once. Your agent judges the answer, not this page.",
+    "viaAgent": "via your agent",
+    "viaPage": "via this page",
+    "verdictTitle": "Verdict",
+    "verdicts": "Verdicts",
+    "lineStrong": "Holds under load.",
+    "linePartial": "Carries signal, with gaps.",
+    "lineWeak": "Open circuit. Revisit this.",
+    "pad": "Question {index}, {state}"
   },
   "quiz": {
     "right": "Correct",
@@ -236,7 +296,10 @@
     "answer": "Correct answer: {answer}",
     "submit": "Submit answers",
     "score": "{correct} of {total} correct",
-    "error": "Could not record your answers. Try again."
+    "error": "Could not record your answers. Try again.",
+    "yours": "your answer",
+    "retry": "Try again",
+    "answered": "{answered} of {total} answered"
   },
   "token": {
     "title": "MCP tokens",
@@ -330,5 +393,36 @@
     "python": "Python",
     "go": "Go",
     "rust": "Rust"
+  },
+  "block": {
+    "theory": "Theory",
+    "code": "Code",
+    "callout": "Callout",
+    "link": "Link",
+    "video": "Video",
+    "quiz": "Quiz",
+    "exercise": "Exercise"
+  },
+  "topicState": {
+    "complete": "live",
+    "ready": "ready",
+    "blocked": "blocked"
+  },
+  "board": {
+    "after": "after {topics}",
+    "part": "{tag} {title}. Mastery {level} of 4. {state}.",
+    "partOutline": "{tag} {title}.",
+    "view": "View",
+    "viewBoard": "Board",
+    "viewList": "List",
+    "zoom": "Zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fit": "Fit the board",
+    "overview": "Board overview",
+    "liveOf": "of {total} live",
+    "legend": "Legend",
+    "signal": "signal",
+    "noSignal": "no signal"
   }
 }

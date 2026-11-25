@@ -1,0 +1,81 @@
+/*
+ * The box shared by every text-entry control: Input, Textarea, Select and Combobox.
+ * It owns the outline, the fill and every state. A component adds layout and type only, and sets
+ * its height through --_height. No component rule declares a property that is declared here: the
+ * two have the same specificity, and their order differs between development and production.
+ */
+.s-root .s-control {
+  min-width: 0;
+  min-height: var(--_height, var(--s-field-md));
+  border: 1px solid var(--s-line-strong);
+  border-radius: var(--s-radius-sm);
+  background: var(--s-raised);
+  color: var(--s-ink);
+  transition:
+    border-color var(--s-dur-1) var(--s-ease),
+    box-shadow var(--s-dur-1) var(--s-ease),
+    background-color var(--s-dur-1) var(--s-ease);
+}
+.s-root .s-control--sm {
+  --_height: var(--s-field-sm);
+}
+.s-root .s-control--lg {
+  --_height: var(--s-field-lg);
+}
+.s-root .s-control:where(:hover) {
+  border-color: var(--s-ink);
+}
+.s-root .s-control:is(:focus-within, :focus-visible, [data-state="open"]) {
+  outline: none;
+  border-color: var(--s-focus);
+  border-radius: var(--s-radius-sm);
+  box-shadow: 0 0 0 1px var(--s-focus);
+}
+.s-root .s-control.is-invalid {
+  border-color: var(--s-oxide);
+}
+.s-root .s-control.is-invalid:is(:focus-within, :focus-visible, [data-state="open"]) {
+  box-shadow: 0 0 0 1px var(--s-oxide);
+}
+
+/* Read only: the value sits on the surface. It can still be focused, selected and copied. */
+.s-root .s-control:is([readonly], :has([readonly])) {
+  border-color: var(--s-line);
+  background: transparent;
+}
+.s-root .s-control:is([readonly], :has([readonly])):is(:focus-within, :focus-visible) {
+  border-color: var(--s-focus);
+}
+
+.s-root .s-control:is(:disabled, [data-disabled], :has(:disabled:not(button))) {
+  border-color: var(--s-line);
+  background: var(--s-sunken);
+  box-shadow: none;
+  color: var(--s-ink-3);
+  cursor: not-allowed;
+}
+
+/*
+ * A browser paints its own fill behind a value it filled in, on the input alone. The inset shadow
+ * covers that fill and the box takes the same tint, so the control stays one piece.
+ */
+.s-root .s-control:is(:autofill, :has(:is(input, textarea):autofill)) {
+  background: var(--s-copper-soft);
+}
+.s-root .s-control:autofill,
+.s-root .s-control :is(input, textarea):autofill {
+  box-shadow: 0 0 0 100vmax var(--s-copper-soft) inset;
+  -webkit-text-fill-color: var(--s-ink);
+  caret-color: var(--s-ink);
+}
+.s-root .s-control:autofill:focus-visible {
+  box-shadow:
+    0 0 0 100vmax var(--s-copper-soft) inset,
+    0 0 0 1px var(--s-focus);
+}
+
+.s-root .s-control ::placeholder,
+.s-root .s-control::placeholder {
+  color: var(--s-ink-3);
+  opacity: 1;
+}

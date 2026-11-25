@@ -1,0 +1,57 @@
+/*
+ * Traces of the Track board. The interactive board and the static map draw the same paths,
+ * so the rules live here and not in either component.
+ */
+.s-root .s-trace {
+  fill: none;
+  stroke: var(--s-line-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke var(--s-dur-2) var(--s-ease);
+}
+.s-root .s-trace.is-live {
+  stroke: var(--s-copper-fill);
+  stroke-width: 2;
+  stroke-dasharray: none;
+}
+.s-root .s-trace.is-lit {
+  stroke: var(--s-ink);
+  stroke-width: 2;
+}
+.s-root .s-trace.is-live.is-lit {
+  stroke: var(--s-copper);
+  stroke-width: 3;
+}
+.s-root .s-trace.is-faded {
+  opacity: 0.35;
+}
+.s-root .s-trace-current {
+  fill: none;
+  stroke: var(--s-on-copper);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 1 23;
+  opacity: 0.85;
+  animation: s-trace-flow 1.6s linear infinite;
+}
+@keyframes s-trace-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .s-root .s-trace-current {
+    display: none;
+  }
+}
+.s-root .s-trace-pad {
+  fill: var(--s-sunken);
+  stroke: var(--s-line-strong);
+  stroke-width: 1.5;
+}
+.s-root .s-trace-pad.is-live {
+  fill: var(--s-copper-fill);
+  stroke: var(--s-sunken);
+}

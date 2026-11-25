@@ -440,6 +440,7 @@ const replay = ref(0);
 .scale__step {
   display: grid;
   gap: var(--s-3);
+  min-width: 0;
   align-content: start;
   justify-items: start;
   padding: var(--s-4);

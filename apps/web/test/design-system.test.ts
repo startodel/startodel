@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { expect, test } from "vite-plus/test";
 import { designShowcaseEnabled, isDesignShowcasePath } from "../app/utils/design-showcase";
 
@@ -59,6 +59,20 @@ const pairs: [foreground: string, background: string, minimum: number][] = [
   ]),
 ];
 
+test("light-dark() holds colours only, so a token works without the production build", () => {
+  // A browser accepts nothing but colours here. The production build lowers the function to plain
+  // variables and so hides the mistake: the token then works when deployed and not in development.
+  const colour = /^(#[0-9a-f]{3,8}|rgb\([^()]*\)|transparent)$/;
+  const declarations = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const wrong = [...declarations.matchAll(/light-dark\(((?:[^()]|\([^()]*\))*)\)/g)]
+    .map(([, body]) => body!)
+    .filter((body) => {
+      const parts = body.split(/,(?![^(]*\))/).map((part) => part.trim());
+      return parts.length !== 2 || !parts.every((part) => colour.test(part));
+    });
+  expect(wrong).toEqual([]);
+});
+
 test("design tokens define a light and a dark value for every colour pair in use", () => {
   const missing = pairs.flatMap(([a, b]) => [a, b]).filter((name) => !tokens.has(name));
   expect([...new Set(missing)]).toEqual([]);
@@ -109,4 +123,41 @@ test("only showcase paths skip the Session check", () => {
       isDesignShowcasePath,
     ),
   ).toEqual([false, false, false, false, false, false, false]);
+});
+
+// app.vue still styles these class names globally. Remove this test with those styles.
+const legacyClasses = [
+  "actions",
+  "bar",
+  "brand",
+  "brand-mark",
+  "button",
+  "choice",
+  "choices",
+  "identity",
+  "mast",
+  "muted",
+  "narrow",
+  "panel",
+  "primary",
+  "quiet",
+];
+
+test("design system files use no class name that app.vue styles globally", () => {
+  const app = new URL("../app/", import.meta.url);
+  const files = ["components/ui/", "components/showcase/", "pages/design/"].flatMap((dir) =>
+    readdirSync(new URL(dir, app), { recursive: true, encoding: "utf8" })
+      .filter((name) => name.endsWith(".vue"))
+      .map((name) => dir + name),
+  );
+  expect(files.length).toBeGreaterThan(80);
+  const name = `(?:${legacyClasses.join("|")})`;
+  const inMarkup = new RegExp(`\\bclass="(?:[^"]*[\\s'])?${name}(?:[\\s'][^"]*)?"`);
+  const inStyle = new RegExp(`\\.${name}(?![\\w-])`);
+  const found = files.filter((file) => {
+    const source = readFileSync(new URL(file, app), "utf8");
+    const style = source.slice(source.lastIndexOf("<style"));
+    return inMarkup.test(source) || inStyle.test(style);
+  });
+  expect(found).toEqual([]);
 });

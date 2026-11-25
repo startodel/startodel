@@ -1,148 +1,100 @@
 <script setup lang="ts">
+import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "reka-ui";
 import type { IconName } from "./icons";
-const props = withDefaults(
+/**
+ * Tabs with their panels. Give each panel as a slot named after its tab id.
+ * Arrow keys move between tabs. For a switch with no panels, use UiSegmented.
+ */
+withDefaults(
   defineProps<{
     tabs: { id: string; label: string; count?: number; icon?: IconName; disabled?: boolean }[];
     label: string;
-    variant?: "line" | "segment";
-    /** Prefix for tab and panel ids. A panel uses `${idBase}-panel-${id}`. */
-    idBase?: string;
-    iconOnly?: boolean;
+    /** Keep hidden panels mounted, for example to preserve a draft. */
+    keepAlive?: boolean;
   }>(),
-  { variant: "line", idBase: "tabs" },
+  {},
 );
 const model = defineModel<string>({ required: true });
-const list = ref<HTMLElement>();
-function move(event: KeyboardEvent) {
-  const enabled = props.tabs.filter((t) => !t.disabled);
-  const at = enabled.findIndex((t) => t.id === model.value);
-  const next =
-    event.key === "ArrowRight"
-      ? enabled[(at + 1) % enabled.length]
-      : event.key === "ArrowLeft"
-        ? enabled[(at - 1 + enabled.length) % enabled.length]
-        : event.key === "Home"
-          ? enabled[0]
-          : event.key === "End"
-            ? enabled.at(-1)
-            : undefined;
-  if (!next) return;
-  event.preventDefault();
-  model.value = next.id;
-  void nextTick(() =>
-    list.value
-      ?.querySelector<HTMLElement>(`#${CSS.escape(props.idBase + "-tab-" + next.id)}`)
-      ?.focus(),
-  );
-}
 </script>
 <template>
-  <div
-    ref="list"
-    class="s-tabs"
-    :class="'s-tabs--' + variant"
-    role="tablist"
-    :aria-label="label"
-    @keydown="move"
-  >
-    <button
-      v-for="t in tabs"
-      :id="idBase + '-tab-' + t.id"
-      :key="t.id"
-      class="s-tabs__tab"
-      type="button"
-      role="tab"
-      :aria-selected="model === t.id"
-      :aria-controls="idBase + '-panel-' + t.id"
-      :aria-label="iconOnly ? t.label : undefined"
-      :tabindex="model === t.id ? 0 : -1"
-      :disabled="t.disabled"
-      @click="model = t.id"
-    >
-      <UiIcon v-if="t.icon" :name="t.icon" :size="14" /><span v-if="!iconOnly">{{ t.label }}</span
-      ><span v-if="t.count !== undefined" class="s-tabs__count">{{ t.count }}</span>
-    </button>
-  </div>
+  <TabsRoot v-model="model" class="s-tabs" :unmount-on-hide="!keepAlive">
+    <TabsList class="s-tabs__list" :aria-label="label">
+      <TabsTrigger
+        v-for="t in tabs"
+        :key="t.id"
+        class="s-tabs__tab"
+        :value="t.id"
+        :disabled="t.disabled"
+      >
+        <UiIcon v-if="t.icon" :name="t.icon" :size="14" /><span>{{ t.label }}</span
+        ><span v-if="t.count !== undefined" class="s-tabs__count">{{ t.count }}</span>
+      </TabsTrigger>
+    </TabsList>
+    <template v-for="t in tabs" :key="t.id">
+      <TabsContent v-if="$slots[t.id]" class="s-tabs__panel" :value="t.id"
+        ><slot :name="t.id"
+      /></TabsContent>
+    </template>
+  </TabsRoot>
 </template>
-<style scoped>
-.s-tabs {
-  display: flex;
+<style>
+.s-root .s-tabs {
+  display: grid;
+  gap: var(--s-5);
   min-width: 0;
 }
-.s-tabs__tab {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  flex: none;
-  color: var(--s-ink-3);
-  font-size: var(--s-text-sm);
-  font-weight: 600;
-  white-space: nowrap;
-  transition:
-    color var(--s-dur-1) var(--s-ease),
-    background var(--s-dur-1) var(--s-ease);
-}
-.s-tabs__tab:hover {
-  color: var(--s-ink);
-}
-.s-tabs__tab:disabled {
-  color: var(--s-ink-3);
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-.s-tabs__count {
-  font: 500 var(--s-text-2xs) / 1 var(--s-font-mono);
-  font-stretch: 75%;
-  font-variant-numeric: tabular-nums;
-  color: var(--s-ink-3);
-}
-
-.s-tabs--line {
+.s-root .s-tabs__list {
+  display: flex;
   gap: var(--s-5);
   border-bottom: 1px solid var(--s-line);
   overflow-x: auto;
   scrollbar-width: none;
 }
-.s-tabs--line .s-tabs__tab {
-  padding: var(--s-2) 0 0.625rem;
+.s-root .s-tabs__tab {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) 0;
+  color: var(--s-ink-3);
+  font-size: var(--s-text-sm);
+  font-weight: 600;
+  transition: color var(--s-dur-1) var(--s-ease);
 }
-.s-tabs--line .s-tabs__tab::after {
+.s-root .s-tabs__tab:hover {
+  color: var(--s-ink);
+}
+.s-root .s-tabs__tab[data-state="active"] {
+  color: var(--s-ink);
+}
+.s-root .s-tabs__tab[data-state="active"]::after {
   content: "";
   position: absolute;
   inset: auto 0 -1px;
   height: 2px;
   background: var(--s-copper-fill);
-  scale: 0 1;
-  transition: scale var(--s-dur-2) var(--s-ease);
 }
-.s-tabs--line .s-tabs__tab[aria-selected="true"] {
-  color: var(--s-ink);
+.s-root .s-tabs__tab[data-disabled] {
+  color: var(--s-ink-3);
+  opacity: 0.6;
+  cursor: not-allowed;
 }
-.s-tabs--line .s-tabs__tab[aria-selected="true"]::after {
-  scale: 1 1;
+.s-root .s-tabs__tab:focus-visible {
+  outline-offset: -2px;
 }
-.s-tabs--line .s-tabs__tab[aria-selected="true"] .s-tabs__count {
+.s-root .s-tabs__count {
+  font: 500 var(--s-text-2xs) / 1 var(--s-font-mono);
+  font-stretch: 75%;
+  color: var(--s-ink-3);
+}
+.s-root .s-tabs__tab[data-state="active"] .s-tabs__count {
   color: var(--s-copper);
 }
-
-.s-tabs--segment {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--s-line);
-  border-radius: var(--s-radius-sm);
-  background: var(--s-sunken);
+.s-root .s-tabs__panel {
+  min-width: 0;
 }
-.s-tabs--segment .s-tabs__tab {
-  min-height: 1.625rem;
-  padding: 0 0.625rem;
-  border-radius: var(--s-radius-xs);
-  font-size: var(--s-text-xs);
-}
-.s-tabs--segment .s-tabs__tab[aria-selected="true"] {
-  background: var(--s-raised);
-  color: var(--s-ink);
-  box-shadow: 0 0 0 1px var(--s-line-strong);
+.s-root .s-tabs__panel:focus-visible {
+  outline-offset: 4px;
 }
 </style>

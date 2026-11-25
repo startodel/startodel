@@ -1,0 +1,118 @@
+# Moving the app onto the design system
+
+The design system lives beside the existing pages: tokens, the `Ui*` components and the showcase at `/design`. No real page uses it yet. This document is the plan for moving every page onto it and then deleting the old styles and `legacy-shield.css`.
+
+Each page has a mock screen in the showcase under `/design/screens`. A mock screen is built only from `Ui*` components and sample data, so it shows the target for the page and the components to use. It proves the layout, not the data wiring.
+
+Read [the design concept](CONCEPT.md) and [ADR 0017](../adr/0017-design-system.md) first.
+
+## Rules that hold during the migration
+
+- Migrate one page, or one closely related group, in each pull request. Do not change the API, the data model or the MCP Tools in the same change.
+- A migrated page renders inside `UiRoot` and uses only `Ui*` components and `--s-*` tokens. It has no styles of its own beyond layout.
+- Keep every user-facing string in `ru.json` and `en.json`. The showcase copy is English sample text and is not a source of messages. Use the Russian terms in [CONTEXT.md](../CONTEXT.md#russian-ui-terms).
+- Link to app pages with `NuxtLinkLocale`. Components that take a link accept a `LinkTarget` and render it that way.
+- Do not use the class names that `app.vue` styles globally inside `.s-root` until the cleanup step: `actions`, `bar`, `brand`, `brand-mark`, `button`, `choice`, `choices`, `identity`, `mast`, `muted`, `narrow`, `panel`, `primary`, `quiet`. A test in `apps/web/test/design-system.test.ts` enforces this.
+- Keep the content safety rules of [ADR 0014](../adr/0014-review-practice-and-ui-answers.md). `UiProse`, `UiCodeBlock`, `UiResourceLink` and `UiVideoEmbed` call the same `renderMarkdown`, `codeTokens`, `httpUrl` and `youtubeEmbed` utilities as the components they replace. `apps/web/test/rendering.test.ts` covers those utilities and stays as it is.
+
+## Style rules that keep development and production identical
+
+The development server and the production build emit the same stylesheets in a different order. Two rules of equal specificity from different files can therefore swap. This caused a real defect: text inputs in the production showcase had a second border and a white background, because a global rule in `app.vue` tied with the reset and won only in production.
+
+Styles are ranked by specificity, never by order:
+
+| Tier                            | Selector form                             | Specificity | Where                     |
+| ------------------------------- | ----------------------------------------- | ----------- | ------------------------- |
+| Element reset                   | `html :where(.s-root) button`             | (0,0,2)     | `legacy-shield.css`       |
+| Shared classes                  | `:where(.s-root) .s-stack`                | (0,1,0)     | `base.css`                |
+| Component rules                 | scoped `.s-card`, or `.s-root .s-control` | (0,2,0)     | components, `control.css` |
+| A parent placing a child's root | `.s-shell .s-shell__tabs`                 | (0,3,0)     | the parent component      |
+
+Follow the same form in new code. A parent that styles the root element of a child component must name its own block first, as in the last row.
+
+`apps/web/test/cascade.mjs` finds any pair of rules that still depends on order. Run it against the development server after each migrated page:
+
+```sh
+node apps/web/test/cascade.mjs http://localhost:3000 /design/components /settings
+```
+
+It needs Playwright and Chrome, which are not dependencies of the repository. Set `PLAYWRIGHT_MODULE` and `CHROME` to their paths. Pages behind the Session need a signed-in browser profile or a seeded Session.
+
+## Step 0. Layouts
+
+Do this once, before the first page.
+
+1. Add `<NuxtLayout>` around `<NuxtPage>` in `apps/web/app/app.vue`.
+2. Move the header and footer markup of `app.vue` into `apps/web/app/layouts/default.vue` without changing it. Leave the global `<style>` block in `app.vue`. Pages that are not migrated keep the default layout and look the same.
+3. Add three layouts. Each one renders `UiRoot` once, so the theme, the toasts and the overlay layer `#s-layer` exist exactly once per page.
+
+| Layout  | Built from                 | Mock                           | Data it needs                                                                                                                |
+| ------- | -------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `app`   | `UiAppShell`               | `components/showcase/App.vue`  | The User from the Session, the Track list from `/api/tracks`, the due count from `/api/dashboard`, and logout from `app.vue` |
+| `site`  | `UiSiteHeader`, `UiFooter` | `components/showcase/Site.vue` | The Session, to choose between “Sign in” and “Dashboard”                                                                     |
+| `focus` | `UiFocusLayout`            | the Onboarding screen          | The User from the Session                                                                                                    |
+
+A migrated page selects its layout with `definePageMeta({ layout: "app" })`. `UiAppShell` sets `--s-sticky-top`, which sticky elements inside a page use as their offset.
+
+After this step the rule in `legacy-shield.css` that hides `.mast` and the old footer has nothing to hide on a migrated page. It stays until the cleanup, because the default layout can remain mounted for a moment during a client-side navigation.
+
+## Step 1 to 11. Pages
+
+The order goes from pages with the least data and risk to the ones with the most. Each row names the mock screen to copy the structure from and the old components that the page stops using.
+
+| #   | Route                                                                     | Layout  | Mock screen                                | Replaces                                                                                                                                                                             |
+| --- | ------------------------------------------------------------------------- | ------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `/terms`, `/rules`                                                        | `site`  | `legal`                                    | `LegalDocument` → `UiDocument`                                                                                                                                                       |
+| 2   | `/login`                                                                  | `site`  | `landing`                                  | page markup                                                                                                                                                                          |
+| 3   | `/settings`                                                               | `app`   | `settings`                                 | `McpTokens` → `UiTable`, `UiCopyField`, `UiModal`; `LanguageSwitcher` → `UiLanguageSwitcher`                                                                                         |
+| 4   | `/onboarding`, `/onboarding/connect`                                      | `focus` | `onboarding`, `connect`                    | `AgentConfig` → `UiTabs`, `UiCodeBlock`, `UiCopyField`; `AgentPrompt` → `UiAgentPrompt`                                                                                              |
+| 5   | `/`                                                                       | `app`   | `dashboard`                                | `NextStep` → `UiNextUp`; Track rows → `UiTrackStrip`                                                                                                                                 |
+| 6   | `/progress`                                                               | `app`   | `progress`                                 | page markup → `UiMasteryHistogram`, `UiVerdictTally`, `UiTable`, `UiTimelineItem`                                                                                                    |
+| 7   | `/reviews`, `/reviews/[topicId]/practice`                                 | `app`   | `reviews`                                  | `QuestionChoices` → `UiQuiz`; rows → `UiReviewCard`                                                                                                                                  |
+| 8   | `/lessons/[id]`                                                           | `app`   | `lesson`                                   | `LessonContent`, `LessonMarkdown`, `LessonCode`, `LessonQuiz` → `UiLessonBlock` with `UiProse`, `UiCodeBlock`, `UiCallout`, `UiResourceLink`, `UiVideoEmbed`, `UiQuiz`, `UiExercise` |
+| 9   | `/tracks/[id]`, `/topics/[id]`                                            | `app`   | `track`                                    | `TrackGraph.client` → `UiTrackBoard`; `TopicPanel` → `UiTopicCard`, `UiLessonList`; `TrackVisibility` → `UiModal` with `UiCheckbox`                                                  |
+| 10  | `/grills`, `/grills/[id]`                                                 | `app`   | `grill`                                    | page markup → `UiGrillStrip`, `UiGrillQuestion`, `UiGrillAnswer`, `UiGrillJudgment`, `UiVerdictTally`                                                                                |
+| 11  | `/u/[login]`, `/u/[login]/[slug]`, `/u/[login]/[slug]/lessons/[lessonId]` | `site`  | `public-profile`, `public-track`, `lesson` | `ForkedFrom` → `UiForkedFrom`; page markup → `UiTrackMap` with `outline`, `UiForkButton`, `UiTrackCard`, `UiLessonList`                                                              |
+
+Notes for single steps:
+
+- **Step 2.** The landing mock is the signed-out page. Keep the GitHub sign-in link and the redirect behaviour of `/login`.
+- **Step 3.** The plaintext MCP Token is shown once, in `UiCopyField`. Keep it out of logs and out of any stored state.
+- **Step 7 and 8.** `UiQuiz` receives questions and options only. The correct option and the explanation arrive in the `result` prop after submission. `UiExercise` receives the solution only after `reveal`. Do not preload either.
+- **Step 9.** `UiTrackBoard` and `UiTrackMap` share `boardModel()` in `components/ui/board.ts`, so the interactive board and the server-rendered board are identical. `@vue-flow/core` and `@dagrejs/dagre` stay. The board falls back to `UiTrackList` in a narrow container.
+- **Step 11.** A Public Track has no Mastery. Pass `outline` to `UiTrackMap`. The public Lesson reuses the renderers of step 8 with the Quiz and Exercise in their read-only form.
+
+### Data the mock screens assume
+
+Some mock screens show more than the current handlers return. Decide for each item whether to derive it on the client, extend a handler in a separate change, or leave the element out. Check the handler before wiring.
+
+| Screen             | Element                                                          | Current source                                                                                               |
+| ------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Dashboard          | One cell per Topic in `UiTrackStrip`                             | `/api/dashboard` returns totals per Track. `/api/progress` has Mastery per Topic.                            |
+| Dashboard, Reviews | `UiLeitnerRack` counts per Review Box, `UiWeekStrip` due per day | Derive from the ReviewItems of `/api/reviews`, which carry the Review Box and the due date.                  |
+| Dashboard          | Recent Activity                                                  | `/api/progress` returns Activity. `/api/dashboard` does not.                                                 |
+| Connect            | “Waiting” and “Connected” states                                 | `/api/mcp-tokens` returns when each MCP Token was last used. There is no push, so the page has to ask again. |
+| Public Track       | Paged list of Public Forks                                       | The public Track response returns every Public Fork in one list. Page it on the client with `UiPagination`.  |
+| Settings           | Theme and language controls                                      | Both are client-side: the `startodel-theme` cookie and the locale route.                                     |
+
+## Step 12. Cleanup
+
+Do this after the last page is migrated.
+
+1. Delete `apps/web/app/layouts/default.vue` and the whole `<style>` block of `app.vue`. `app.vue` keeps `useHead`, the public origin and `<NuxtLayout><NuxtPage /></NuxtLayout>`.
+2. Delete the old components: `AgentConfig`, `AgentPrompt`, `ForkedFrom`, `LanguageSwitcher`, `LegalDocument`, `LessonCode`, `LessonContent`, `LessonMarkdown`, `LessonQuiz`, `McpTokens`, `NextStep`, `QuestionChoices`, `TopicPanel`, `TrackGraph.client`, `TrackVisibility`.
+3. In `apps/web/app/assets/design/legacy-shield.css`, delete every rule marked “Legacy”: the rule that hides `.mast` and the old footer, the `main` and `nav` resets, `nav .router-link-exact-active`, and the `html .s-root input` selector, which then joins the `:where(.s-root)` list. Lower the `button:hover` and `button:disabled` rules to plain element selectors. Rename the file to `reset.css` and update `index.css`.
+4. Remove the test for forbidden class names in `apps/web/test/design-system.test.ts` and the last paragraph of the consequences in ADR 0017.
+5. Move `.s-root` to `body` if no page renders outside it. The `:where(.s-root)` prefixes can then go in one mechanical change. This is optional.
+6. Remove message keys that only the old components used. `pnpm i18n:check` reports unused keys.
+7. Run `apps/web/test/cascade.mjs` over every route, then compare a development and a production build of each page in both themes.
+
+## Checklist for each page
+
+- The page matches its mock screen at 390 and 1440 pixels, in the light and the dark theme, under `/` and `/en`.
+- Loading, empty and error states use `UiSkeletonList`, `UiEmptyState` and `UiNotice`.
+- Every state is carried by a shape and a word, not by colour alone.
+- Keyboard: every action is reachable, the focus ring is visible, and overlays return focus.
+- `pnpm check`, `pnpm test` and `pnpm build` pass.
+- `apps/web/test/cascade.mjs` reports no order-dependent declarations for the page.
+- The page looks the same in `pnpm dev` and in the production build.

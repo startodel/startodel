@@ -2,46 +2,34 @@
 defineProps<{ sections: { id: string; title: string }[] }>();
 const route = useRoute();
 const localePath = useLocalePath();
-const switchLocalePath = useSwitchLocalePath();
-const { locale } = useI18n();
 const pages = [
   { to: "/design", label: "Foundations" },
   { to: "/design/components", label: "Components" },
+  { to: "/design/screens", label: "Screens" },
 ];
 </script>
 <template>
   <ShowcaseRoot>
     <div class="docs">
       <header class="docs__bar">
-        <NuxtLink :to="localePath('/design')" class="docs__brand">
+        <NuxtLinkLocale to="/design" class="docs__brand">
           <UiLogo :size="22" class="docs__logo" /><UiLogo
             variant="mark"
             :size="22"
             class="docs__mark"
           /><span class="docs__name">Design system</span>
-        </NuxtLink>
+        </NuxtLinkLocale>
         <nav class="docs__pages" aria-label="Showcase">
-          <NuxtLink
+          <NuxtLinkLocale
             v-for="p in pages"
             :key="p.to"
-            :to="localePath(p.to)"
+            :to="p.to"
             class="docs__page"
             :aria-current="route.path.replace(/\/$/, '') === localePath(p.to) ? 'page' : undefined"
-            >{{ p.label }}</NuxtLink
+            >{{ p.label }}</NuxtLinkLocale
           >
         </nav>
-        <nav class="docs__locales" aria-label="Language of the built-in component text">
-          <NuxtLink
-            v-for="code in ['ru', 'en'] as const"
-            :key="code"
-            :to="switchLocalePath(code)"
-            class="docs__locale"
-            :lang="code"
-            :hreflang="code"
-            :aria-current="locale === code ? 'true' : undefined"
-            >{{ code }}</NuxtLink
-          >
-        </nav>
+        <UiLanguageSwitcher variant="inline" class="docs__lang" />
         <UiThemeToggle />
       </header>
       <div class="docs__layout">
@@ -123,27 +111,8 @@ const pages = [
   height: 2px;
   background: var(--s-copper-fill);
 }
-.docs__locales {
-  display: flex;
+.docs__lang {
   flex: none;
-  border: 1px solid var(--s-line);
-  border-radius: var(--s-radius-sm);
-  overflow: hidden;
-}
-.docs__locale {
-  padding: 0.25rem var(--s-2);
-  font: 600 var(--s-text-xs) / 1rem var(--s-font-mono);
-  font-stretch: 75%;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--s-ink-3);
-}
-.docs__locale:hover {
-  color: var(--s-ink);
-}
-.docs__locale[aria-current] {
-  background: var(--s-inverse);
-  color: var(--s-on-inverse);
 }
 .docs__layout {
   display: grid;

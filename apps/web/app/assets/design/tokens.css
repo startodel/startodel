@@ -75,19 +75,18 @@
   --s-grid: light-dark(#cdc7b8, #26302d);
   --s-scrim: light-dark(rgb(20 27 25 / 0.45), rgb(0 0 0 / 0.65));
 
-  /* Elevation. Light surfaces print a hard edge. Dark surfaces rely on their outline. */
-  --s-shadow-1: light-dark(0 1px 0 #d9d4c7, 0 1px 0 #070a09);
-  --s-shadow-2: light-dark(
-    0 1px 0 #d9d4c7,
-    0 8px 20px -12px rgb(20 27 25 / 0.3),
-    0 1px 0 #070a09,
-    0 8px 20px -10px rgb(0 0 0 / 0.7)
-  );
-  --s-shadow-3: light-dark(
-    0 24px 48px -20px rgb(20 27 25 / 0.4),
-    0 24px 56px -16px rgb(0 0 0 / 0.85)
-  );
-  --s-glow: light-dark(0 0 0 3px rgb(178 78 24 / 0.16), 0 0 18px -2px rgb(232 131 74 / 0.45));
+  /*
+   * Elevation. Light surfaces print a hard edge. Dark surfaces rely on their outline.
+   * light-dark() takes colours only, so each shadow keeps one geometry and switches its colours.
+   */
+  --s-shadow-edge: light-dark(#d9d4c7, #070a09);
+  --s-shadow-1: 0 1px 0 var(--s-shadow-edge);
+  --s-shadow-2:
+    0 1px 0 var(--s-shadow-edge), 0 8px 20px -12px light-dark(rgb(20 27 25 / 0.3), rgb(0 0 0 / 0.7));
+  --s-shadow-3: 0 24px 52px -18px light-dark(rgb(20 27 25 / 0.4), rgb(0 0 0 / 0.85));
+  --s-glow:
+    0 0 0 3px light-dark(rgb(178 78 24 / 0.16), transparent),
+    0 0 18px -2px light-dark(transparent, rgb(232 131 74 / 0.45));
 
   /* Type. Three voices: mono for the system, sans for controls, serif for what you study. */
   --s-font-mono: "Martian Mono Variable", ui-monospace, "SFMono-Regular", "Menlo", monospace;
@@ -132,6 +131,13 @@
   --s-control-md: 2.25rem;
   --s-control-lg: 2.75rem;
 
+  /* Text-entry controls. A touch screen gets a taller box and 16px text, which stops iOS zooming in. */
+  --s-field-sm: var(--s-control-sm);
+  --s-field-md: var(--s-control-md);
+  --s-field-lg: var(--s-control-lg);
+  --s-field-text: var(--s-text-md);
+  --s-field-text-sm: var(--s-text-sm);
+
   /* Motion is short and mechanical. */
   --s-dur-1: 120ms;
   --s-dur-2: 200ms;
@@ -160,5 +166,16 @@
     --s-dur-1: 0ms;
     --s-dur-2: 0ms;
     --s-dur-3: 0ms;
+  }
+}
+
+@media (pointer: coarse) {
+  :root,
+  [data-theme] {
+    --s-field-sm: 2.25rem;
+    --s-field-md: 2.75rem;
+    --s-field-lg: 3rem;
+    --s-field-text: 1rem;
+    --s-field-text-sm: 1rem;
   }
 }

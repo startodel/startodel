@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from "vue-router";
-import { NuxtLink } from "#components";
+import type { LinkTarget } from "./nav";
+import { NuxtLinkLocale } from "#components";
 withDefaults(
   defineProps<{
     variant?: "default" | "raised" | "sunken" | "outline" | "live";
     padding?: "none" | "sm" | "md" | "lg";
     /** A short mono tag in the top edge, such as a designator or a kind. */
     tag?: string;
-    to?: RouteLocationRaw;
+    to?: LinkTarget;
     as?: string;
   }>(),
   { variant: "default", padding: "md", as: "div" },
@@ -15,7 +15,7 @@ withDefaults(
 </script>
 <template>
   <component
-    :is="to ? NuxtLink : as"
+    :is="to ? NuxtLinkLocale : as"
     :to="to"
     class="s-card"
     :class="['s-card--' + variant, 's-card--pad-' + padding, { 's-card--link': to }]"

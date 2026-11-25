@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from "vue-router";
+import type { LinkTarget } from "./nav";
 import type { IconName } from "./icons";
 const props = withDefaults(
   defineProps<{
@@ -9,7 +9,7 @@ const props = withDefaults(
     iconRight?: IconName;
     /** Accessible name for an icon-only button. */
     label?: string;
-    to?: RouteLocationRaw;
+    to?: LinkTarget;
     href?: string;
     type?: "button" | "submit" | "reset";
     loading?: boolean;
@@ -28,7 +28,7 @@ const classes = computed(() => [
 ]);
 </script>
 <template>
-  <NuxtLink
+  <NuxtLinkLocale
     v-if="(to || href) && !inactive"
     :class="classes"
     :to="to"
@@ -40,7 +40,7 @@ const classes = computed(() => [
     <UiIcon v-if="icon" :name="icon" /><span v-if="$slots.default" class="s-button__text"
       ><slot /></span
     ><UiIcon v-if="iconRight" :name="iconRight" />
-  </NuxtLink>
+  </NuxtLinkLocale>
   <button
     v-else
     :class="classes"

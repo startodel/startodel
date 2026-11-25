@@ -2,3 +2,6 @@
 @import "./tokens.css";
 @import "./legacy-shield.css";
 @import "./base.css";
+@import "./control.css";
+@import "./overlay.css";
+@import "./board.css";

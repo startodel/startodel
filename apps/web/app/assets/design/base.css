@@ -1,6 +1,11 @@
 /*
  * Base layer. Everything is scoped to .s-root so the design system can live beside pages that
  * have not adopted it yet.
+ *
+ * The shared classes below (type voices, helpers, layout) are written :where(.s-root) .s-name, so
+ * they weigh one class: more than the element reset, less than any component rule. A component
+ * that puts .s-title on its heading and then sets a size of its own always gets that size,
+ * whatever order the files load in.
  */
 .s-root {
   color-scheme: light dark;
@@ -42,7 +47,8 @@ html[data-theme="dark"]:has(.s-root) {
   background: var(--s-copper-fill);
   color: var(--s-on-copper);
 }
-.s-root :focus-visible {
+/* Above app.vue's own focus rule, below any component, so a focused part keeps its corners. */
+html :where(.s-root) :focus-visible {
   outline: 2px solid var(--s-focus);
   outline-offset: 2px;
   border-radius: var(--s-radius-xs);
@@ -62,30 +68,30 @@ html[data-theme="dark"]:has(.s-root) {
 }
 
 /* The system voice: condensed mono for titles, labels and readouts. */
-.s-root .s-display,
-.s-root .s-title,
-.s-root .s-label,
-.s-root .s-mono,
-.s-root .s-num {
+:where(.s-root) .s-display,
+:where(.s-root) .s-title,
+:where(.s-root) .s-label,
+:where(.s-root) .s-mono,
+:where(.s-root) .s-num {
   font-family: var(--s-font-mono);
   font-stretch: 75%;
   font-variant-ligatures: none;
 }
-.s-root .s-display {
+:where(.s-root) .s-display {
   font-size: clamp(2.5rem, 7.2cqi, var(--s-text-5xl));
   font-weight: 600;
   line-height: 0.98;
   letter-spacing: -0.045em;
   text-wrap: balance;
 }
-.s-root .s-title {
+:where(.s-root) .s-title {
   font-size: clamp(1.625rem, 4cqi, var(--s-text-3xl));
   font-weight: 600;
   line-height: 1.08;
   letter-spacing: -0.035em;
   text-wrap: balance;
 }
-.s-root .s-label {
+:where(.s-root) .s-label {
   font-size: var(--s-text-2xs);
   font-weight: 500;
   line-height: 1.3;
@@ -93,36 +99,36 @@ html[data-theme="dark"]:has(.s-root) {
   text-transform: uppercase;
   color: var(--s-ink-3);
 }
-.s-root .s-mono {
+:where(.s-root) .s-mono {
   font-size: 0.92em;
   letter-spacing: -0.01em;
 }
-.s-root .s-num {
+:where(.s-root) .s-num {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
 
 /* The reading voice: a serif for everything the learner studies or writes. */
-.s-root .s-heading,
-.s-root .s-read {
+:where(.s-root) .s-heading,
+:where(.s-root) .s-read {
   font-family: var(--s-font-read);
 }
-.s-root .s-heading {
+:where(.s-root) .s-heading {
   font-size: clamp(1.75rem, 4.4cqi, var(--s-text-4xl));
   font-weight: 500;
   line-height: 1.12;
   letter-spacing: -0.022em;
   text-wrap: balance;
 }
-.s-root .s-read {
+:where(.s-root) .s-read {
   font-size: var(--s-read-size);
   line-height: 1.65;
 }
 
-.s-root .s-muted {
+:where(.s-root) .s-muted {
   color: var(--s-ink-3);
 }
-.s-root .s-link {
+:where(.s-root) .s-link {
   color: var(--s-copper);
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -130,7 +136,7 @@ html[data-theme="dark"]:has(.s-root) {
   text-decoration-color: var(--s-copper-line);
   transition: text-decoration-color var(--s-dur-1) var(--s-ease);
 }
-.s-root .s-link:hover {
+:where(.s-root) .s-link:hover {
   text-decoration-color: currentColor;
 }
 .s-root .s-sr {
@@ -143,7 +149,7 @@ html[data-theme="dark"]:has(.s-root) {
 }
 
 /* A dot-grid field. Used behind the Track board and in empty states only. */
-.s-root .s-grid {
+:where(.s-root) .s-grid {
   background-image: radial-gradient(var(--s-grid) 1px, transparent 1.2px);
   background-size: 16px 16px;
   background-position: 8px 8px;
@@ -257,4 +263,58 @@ html[data-theme="dark"]:has(.s-root) {
 .s-root .s-prose th {
   font-weight: 600;
   border-bottom-color: var(--s-line-strong);
+}
+
+/* Layout helpers. Pages compose these and the components, and rarely need CSS of their own. */
+:where(.s-root) .s-page {
+  width: 100%;
+  max-width: var(--s-page, 72rem);
+  margin-inline: auto;
+  padding-inline: var(--s-page-gutter, var(--s-5));
+}
+:where(.s-root) .s-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--s-gap, var(--s-6));
+}
+:where(.s-root) .s-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-gap, var(--s-3));
+}
+:where(.s-root) .s-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--s-col, 17rem)), 1fr));
+  gap: var(--s-gap, var(--s-4));
+}
+/*
+ * Fields in a row with an action. Everything aligns to the top, and the action drops by the height
+ * of a label, so it lines up with the controls whether or not a field has a hint or an error.
+ */
+:where(.s-root) .s-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s-gap, var(--s-4));
+}
+:where(.s-root) .s-form-row > .s-field {
+  flex: 1 1 12rem;
+}
+:where(.s-root) .s-form-row__action {
+  flex: none;
+  margin-top: calc(var(--s-text-sm) * 1.35 + 0.375rem);
+}
+/* Main content with a side column. The side column drops below on a narrow container. */
+:where(.s-root) .s-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--s-gap, var(--s-8));
+}
+@container s-main (min-width: 60rem) {
+  :where(.s-root) .s-split {
+    grid-template-columns: minmax(0, 1fr) var(--s-aside, 20rem);
+  }
 }

@@ -32,6 +32,7 @@ const name = computed(() => t(`mastery.level${level.value}`));
   display: inline-flex;
   align-items: baseline;
   gap: 0.375rem;
+  max-width: 100%;
   color: var(--s-ink-2);
   font: 500 var(--s-text-xs) / 1 var(--s-font-mono);
   font-stretch: 75%;
@@ -48,6 +49,7 @@ const name = computed(() => t(`mastery.level${level.value}`));
 }
 .s-mastery__bars {
   display: inline-flex;
+  flex: none;
   align-items: flex-end;
   gap: calc(var(--_u) * 0.67);
   height: calc(var(--_u) * 4.67);
@@ -81,7 +83,11 @@ const name = computed(() => t(`mastery.level${level.value}`));
 .s-mastery--l0 .s-mastery__level {
   color: var(--s-ink-3);
 }
+/* A long name, such as a Russian one, wraps instead of pushing its container wider. */
 .s-mastery__name {
+  min-width: 0;
+  line-height: 1.25;
+  white-space: normal;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--s-ink-3);
