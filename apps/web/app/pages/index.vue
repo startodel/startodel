@@ -5,6 +5,7 @@ const { data, error, refresh } = await useFetch("/api/dashboard");
 <template>
   <main>
     <h1>Dashboard</h1>
+    <NextStep />
     <p v-if="error" role="alert">
       Could not load your Tracks. <button @click="refresh()">Retry</button>
     </p>

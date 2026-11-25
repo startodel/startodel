@@ -18,7 +18,9 @@ async function logout() {
         ><span aria-hidden="true" class="brand-mark">S</span>Startodel</NuxtLink
       >
       <nav v-if="user && route.path !== '/login'" aria-label="Main navigation">
-        <NuxtLink to="/">Dashboard</NuxtLink><NuxtLink to="/settings">Settings</NuxtLink>
+        <NuxtLink to="/">Dashboard</NuxtLink><NuxtLink to="/grills">Grills</NuxtLink
+        ><NuxtLink to="/reviews">Reviews</NuxtLink><NuxtLink to="/progress">Progress</NuxtLink
+        ><NuxtLink to="/settings">Settings</NuxtLink>
         <span class="identity"
           ><img v-if="user.avatarUrl" :src="user.avatarUrl" alt="" width="28" height="28" />{{
             user.name || user.login

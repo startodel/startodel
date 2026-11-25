@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { MASTERY_LABELS } from "@startodel/core";
-const props = defineProps<{ id: string; track: string }>();
+const props = defineProps<{ id: string; track?: string }>();
 const { data, error, refresh } = await useFetch(`/api/topics/${props.id}`);
 </script>
 <template>
