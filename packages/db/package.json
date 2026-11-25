@@ -12,6 +12,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@startodel/core": "workspace:*",
     "drizzle-orm": "0.45.4",
     "pg": "8.23.1"
   },
