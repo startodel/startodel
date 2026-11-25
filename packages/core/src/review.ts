@@ -32,3 +32,16 @@ export function lessonMastery(lessons: number, read: number, quizzes: number, pa
   if (lessons > 0 && read === lessons) return 1;
   return 0;
 }
+
+export function practiceVerdict(correct: number, total: number): Verdict {
+  if (
+    !Number.isInteger(total) ||
+    !Number.isInteger(correct) ||
+    total < 1 ||
+    correct < 0 ||
+    correct > total
+  )
+    throw new RangeError("Expected a score for a nonempty Practice Quiz");
+  if (correct === total) return "strong";
+  return correct * 2 >= total ? "partial" : "weak";
+}
