@@ -29,6 +29,7 @@ const { masteryLabel } = useLearningLabels();
 }
 .s-histogram__col {
   display: grid;
+  align-content: start;
   justify-items: center;
   gap: var(--s-2);
   min-width: 0;
