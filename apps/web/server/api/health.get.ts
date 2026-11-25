@@ -1,1 +1,3 @@
-export default defineEventHandler(() => ({ ok: true }));
+import { databaseHealth } from "../utils/database-health";
+
+export default defineEventHandler(databaseHealth);
