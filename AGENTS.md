@@ -23,6 +23,10 @@ Every MCP Tool uses the request’s `forUser(db, userId)`, bound to the Owner of
 
 Add UI strings to both Russian and English message catalogs. Follow the [contributor instructions](CONTRIBUTING.md#interface-languages) and run `pnpm i18n:check`.
 
+## Design system
+
+Build new interface from the `Ui*` components in `apps/web/app/components/ui/` and the `--s-*` tokens in `apps/web/app/assets/design/tokens.css`. Render it inside `.s-root`. Give every new component a specimen in the showcase at `/design`, which is served in development or with `NUXT_PUBLIC_DESIGN_SHOWCASE=true`. Carry each state with a shape and a word, never with colour alone. See [the design concept](docs/design/CONCEPT.md) and [ADR 0017](docs/adr/0017-design-system.md).
+
 ## Commands
 
 Run from the workspace root:
