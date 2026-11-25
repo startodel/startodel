@@ -31,7 +31,15 @@ const { data, error, refresh } = await useFetch("/api/reviews");
               · {{ $t("review.last", { result: verdictLabel(item.lastResult) }) }}</span
             >
           </p>
-          <p v-if="item.reason">{{ item.reason }}</p>
+          <p v-if="item.practiceCorrect !== null && item.practiceTotal !== null">
+            {{
+              $t("review.score", {
+                correct: $n(item.practiceCorrect),
+                total: $n(item.practiceTotal),
+              })
+            }}
+          </p>
+          <p v-else-if="item.reason">{{ item.reason }}</p>
           <div class="actions">
             <NuxtLinkLocale
               v-if="item.hasQuiz"

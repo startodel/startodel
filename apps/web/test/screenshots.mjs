@@ -287,7 +287,26 @@ try {
     await shot("pr12-ru-track");
     await visit("/reviews");
     await page.getByRole("heading", { name: by.tasks.title }).waitFor();
+    await page.getByText("Тренировочный тест: 1 из 1 верно", { exact: true }).waitFor();
     await shot("pr12-ru-grill-or-reviews");
+
+    // Exercise the real submission handler and check the message visible after each response.
+    await page.getByRole("link", { name: "Тренировочный тест", exact: true }).click();
+    await page.getByRole("radio", { name: "sync", exact: true }).check();
+    await page.route("**/api/reviews/*/practice", (route) => route.continue({ postData: "{}" }), {
+      times: 1,
+    });
+    await page.getByRole("button", { name: "Проверить ответы" }).click();
+    await page
+      .getByText("Проверьте, что для каждого вопроса выбран один из предложенных ответов.", {
+        exact: true,
+      })
+      .waitFor();
+    await owner.recordReviewResult(by.tasks.id, "strong", "Discussed with the learner");
+    await page.getByRole("button", { name: "Проверить ответы" }).click();
+    await page
+      .getByText("Вопросы изменились. Загрузите новую версию теста.", { exact: true })
+      .waitFor();
 
     await owner.setTrackVisibility(track.id, true, true);
     await context.clearCookies();

@@ -3,7 +3,7 @@ const props = defineProps<{
   question: string;
   presets: string[];
   label: string;
-  labels?: Record<string, string>;
+  labels?: ReadonlyMap<string, string>;
 }>();
 const selected = defineModel<string[]>({ required: true });
 const extra = ref("");
@@ -33,7 +33,7 @@ function onKey(event: KeyboardEvent) {
     <div class="choices">
       <label v-for="option in options" :key="option" class="choice"
         ><input type="checkbox" v-model="selected" :value="option" />{{
-          labels?.[option] ?? option
+          labels?.get(option) ?? option
         }}</label
       >
     </div>

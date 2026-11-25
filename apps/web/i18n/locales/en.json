@@ -135,7 +135,9 @@
     "submit": "Submit Practice Quiz",
     "reload": "Load current questions",
     "stale": "This review has changed. Load the current questions to practice again.",
-    "saveError": "Could not save this Practice Quiz. Try again."
+    "saveError": "Could not save this Practice Quiz. Try again.",
+    "score": "Practice Quiz: {correct} of {total} correct",
+    "invalid": "Choose one of the available answers for each question."
   },
   "agent": {
     "connect": "Connect your agent",

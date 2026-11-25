@@ -5,12 +5,7 @@ useHead({ title: t("onboarding.title") });
 const profile = useMe().value?.profile;
 const stack = ref(profile?.stack ?? []);
 const goals = ref(profile?.goals ?? []);
-const goalLabels = computed<Record<string, string>>(() => ({
-  "Prepare for interviews": t("onboarding.interviews"),
-  "Get better at my current job": t("onboarding.job"),
-  "Learn a new technology": t("onboarding.technology"),
-  "Understand internals": t("onboarding.internals"),
-}));
+const goalLabels = useGoalLabels();
 const grade = ref(profile?.experience ?? null);
 const busy = ref(false);
 const message = ref("");
@@ -60,7 +55,7 @@ async function submit() {
         v-model="goals"
         :question="$t('onboarding.goal')"
         :label="$t('onboarding.goals')"
-        :presets="Object.keys(goalLabels)"
+        :presets="Array.from(goalLabels.keys())"
         :labels="goalLabels"
       />
       <fieldset>

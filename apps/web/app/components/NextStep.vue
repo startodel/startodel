@@ -1,6 +1,10 @@
 <script setup lang="ts">
 const countArgs = useCountArgs();
+const goalLabels = useGoalLabels();
 const me = useMe();
+const goals = computed(() =>
+  me.value?.profile?.goals.map((goal) => goalLabels.value.get(goal) ?? goal).join(", "),
+);
 const { data, error, refresh } = await useFetch("/api/next-step");
 </script>
 <template>
@@ -41,10 +45,7 @@ const { data, error, refresh } = await useFetch("/api/next-step");
         :text="
           data.id === 'build-track-technology'
             ? $t('next.buildPrompt', {
-                goals:
-                  me?.profile?.goals.join(', ') ||
-                  me?.profile?.stack.join(', ') ||
-                  $t('next.goals'),
+                goals: goals || me?.profile?.stack.join(', ') || $t('next.goals'),
               })
             : $t('next.planPrompt')
         "

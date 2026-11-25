@@ -36,9 +36,12 @@ async function submit() {
   try {
     result.value = await send(data.value);
   } catch (error) {
-    stale.value =
-      !!error && typeof error === "object" && "statusCode" in error && error.statusCode === 409;
-    message.value = stale.value ? t("review.stale") : t("review.saveError");
+    const failure = practiceFailure(
+      error && typeof error === "object" && "statusCode" in error ? error.statusCode : undefined,
+      t,
+    );
+    stale.value = failure.stale;
+    message.value = failure.message;
   } finally {
     busy.value = false;
   }

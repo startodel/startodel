@@ -4,6 +4,9 @@ import { CallToolResultSchema } from "@modelcontextprotocol/sdk/types.js";
 import { forUser, type Database } from "@startodel/db";
 import { expect, test } from "vite-plus/test";
 
+import { practiceFailure } from "../app/utils/practice-failure";
+import ru from "../i18n/locales/ru.json";
+
 type Request = (
   path: string,
   cookie?: string,
@@ -45,7 +48,12 @@ export function practiceHttpTests(
     }
     try {
       await step("first-steps");
-      await data.updateProfile({ onboardedAt: new Date(), goals: ["queues"] });
+      await data.updateProfile({
+        onboardedAt: new Date(),
+        goals: ["Understand internals", "queues"],
+      });
+      const dashboard = await (await request("/", cookie)).text();
+      expect(dashboard).toContain("Разобраться, как всё устроено внутри, queues");
       expect((await step("build-track-technology")).prompt).toContain("queues");
       const track = await data.createTrack("Delivery");
       expect((await step("agent-workflow")).why).toContain("No Track Topics");
@@ -254,7 +262,14 @@ export function practiceHttpTests(
         { answer: null },
       ],
     });
-    expect((await request(practiceUrl(topic.id), b.cookie, "POST", submission)).status).toBe(409);
+    const ruPracticeMessage = (key: string) =>
+      ru.review[key.slice("review.".length) as keyof typeof ru.review];
+    const stale = await request(practiceUrl(topic.id), b.cookie, "POST", submission);
+    expect(stale.status).toBe(409);
+    expect(practiceFailure(stale.status, ruPracticeMessage)).toEqual({
+      stale: true,
+      message: "Вопросы изменились. Загрузите новую версию теста.",
+    });
     const current = await (await request(practiceUrl(topic.id), b.cookie)).json();
     submission.revision = current.revision;
     const readerTopic = await a.data.upsertTopic({ slug: "private", title: "Reader Topic" });
@@ -269,7 +284,12 @@ export function practiceHttpTests(
     }
     const invalid = structuredClone(submission);
     invalid.answers[1]!.answers = [9];
-    expect((await request(practiceUrl(topic.id), b.cookie, "POST", invalid)).status).toBe(400);
+    const rejected = await request(practiceUrl(topic.id), b.cookie, "POST", invalid);
+    expect(rejected.status).toBe(400);
+    expect(practiceFailure(rejected.status, ruPracticeMessage)).toEqual({
+      stale: false,
+      message: "Проверьте, что для каждого вопроса выбран один из предложенных ответов.",
+    });
     expect((await b.data.getProgress()).recentQuizAttempts).toEqual([]);
     await b.data.markLessonRead(lesson.id);
     const responses = await Promise.all(
@@ -289,6 +309,25 @@ export function practiceHttpTests(
       mastery: 2,
     });
     const reviewed = await b.data.listDueReviews(new Date(result.dueAt), 1);
+    expect(reviewed[0]?.reason).toBe("Practice Quiz: 2 of 2 correct");
+    expect(reviewed[0]).not.toHaveProperty("practiceCorrect");
+    expect(reviewed[0]).not.toHaveProperty("practiceTotal");
+    expect(await (await request("/api/reviews", b.cookie)).json()).toMatchObject({
+      upcoming: [{ topicId: topic.id, practiceCorrect: 2, practiceTotal: 2 }],
+    });
+    expect(await (await request("/api/reviews", a.cookie)).json()).toEqual({
+      due: [],
+      upcoming: [],
+    });
+    await b.data.updateProfile({ onboardedAt: new Date() });
+    for (const [prefix, score] of [
+      ["", "Тренировочный тест: 2 из 2 верно"],
+      ["/en", "Practice Quiz: 2 of 2 correct"],
+    ]) {
+      expect(await (await request(prefix + "/reviews", b.cookie)).text()).toContain(
+        "<p>" + score + "</p>",
+      );
+    }
     expect(new Date(result.dueAt).getTime() - reviewed[0]!.lastReviewedAt!.getTime()).toBe(
       3 * 86400000,
     );
@@ -323,5 +362,13 @@ export function practiceHttpTests(
     const times = progress.activity.map((r: { at: string }) => Date.parse(r.at));
     expect(times).toEqual([...times].sort((a, b) => b - a));
     expect((await (await request("/api/progress", a.cookie)).json()).activity).toEqual([]);
+
+    // New authored notes are always literal, even when they match the retired formatter.
+    const note = "Practice Quiz: 1 of 1 correct";
+    await b.data.recordReviewResult(topic.id, "weak", note);
+    expect(await (await request("/api/reviews", b.cookie)).json()).toMatchObject({
+      upcoming: [{ topicId: topic.id, practiceCorrect: null, practiceTotal: null, reason: note }],
+    });
+    expect(await (await request("/reviews", b.cookie)).text()).toContain("<p>" + note + "</p>");
   });
 }
