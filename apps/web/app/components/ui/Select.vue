@@ -10,7 +10,8 @@ import {
   SelectValue,
   SelectViewport,
 } from "reka-ui";
-/** A list of options with typeahead and full keyboard support. */
+/** A list of options with typeahead and full keyboard support. A class set on it lands on the trigger. */
+defineOptions({ inheritAttrs: false });
 const props = defineProps<{
   options: { value: string; label: string; disabled?: boolean }[];
   size?: "sm" | "md" | "lg";
@@ -36,6 +37,7 @@ const field = useField({ id: () => props.id, invalid: () => props.invalid });
       :aria-label="label"
       :aria-invalid="field.invalid.value || undefined"
       :aria-describedby="field.describedBy.value"
+      v-bind="$attrs"
     >
       <SelectValue class="s-select__value" :placeholder="placeholder ?? $t('ui.choose')" />
       <UiIcon name="chevron-down" :size="14" class="s-select__caret" />
