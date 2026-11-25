@@ -1,5 +1,5 @@
 import { AnswerSource, LessonBlocks } from "@startodel/core";
-import { and, eq } from "drizzle-orm";
+import { and, eq, max } from "drizzle-orm";
 import type { Database } from "./index.ts";
 import { ownedId, referencedRow } from "./owned.ts";
 import { lessons, lessonProgress, quizAttempts, topics } from "./schema.ts";
@@ -7,7 +7,7 @@ import { lessons, lessonProgress, quizAttempts, topics } from "./schema.ts";
 type LessonInput = {
   title: string;
   summary?: string | null;
-  position: number;
+  position?: number;
   blocks?: LessonBlocks;
 };
 function lessonFields({ title, summary, position, blocks }: Partial<LessonInput>) {
@@ -22,12 +22,33 @@ export function lessonsForUser(db: Database, userId: string) {
   return {
     async createLesson(input: LessonInput & { topicId: string }) {
       const { title, position, topicId } = input;
-      return referencedRow(
-        db
-          .insert(lessons)
-          .values({ ...lessonFields(input), title, position, userId, topicId })
-          .returning(),
-      );
+      const fields = lessonFields(input);
+      if (position !== undefined) {
+        return referencedRow(
+          db
+            .insert(lessons)
+            .values({ ...fields, title, userId, topicId, position })
+            .returning(),
+        );
+      }
+      return db.transaction(async (tx) => {
+        const [topic] = await tx
+          .select({ id: topics.id })
+          .from(topics)
+          .where(ownedId(topics, userId, topicId))
+          .for("update");
+        if (!topic) return undefined;
+        const [last] = await tx
+          .select({ position: max(lessons.position) })
+          .from(lessons)
+          .where(and(eq(lessons.userId, userId), eq(lessons.topicId, topicId)));
+        return (
+          await tx
+            .insert(lessons)
+            .values({ ...fields, title, userId, topicId, position: (last?.position ?? -1) + 1 })
+            .returning()
+        )[0];
+      });
     },
     async updateLesson(id: string, patch: Partial<LessonInput>) {
       return (
@@ -45,6 +66,23 @@ export function lessonsForUser(db: Database, userId: string) {
           .from(lessons)
           .where(ownedId(lessons, userId, id))
       )[0];
+    },
+    listLessonSummaries(topicId: string) {
+      return db
+        .select({
+          id: lessons.id,
+          title: lessons.title,
+          summary: lessons.summary,
+          position: lessons.position,
+          readAt: lessonProgress.readAt,
+        })
+        .from(lessons)
+        .leftJoin(
+          lessonProgress,
+          and(eq(lessonProgress.userId, userId), eq(lessonProgress.lessonId, lessons.id)),
+        )
+        .where(and(eq(lessons.userId, userId), eq(lessons.topicId, topicId)))
+        .orderBy(lessons.position, lessons.id);
     },
     async listLessonsForTopic(topicId: string) {
       const rows = await db

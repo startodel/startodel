@@ -1,3 +1,4 @@
+import { progressForUser } from "./progress.ts";
 import { grillsForUser } from "./grills.ts";
 import { lessonsForUser } from "./lessons.ts";
 import { masteryForUser } from "./mastery.ts";
@@ -24,6 +25,7 @@ export function forUser(db: Database, userId: string) {
 
   return {
     ...catalogForUser(db, userId),
+    ...progressForUser(db, userId),
     ...grillsForUser(db, userId),
     ...lessonsForUser(db, userId),
     ...masteryForUser(db, userId),

@@ -1,0 +1,126 @@
+import { DEFAULT_GRILL_SIZE, MasteryLevel, Verdict } from "@startodel/core";
+import { z } from "zod";
+import {
+  empty,
+  id,
+  limit,
+  resolveTopic,
+  title,
+  topicRef,
+  type Register,
+  type UserData,
+} from "./register";
+
+export function registerPractice(register: Register, data: UserData) {
+  const questionId = z.strictObject({ questionId: id });
+  const sessionId = z.strictObject({ sessionId: id });
+  const lessonId = z.strictObject({ lessonId: id });
+  register(
+    "get_progress",
+    "Plan study using Mastery counts by level, completed (level 2+) and total Topics per Track, due review count, ten latest Quiz Attempts and open GrillSessions.",
+    empty,
+    () => data.getProgress(),
+  );
+  register(
+    "set_mastery",
+    "Record an assessed level (0–4) and optional evidence for one Topic. Returns the Mastery record.",
+    z.strictObject({ topic: topicRef, level: MasteryLevel, evidence: z.string().optional() }),
+    async ({ topic, level, evidence }) => {
+      const parent = await resolveTopic(data, topic);
+      if (parent) return data.setMastery(parent.id, level, evidence);
+    },
+  );
+  register(
+    "record_quiz_result",
+    "Submit one zero-based option index per Quiz question (1–3). Returns the stored scored Quiz Attempt with MCP Answer Source.",
+    lessonId.extend({
+      blockId: z.string().min(1).max(64),
+      answers: z.array(z.int().nonnegative()).min(1).max(3),
+    }),
+    ({ lessonId, blockId, answers }) => data.recordQuizAttempt(lessonId, blockId, answers, "mcp"),
+  );
+  register(
+    "mark_lesson_read",
+    "Mark a Lesson as read when the learner confirms. Returns Lesson Progress with the read time.",
+    lessonId,
+    ({ lessonId }) => data.markLessonRead(lessonId),
+  );
+  register(
+    "list_due_reviews",
+    "List ReviewItems due now, oldest first. Defaults to 15 and accepts up to 100.",
+    z.strictObject({ limit: limit.default(15) }),
+    ({ limit }) => data.listDueReviews(new Date(), limit),
+  );
+  register(
+    "record_review_result",
+    "After reviewing one Topic, record the Verdict and optional reason. Returns the ReviewItem with resulting box and next due time.",
+    z.strictObject({ topic: topicRef, verdict: Verdict, reason: z.string().optional() }),
+    async ({ topic, verdict, reason }) => {
+      const parent = await resolveTopic(data, topic);
+      if (parent) return data.recordReviewResult(parent.id, verdict, reason);
+    },
+  );
+  const trackId = id.optional();
+  register(
+    "start_grill",
+    "Open a GrillSession, optionally for one Track. Returns the session and ranked candidate Topics. Target defaults to 15 (up to 100).",
+    z.strictObject({ trackId, title, targetSize: limit.default(DEFAULT_GRILL_SIZE) }),
+    (input) => data.startGrillWithCandidates(input),
+  );
+  register(
+    "get_grill_candidates",
+    "Choose prompts from due ReviewItems first and then the weakest Topics. Optionally restrict to one Track. Returns up to 100 candidates, default 15.",
+    z.strictObject({ trackId, limit: limit.default(DEFAULT_GRILL_SIZE) }),
+    (input) => data.grillCandidates(input),
+  );
+  register(
+    "add_grill_questions",
+    "Append 1–30 ordered prompts to an open GrillSession, optionally linked to Topics by slug or ID. Returns the saved Grill Questions.",
+    sessionId.extend({
+      questions: z
+        .array(z.strictObject({ prompt: title, topic: topicRef.optional() }))
+        .min(1)
+        .max(30),
+    }),
+    async ({ sessionId, questions }) => {
+      const rows = [];
+      for (const { prompt, topic } of questions) {
+        const parent = topic && (await resolveTopic(data, topic));
+        if (topic && !parent) return undefined;
+        rows.push({ prompt, topicId: parent ? parent.id : null });
+      }
+      const saved = await data.addGrillQuestions(sessionId, rows);
+      return saved?.length ? saved : undefined;
+    },
+  );
+  register(
+    "get_grill",
+    "Resume or inspect a GrillSession by ID. Returns its ordered questions, answers, sources, Verdicts and feedback.",
+    sessionId,
+    ({ sessionId }) => data.getGrill(sessionId),
+  );
+  register(
+    "list_grills",
+    "List your GrillSessions newest first, optionally filtered by open or finished status.",
+    z.strictObject({ status: z.enum(["open", "finished"]).optional() }),
+    ({ status }) => data.listGrills(status),
+  );
+  register(
+    "submit_grill_answer",
+    "Save the learner's voice or chat answer to an open Grill Question with MCP Answer Source. Returns the question ready for judgment.",
+    questionId.extend({ answer: title }),
+    ({ questionId, answer }) => data.answerGrillQuestion(questionId, answer, "mcp"),
+  );
+  register(
+    "judge_grill_answer",
+    "Assess a submitted answer with a strong, partial or weak Verdict and optional feedback. Returns the judged question. Partial and weak refresh its Topic's ReviewItem.",
+    questionId.extend({ verdict: Verdict, feedback: z.string().optional() }),
+    ({ questionId, verdict, feedback }) => data.judgeGrillQuestion(questionId, verdict, feedback),
+  );
+  register(
+    "finish_grill",
+    "Close question and answer entry. Returns the finished session, counts by Verdict and distinct Topic IDs with weak answers.",
+    sessionId,
+    ({ sessionId }) => data.finishGrillWithSummary(sessionId),
+  );
+}

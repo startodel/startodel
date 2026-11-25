@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 
 import { createDatabase, forUser } from "@startodel/db";
 import { localGitHub } from "./github";
+import { learningMcpTests } from "./learning-mcp";
 
 const url = process.env.DATABASE_URL_TEST;
 describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
@@ -16,6 +17,8 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
   let origin: string;
   let github: Awaited<ReturnType<typeof localGitHub>>;
   let db: ReturnType<typeof createDatabase>;
+
+  learningMcpTests(() => ({ db, origin }));
 
   function request(path: string, cookie = "", method = "GET", body?: unknown) {
     return fetch(origin + path, {
@@ -290,7 +293,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
     expect(rows[0]).toEqual({ revoked_at: null });
   });
 
-  test("the SDK client discovers six Tools and the Bearer Owner scopes every Profile and Track operation", async () => {
+  test("the SDK client discovers the learning Tools and the Bearer Owner scopes every Profile and Track operation", async () => {
     const a = await signIn("alice");
     const b = await signIn("bob");
     const profileA = await (await request("/api/profile", a)).json();
@@ -320,13 +323,45 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       );
       const { tools } = await client.listTools();
       expect(tools.map(({ name }) => name).sort()).toEqual([
+        "add_edges",
+        "add_grill_questions",
+        "attach_topics_to_track",
+        "create_lesson",
         "create_track",
+        "detach_topic_from_track",
+        "finish_grill",
+        "get_grill",
+        "get_grill_candidates",
+        "get_guide",
+        "get_lesson",
         "get_profile",
+        "get_progress",
+        "get_topic",
         "get_track",
+        "get_track_graph",
+        "judge_grill_answer",
+        "list_due_reviews",
+        "list_grills",
+        "list_lessons",
+        "list_topics",
         "list_tracks",
+        "mark_lesson_read",
+        "record_quiz_result",
+        "record_review_result",
+        "remove_edge",
+        "set_mastery",
+        "start_grill",
+        "submit_grill_answer",
+        "update_lesson",
         "update_profile",
         "update_track",
+        "upsert_topics",
       ]);
+      for (const tool of tools) {
+        expect(tool.description?.trim().length).toBeGreaterThan(0);
+        expect(tool.inputSchema).toMatchObject({ type: "object", additionalProperties: false });
+        expect(JSON.stringify(tool.inputSchema)).not.toMatch(/"(userId|ownerId|user_id)"\s*:/);
+      }
       expect(await call("get_profile")).toEqual(profileA);
       const updated = await call("update_profile", { goals: ["Transactions"] });
       expect(updated).toMatchObject({ id: profileA.id, goals: ["Transactions"] });

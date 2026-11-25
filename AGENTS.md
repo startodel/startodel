@@ -15,7 +15,7 @@ Reference user-owned parents with composite foreign keys from `(user_id, parent_
 
 Validate Lesson Block payloads on every write through the Zod schemas in `@startodel/core`. See [ADR 0008](docs/adr/0008-lesson-blocks.md).
 
-Every MCP Tool uses the request’s `forUser(db, userId)`, bound to the Owner of the MCP Token. Never accept a `userId`, `ownerId`, or equivalent Tool argument. Add two-User HTTP isolation tests with each new Tool. See [ADR 0005](docs/adr/0005-mcp-transport-and-token-model.md).
+Every MCP Tool uses the request’s `forUser(db, userId)`, bound to the Owner of the MCP Token. Never accept a `userId`, `ownerId`, or equivalent Tool argument. For every new Tool, add two-User HTTP isolation tests and describe when to call it in the [agent guide](docs/agent-guide/README.md). Regenerate the bundled guide with `pnpm guide:build` after editing its Markdown. See [ADR 0005](docs/adr/0005-mcp-transport-and-token-model.md).
 
 ## Commands
 

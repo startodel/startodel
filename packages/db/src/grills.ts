@@ -2,7 +2,7 @@ import { AnswerSource, DEFAULT_GRILL_SIZE, type MasteryLevel, Verdict } from "@s
 import { and, desc, eq, inArray, isNotNull, lte, max, sql } from "drizzle-orm";
 import type { Database } from "./index.ts";
 import { recordReview } from "./mastery.ts";
-import { ownedId, referencedRow } from "./owned.ts";
+import { ownedId, referencedRow, referencedRows, type Transaction } from "./owned.ts";
 import {
   grillQuestions,
   grillSessions,
@@ -13,47 +13,126 @@ import {
   trackTopics,
 } from "./schema.ts";
 
+type GrillInput = { trackId?: string | null; title: string; targetSize?: number };
+
 export function grillsForUser(db: Database, userId: string) {
   const ownSessions = eq(grillSessions.userId, userId);
   const ownQuestions = eq(grillQuestions.userId, userId);
   const openSession = (id: string) =>
     and(ownedId(grillSessions, userId, id), eq(grillSessions.status, "open"));
+  async function finishGrill(connection: Database | Transaction, id: string) {
+    return (
+      await connection
+        .update(grillSessions)
+        .set({
+          status: "finished",
+          finishedAt: sql`coalesce(${grillSessions.finishedAt},now())`,
+          updatedAt: new Date(),
+        })
+        .where(ownedId(grillSessions, userId, id))
+        .returning()
+    )[0];
+  }
+  function insertGrill(
+    connection: Database | Transaction,
+    { trackId, title, targetSize = DEFAULT_GRILL_SIZE }: GrillInput,
+  ) {
+    return connection
+      .insert(grillSessions)
+      .values({ userId, trackId, title, targetSize })
+      .returning();
+  }
+  function rankedCandidates(tx: Transaction, trackId: string | undefined, limit: number) {
+    const members = trackId
+      ? inArray(
+          topics.id,
+          tx
+            .select({ id: trackTopics.topicId })
+            .from(trackTopics)
+            .where(and(eq(trackTopics.userId, userId), eq(trackTopics.trackId, trackId))),
+        )
+      : undefined;
+    const level = sql<MasteryLevel>`coalesce(${topicMastery.level},0)`;
+    return tx
+      .select({
+        topicId: topics.id,
+        slug: topics.slug,
+        title: topics.title,
+        level,
+        reviewItem: reviewItems,
+      })
+      .from(topics)
+      .leftJoin(
+        reviewItems,
+        and(
+          eq(reviewItems.userId, userId),
+          eq(reviewItems.topicId, topics.id),
+          lte(reviewItems.dueAt, new Date()),
+        ),
+      )
+      .leftJoin(
+        topicMastery,
+        and(eq(topicMastery.userId, userId), eq(topicMastery.topicId, topics.id)),
+      )
+      .where(and(eq(topics.userId, userId), members))
+      .orderBy(sql`${reviewItems.dueAt} asc nulls last`, level, topics.slug)
+      .limit(limit);
+  }
+  async function addGrillQuestions(
+    sessionId: string,
+    questions: { prompt: string; topicId?: string | null }[],
+  ) {
+    return referencedRows(
+      db.transaction(async (tx) => {
+        const [open] = await tx
+          .select({ id: grillSessions.id })
+          .from(grillSessions)
+          .where(openSession(sessionId))
+          .for("no key update");
+        if (!open) return [];
+        const [last] = await tx
+          .select({ position: max(grillQuestions.position) })
+          .from(grillQuestions)
+          .where(and(ownQuestions, eq(grillQuestions.sessionId, sessionId)));
+        return tx
+          .insert(grillQuestions)
+          .values(
+            questions.map(({ prompt, topicId }, i) => ({
+              userId,
+              sessionId,
+              prompt,
+              topicId,
+              position: (last?.position ?? -1) + 1 + i,
+            })),
+          )
+          .returning();
+      }),
+    );
+  }
   return {
-    startGrill({
-      trackId,
-      title,
-      targetSize = DEFAULT_GRILL_SIZE,
-    }: {
-      trackId?: string | null;
-      title: string;
-      targetSize?: number;
-    }) {
-      return referencedRow(
-        db.insert(grillSessions).values({ userId, trackId, title, targetSize }).returning(),
-      );
+    startGrill(input: GrillInput) {
+      return referencedRow(insertGrill(db, input));
     },
-    addGrillQuestion(
-      sessionId: string,
-      { prompt, topicId }: { prompt: string; topicId?: string | null },
-    ) {
+    startGrillWithCandidates(input: GrillInput) {
       return referencedRow(
         db.transaction(async (tx) => {
-          const [open] = await tx
-            .select({ id: grillSessions.id })
-            .from(grillSessions)
-            .where(openSession(sessionId))
-            .for("no key update");
-          if (!open) return [];
-          const [last] = await tx
-            .select({ position: max(grillQuestions.position) })
-            .from(grillQuestions)
-            .where(and(ownQuestions, eq(grillQuestions.sessionId, sessionId)));
-          return tx
-            .insert(grillQuestions)
-            .values({ userId, sessionId, prompt, topicId, position: (last?.position ?? -1) + 1 })
-            .returning();
+          const [session] = await insertGrill(tx, input);
+          if (!session) return [];
+          const candidates = await rankedCandidates(
+            tx,
+            session.trackId ?? undefined,
+            session.targetSize,
+          );
+          return [{ session, candidates }];
         }),
       );
+    },
+    addGrillQuestions,
+    async addGrillQuestion(
+      sessionId: string,
+      question: { prompt: string; topicId?: string | null },
+    ) {
+      return (await addGrillQuestions(sessionId, [question]))?.[0];
     },
     answerGrillQuestion(id: string, answer: string, source: AnswerSource) {
       return db.transaction(async (tx) => {
@@ -113,18 +192,26 @@ export function grillsForUser(db: Database, userId: string) {
         return question;
       });
     },
-    async finishGrill(id: string) {
-      return (
-        await db
-          .update(grillSessions)
-          .set({
-            status: "finished",
-            finishedAt: sql`coalesce(${grillSessions.finishedAt},now())`,
-            updatedAt: new Date(),
-          })
-          .where(ownedId(grillSessions, userId, id))
-          .returning()
-      )[0];
+    finishGrill(id: string) {
+      return finishGrill(db, id);
+    },
+    finishGrillWithSummary(id: string) {
+      return db.transaction(async (tx) => {
+        const session = await finishGrill(tx, id);
+        if (!session) return undefined;
+        const questions = await tx
+          .select({ topicId: grillQuestions.topicId, verdict: grillQuestions.verdict })
+          .from(grillQuestions)
+          .where(and(ownQuestions, eq(grillQuestions.sessionId, id)))
+          .orderBy(grillQuestions.position);
+        const counts = { strong: 0, partial: 0, weak: 0, unjudged: 0 };
+        const weakTopics = new Set<string>();
+        for (const q of questions) {
+          counts[q.verdict ?? "unjudged"]++;
+          if (q.verdict === "weak" && q.topicId) weakTopics.add(q.topicId);
+        }
+        return { session, counts, weakTopics: [...weakTopics] };
+      });
     },
     getGrill(id: string) {
       return db.transaction(
@@ -144,11 +231,11 @@ export function grillsForUser(db: Database, userId: string) {
         { isolationLevel: "repeatable read", accessMode: "read only" },
       );
     },
-    listGrills() {
+    listGrills(status?: "open" | "finished") {
       return db
         .select()
         .from(grillSessions)
-        .where(ownSessions)
+        .where(and(ownSessions, status && eq(grillSessions.status, status)))
         .orderBy(desc(grillSessions.createdAt), grillSessions.id);
     },
     grillCandidates({
@@ -164,40 +251,7 @@ export function grillsForUser(db: Database, userId: string) {
               .where(ownedId(tracks, userId, trackId));
             if (!track) return undefined;
           }
-          const members = trackId
-            ? inArray(
-                topics.id,
-                tx
-                  .select({ id: trackTopics.topicId })
-                  .from(trackTopics)
-                  .where(and(eq(trackTopics.userId, userId), eq(trackTopics.trackId, trackId))),
-              )
-            : undefined;
-          const level = sql<MasteryLevel>`coalesce(${topicMastery.level},0)`;
-          return tx
-            .select({
-              topicId: topics.id,
-              slug: topics.slug,
-              title: topics.title,
-              level,
-              reviewItem: reviewItems,
-            })
-            .from(topics)
-            .leftJoin(
-              reviewItems,
-              and(
-                eq(reviewItems.userId, userId),
-                eq(reviewItems.topicId, topics.id),
-                lte(reviewItems.dueAt, new Date()),
-              ),
-            )
-            .leftJoin(
-              topicMastery,
-              and(eq(topicMastery.userId, userId), eq(topicMastery.topicId, topics.id)),
-            )
-            .where(and(eq(topics.userId, userId), members))
-            .orderBy(sql`${reviewItems.dueAt} asc nulls last`, level, topics.slug)
-            .limit(limit);
+          return rankedCandidates(tx, trackId, limit);
         },
         { isolationLevel: "repeatable read", accessMode: "read only" },
       );

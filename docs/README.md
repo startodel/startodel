@@ -1,5 +1,6 @@
 # Documentation
 
+- [Agent guide](agent-guide/README.md) — connect an external agent and use the learning Tools.
 - [Deployment guide](deploy.md) — run the image with Docker or Dokploy.
 - [Domain glossary](CONTEXT.md) — the terms used in Startodel's learning model.
 - [ADR 0001 — Record architecture decisions](adr/0001-record-architecture-decisions.md) — how and why this project records decisions.
@@ -13,3 +14,4 @@
 - [ADR 0009 — Mastery and Leitner review scheduling](adr/0009-mastery-and-leitner-reviews.md) — progress and due dates.
 - [ADR 0010 — GrillSessions and agent-judged answers](adr/0010-grill-sessions.md) — question selection, Answer Source and Verdict.
 - [ADR 0011 — Database-enforced ownership with composite foreign keys](adr/0011-composite-ownership.md) — relational integrity within each Owner's data.
+- [ADR 0012 — Agent guidance from Markdown](adr/0012-agent-guidance-from-markdown.md) — one source for server instructions, state-aware guidance and MCP resources.
