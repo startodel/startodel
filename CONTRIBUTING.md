@@ -1,6 +1,6 @@
 # Contributing
 
-Follow the [quickstart](README.md#quickstart) to install Node.js, pnpm, and the workspace dependencies. Run commands from the repository root.
+Follow the [quick start](README.md#quick-start) to install Node.js, pnpm, and the workspace dependencies. Run commands from the repository root.
 
 1. Fetch the latest `main` and create a short-lived branch from `origin/main`.
 2. Keep the change focused and commit it using Conventional Commits.
