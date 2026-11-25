@@ -306,12 +306,30 @@ const reinforce = [
   box-shadow: 0 0 0 3px var(--s-surface);
 }
 .bench__nav {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  justify-items: center;
   gap: var(--s-3);
   padding-top: var(--s-5);
   border-top: 1px solid var(--s-line);
+}
+.bench__nav > :first-child {
+  justify-self: start;
+}
+.bench__nav > :last-child {
+  grid-column: 3;
+  justify-self: end;
+}
+@container s-main (max-width: 32rem) {
+  .bench__nav {
+    grid-template-columns: 1fr 1fr;
+  }
+  .bench__nav > :last-child {
+    grid-column: 2;
+  }
+  .bench__nav > :nth-child(2):not(:last-child) {
+    grid-area: 2 / 1 / auto / -1;
+  }
 }
 .summary {
   display: grid;

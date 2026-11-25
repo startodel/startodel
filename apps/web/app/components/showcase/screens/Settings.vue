@@ -184,6 +184,11 @@ function revoke() {
   padding-top: var(--s-8);
   border-top: 1px solid var(--s-line-strong);
 }
+/* The page header already draws a rule above the first group. */
+.group:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
 .group__head {
   display: grid;
   align-content: start;
