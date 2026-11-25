@@ -7,6 +7,7 @@ export default defineNuxtConfig({
   nitro: { experimental: { envExpansion: true } },
   routeRules: {
     "/": { headers: { "cache-control": "private, no-store" } },
+    "/mcp": { headers: { "cache-control": "private, no-store" } },
     "/api/**": { headers: { "cache-control": "private, no-store" } },
   },
 });
