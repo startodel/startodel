@@ -26,6 +26,9 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     env:
+      NUXT_SESSION_PASSWORD: test-only-ci-session-password-of-at-least-32-characters
+      NUXT_OAUTH_GITHUB_CLIENT_ID: test-client
+      NUXT_OAUTH_GITHUB_CLIENT_SECRET: test-secret
       DATABASE_URL_TEST: postgresql://startodel:startodel@127.0.0.1:5432/startodel_test
     steps:
       - uses: actions/checkout@v7

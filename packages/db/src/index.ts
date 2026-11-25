@@ -7,3 +7,7 @@ export function createDatabase(url: string) {
     schema,
   });
 }
+
+export type Database = ReturnType<typeof createDatabase>;
+export { signInWithGitHub, type GitHubIdentity } from "./sign-in.ts";
+export { forUser } from "./for-user.ts";

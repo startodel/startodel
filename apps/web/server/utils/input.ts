@@ -1,0 +1,42 @@
+import { createError, getRouterParam, readBody, type RequestEvent } from "nuxt/server";
+
+async function readOnlyField(event: RequestEvent, key: string): Promise<unknown> {
+  const body = await readBody(event);
+  if (
+    typeof body !== "object" ||
+    !body ||
+    !Object.hasOwn(body, key) ||
+    Object.keys(body).length !== 1
+  ) {
+    throw createError({ status: 400, message: `Expected only ${key}` });
+  }
+  return Reflect.get(body, key);
+}
+
+export async function readTitle(event: RequestEvent) {
+  const title = await readOnlyField(event, "title");
+  if (typeof title !== "string" || !title.trim())
+    throw createError({ status: 400, message: "Expected a nonempty title" });
+  return title;
+}
+
+export async function readGoals(event: RequestEvent) {
+  const goals = await readOnlyField(event, "goals");
+  if (!Array.isArray(goals) || !goals.every((goal): goal is string => typeof goal === "string")) {
+    throw createError({ status: 400, message: "Expected goals to be an array of strings" });
+  }
+  return goals;
+}
+
+export function trackId(event: RequestEvent) {
+  const id = getRouterParam(event, "id");
+  if (!id || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id)) {
+    throw createError({ status: 404, message: "Not found" });
+  }
+  return id;
+}
+
+export function found<T>(row: T | undefined): T {
+  if (!row) throw createError({ status: 404, message: "Not found" });
+  return row;
+}
