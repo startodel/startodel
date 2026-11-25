@@ -35,6 +35,8 @@ const families = {
   "verdict.": ["strong", "partial", "weak"],
   "callout.": ["gotcha", "production", "tip"],
   "grade.": ["junior", "middle", "senior", "lead"],
+  "block.": ["theory", "code", "callout", "link", "video", "quiz", "exercise"],
+  "topicState.": ["complete", "ready", "blocked"],
 };
 // The design showcase is an English reference built from sample copy. The components it shows are checked.
 const showcase = [
