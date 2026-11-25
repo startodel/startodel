@@ -7,6 +7,10 @@ import type { BoardModel } from "./board";
  * The interactive surface of UiTrackBoard: pan, zoom, select and a minimap. It draws the parts
  * and traces that boardModel() laid out, so it matches the static UiTrackMap exactly.
  */
+const minZoom = 0.35;
+const readable = 0.6;
+const pad = 16;
+const controls = { width: 168, height: 56 };
 const props = defineProps<{
   board: BoardModel;
   flow?: boolean;
@@ -36,15 +40,54 @@ const edges = computed(() =>
 );
 const extent = computed<[[number, number], [number, number]]>(() => [
   [-160, -120],
-  [props.board.width + 160, props.board.height + 120],
+  [props.board.width + 160, props.board.height + 120 + controls.height / minZoom],
 ]);
 
 const instance = shallowRef<VueFlowStore>();
-const fit = () => instance.value?.fitView({ padding: 0.04, maxZoom: 1, duration: 200 });
+/**
+ * Fits the whole board, but never below a zoom at which titles stop being readable: a long Track
+ * opens at its start instead. Room is kept for the controls only when a part would sit under them.
+ */
+function fit(duration = 200) {
+  const store = instance.value;
+  if (!store) return;
+  const { width, height } = store.dimensions.value;
+  const { width: bw, height: bh, parts, size } = props.board;
+  const place = (reserve: number) => {
+    const room = Math.max(height - reserve - pad * 2, 80);
+    const zoom = Math.max(readable, Math.min((width - pad * 2) / bw, room / bh, 1));
+    return {
+      x: Math.max(pad, (width - bw * zoom) / 2),
+      y: pad + Math.max(0, (room - bh * zoom) / 2),
+      zoom,
+    };
+  };
+  let view = place(0);
+  const covered = parts.some(
+    (p) =>
+      view.x + p.x * view.zoom < controls.width &&
+      view.y + (p.y + size.nodeHeight) * view.zoom > height - controls.height,
+  );
+  if (covered) view = place(controls.height);
+  void store.setViewport(view, { duration });
+}
 function ready(store: VueFlowStore) {
   instance.value = store;
-  store.fitView({ padding: 0.04, maxZoom: 1 });
+  fit(0);
 }
+/** The minimap earns its corner only while part of the board is out of view. */
+const partial = computed(() => {
+  const store = instance.value;
+  if (!store) return false;
+  const { x, y, zoom } = store.viewport.value;
+  const { width, height } = store.dimensions.value;
+  return (
+    x < -1 ||
+    y < -1 ||
+    x + props.board.width * zoom > width + 1 ||
+    y + props.board.height * zoom > height + 1
+  );
+});
 const zoom = computed(() => Math.round((instance.value?.viewport.value.zoom ?? 1) * 100));
 </script>
 <template>
@@ -60,7 +103,7 @@ const zoom = computed(() => Math.round((instance.value?.viewport.value.zoom ?? 1
     :zoom-on-scroll="false"
     :zoom-on-double-click="false"
     :prevent-scrolling="false"
-    :min-zoom="0.35"
+    :min-zoom="minZoom"
     :max-zoom="1.5"
     :translate-extent="extent"
     :aria-label="label"
@@ -120,13 +163,13 @@ const zoom = computed(() => Math.round((instance.value?.viewport.value.zoom ?? 1
         </button>
       </UiTooltip>
       <UiTooltip :text="$t('board.fit')" side="top">
-        <button type="button" :aria-label="$t('board.fit')" @click="fit">
+        <button type="button" :aria-label="$t('board.fit')" @click="fit()">
           <UiIcon name="fit" :size="14" />
         </button>
       </UiTooltip>
     </Panel>
     <MiniMap
-      v-if="minimap"
+      v-if="minimap && partial"
       class="s-canvas__minimap"
       position="bottom-right"
       pannable
