@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import type { Block } from "@startodel/core";
-const props = defineProps<{ lessonId: string; quiz: Extract<Block, { type: "quiz" }> }>();
+import type { LessonBlock } from "../../shared/types/lesson";
+const props = defineProps<{ lessonId: string; quiz: Extract<LessonBlock, { type: "quiz" }> }>();
 const emit = defineEmits<{ assessed: [level: number] }>();
 const answers = ref<(number | undefined)[]>([]);
-const result = ref<{ correct: number; total: number; perQuestion: boolean[] }>();
+const result = ref<{
+  correct: number;
+  total: number;
+  perQuestion: boolean[];
+  feedback: { correctIndex: number; explanation?: string }[];
+}>();
 const busy = ref(false);
 const message = ref("");
 async function submit() {
@@ -42,8 +47,11 @@ async function submit() {
       <div v-if="result" class="feedback">
         <strong>{{ result.perQuestion[i] ? "Correct" : "Incorrect" }}</strong
         ><span v-if="!result.perQuestion[i]">
-          · Correct answer: {{ q.options[q.correctIndex] }}</span
-        ><LessonMarkdown v-if="q.explanation" :text="q.explanation" />
+          · Correct answer: {{ q.options[result.feedback[i]!.correctIndex] }}</span
+        ><LessonMarkdown
+          v-if="result.feedback[i]?.explanation"
+          :text="result.feedback[i]!.explanation!"
+        />
       </div>
     </fieldset>
     <button :disabled="busy" class="primary">Submit answers</button>

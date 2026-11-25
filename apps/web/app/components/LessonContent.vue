@@ -1,7 +1,22 @@
 <script setup lang="ts">
-import type { Block } from "@startodel/core";
+import type { LessonBlock } from "../../shared/types/lesson";
 import { httpUrl, youtubeEmbed } from "../utils/links";
-defineProps<{ block: Block; lessonId: string }>();
+const props = defineProps<{ block: LessonBlock; lessonId: string }>();
+const solution = ref("");
+const message = ref("");
+async function reveal(event: Event) {
+  if (!(event.target as HTMLDetailsElement).open || solution.value) return;
+  message.value = "Loading solution…";
+  try {
+    const result = await $fetch(
+      `/api/lessons/${props.lessonId}/exercise/${props.block.id}/solution`,
+    );
+    solution.value = result.solution;
+    message.value = "";
+  } catch {
+    message.value = "Could not load the solution. Close and reopen to retry.";
+  }
+}
 const loadVideo = ref(false);
 defineEmits<{ assessed: [level: number] }>();
 </script>
@@ -59,9 +74,9 @@ defineEmits<{ assessed: [level: number] }>();
         <summary>Hint {{ i + 1 }}</summary>
         <LessonMarkdown :text="hint" />
       </details>
-      <details>
+      <details @toggle="reveal">
         <summary>Show solution</summary>
-        <LessonMarkdown :text="block.solution" />
+        <LessonMarkdown v-if="solution" :text="solution" /><span role="status">{{ message }}</span>
       </details>
     </section>
   </div>

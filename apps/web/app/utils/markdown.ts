@@ -13,7 +13,7 @@ md.renderer.rules.image = (tokens, i, options, env, renderer) => {
   const label =
     "Image: " +
     md.utils.escapeHtml(renderer.renderInlineAsText(token.children ?? [], options, env));
-  const href = httpUrl(token.attrGet("src") ?? "");
+  const href = httpUrl(String(token.attrGet("src") ?? ""));
   return href
     ? `<a href="${md.utils.escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`
     : label;
