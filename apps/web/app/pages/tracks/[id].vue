@@ -2,7 +2,7 @@
 import { MASTERY_LABELS } from "@startodel/core";
 import { httpUrl } from "../../utils/links";
 const route = useRoute();
-const { data, error } = await useFetch(`/api/tracks/${String(route.params.id)}/graph`);
+const { data, error, refresh } = await useFetch(`/api/tracks/${String(route.params.id)}/graph`);
 if (error.value)
   throw createError({
     statusCode: error.value.statusCode || 500,
@@ -23,6 +23,7 @@ const sources = computed(() =>
     <NuxtLink to="/">← Dashboard</NuxtLink>
     <h1>{{ data.track.title }}</h1>
     <p v-if="data.track.description">{{ data.track.description }}</p>
+    <TrackVisibility :track="data.track" :acceptance="data.termsAcceptance" @changed="refresh()" />
     <p class="muted">
       {{ completed }} of {{ data.topics.length }} Topics at Mastery 2 or higher
       <strong v-if="data.topics.length && completed === data.topics.length">

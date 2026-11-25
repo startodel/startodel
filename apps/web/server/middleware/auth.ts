@@ -8,6 +8,7 @@ export default defineHandler(async (event) => {
   const { pathname } = getRequestURL(event);
   if (!/^\/api(?:\/|$)/i.test(pathname)) return;
   if (
+    (event.req.method === "GET" && pathname.startsWith("/api/public/")) ||
     publicApiPaths.has(pathname) ||
     publicApiPrefixes.some((prefix) => pathname.startsWith(prefix))
   )

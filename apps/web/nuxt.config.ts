@@ -8,6 +8,15 @@ export default defineNuxtConfig({
   modules: ["nuxt-auth-utils"],
   // Resolve the deployment's secret when the server starts, including after a build.
   runtimeConfig: { appSecret: "{{NUXT_SESSION_PASSWORD}}" },
+  hooks: {
+    "nitro:config"(config) {
+      const defaults = config.errorHandler ?? [];
+      config.errorHandler = [
+        fileURLToPath(new URL("./server/public-not-found.ts", import.meta.url)),
+        ...[defaults].flat(),
+      ];
+    },
+  },
   nitro: {
     experimental: { envExpansion: true },
     externals: {
@@ -15,6 +24,10 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
+    "/u/**": privatePage,
+    "/sitemap.xml": privatePage,
+    "/terms": privatePage,
+    "/rules": privatePage,
     "/": privatePage,
     "/settings": privatePage,
     "/login": privatePage,

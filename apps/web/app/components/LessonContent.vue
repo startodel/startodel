@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { LessonBlock } from "../../shared/types/lesson";
 import { httpUrl, youtubeEmbed } from "../utils/links";
-const props = defineProps<{ block: LessonBlock; lessonId: string }>();
+const props = defineProps<{ block: LessonBlock; lessonId: string; readOnly?: boolean }>();
 const solution = ref("");
 const message = ref("");
 async function reveal(event: Event) {
@@ -61,6 +61,16 @@ defineEmits<{ assessed: [level: number] }>();
       <figcaption>{{ block.title }}</figcaption>
       <LessonMarkdown v-if="block.note" :text="block.note" />
     </figure>
+    <section v-else-if="block.type === 'quiz' && readOnly">
+      <h2>Quiz</h2>
+      <div v-for="(question, i) in block.questions" :key="i">
+        <LessonMarkdown :text="question.prompt" />
+        <ul>
+          <li v-for="(option, j) in question.options" :key="j">{{ option }}</li>
+        </ul>
+      </div>
+      <p class="muted">Fork this track to practice</p>
+    </section>
     <LessonQuiz
       v-else-if="block.type === 'quiz'"
       :quiz="block"
@@ -74,7 +84,7 @@ defineEmits<{ assessed: [level: number] }>();
         <summary>Hint {{ i + 1 }}</summary>
         <LessonMarkdown :text="hint" />
       </details>
-      <details @toggle="reveal">
+      <details v-if="!readOnly" @toggle="reveal">
         <summary>Show solution</summary>
         <LessonMarkdown v-if="solution" :text="solution" /><span role="status">{{ message }}</span>
       </details>
