@@ -38,6 +38,10 @@ flowchart TD
 - **Bring your own agent.** Per-user MCP tokens, hashed at rest. The agent sees only its owner's data. Start with `get_guide` for a state-aware next step.
 - **Self-hosted or cloud.** MIT licensed. The cloud at [startodel.ru](https://startodel.ru) already has GitHub login and a deployed database.
 
+## Practice in the web app
+
+The dashboard’s **Next up** card follows the same priorities as `get_guide`. Open **Grills** to answer one question at a time, read your agent’s feedback and find Lessons for Topics to reinforce. **Reviews** shows due Topics and the next seven days. Take a Practice Quiz when the Topic has a Quiz, or copy a prompt for your agent. **Progress** shows Mastery across your catalog, Track completion, Lessons read and recent Activity.
+
 ## Stack
 
 The pnpm workspace contains the Nuxt 4 web app, the framework-free domain types in `@startodel/core`, and the Drizzle ORM schema, migrations, and client factory in `@startodel/db`. Authentication uses nuxt-auth-utils with GitHub OAuth. The MCP server uses `@modelcontextprotocol/sdk` over Streamable HTTP. Vite+ provides linting, formatting, and tests. The production image is Docker, deployed with Dokploy.
@@ -56,10 +60,10 @@ Work is grouped by [milestones](https://github.com/startodel/startodel/milestone
 - [x] Learning core data model: topic graph, lessons, mastery, reviews, grill sessions ([#6](https://github.com/startodel/startodel/pull/6))
 - [x] MCP tools for the learning core and the agent guide ([#7](https://github.com/startodel/startodel/pull/7))
 - [x] Onboarding, dashboard, Track Graph, and Lesson pages ([#15](https://github.com/startodel/startodel/issues/15))
+- [x] Grill, progress, and reviews in the UI ([#16](https://github.com/startodel/startodel/issues/16))
 
 ### Next
 
-- [ ] Grill, progress, and reviews in the UI ([#16](https://github.com/startodel/startodel/issues/16))
 - [ ] Agent skills in `packages/skills`, generated from `docs/agent-guide` ([#17](https://github.com/startodel/startodel/issues/17))
 
 Later: [import topic graphs from roadmap.sh](https://github.com/startodel/startodel/issues/18), a [stream overlay page](https://github.com/startodel/startodel/issues/19) for the current plan, and a [server-side model as a paid option](https://github.com/startodel/startodel/issues/20).
