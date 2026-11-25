@@ -1,14 +1,73 @@
 # Startodel
 
-Startodel is an open-source framework for personal, agent-driven developer learning. The goal is for each developer to bring an external agent that builds a Track around their goals and guides them through Lessons, practice, and review. The framework is intended for both self-hosted and cloud use.
+An open-source framework for a personal, agent-driven learning platform for experienced developers.
 
-**Status: early.** GitHub sign-in gives each User a private Profile and Tracks. An external agent can build Track Graphs, write Lessons, record learning progress and run GrillSessions with a personal MCP Token. The database health endpoint is public.
+Startodel is not a catalog of ready-made courses. You bring your own AI agent. After a short onboarding questionnaire, the agent builds a personal Track: a graph of topics, in the style of [roadmap.sh](https://roadmap.sh), drawn from documentation, best practices, interview questions, or a GitHub repository.
+
+You study Lessons made of typed blocks: theory, code, production callouts, links, YouTube, quizzes, and exercises. Grill sessions then ask about 15 questions in your own words; your agent judges the answers. Results update mastery from 0 to 4 for each topic and feed a spaced-repetition review pool, and the loop continues.
+
+The project is free to use with your own agent. You can [self-host](#quick-start) it, or use the cloud at [startodel.ru](https://startodel.ru) with GitHub login.
+
+**Status: early.** GitHub sign-in gives each user a private profile and tracks. An external agent can build track graphs, write lessons, record progress, and run grill sessions with a personal MCP token. The learning UI is next.
+
+- Cloud: [startodel.ru](https://startodel.ru)
+- [Connect your agent](#connect-your-agent)
+- [Agent guide](docs/agent-guide/README.md)
+- [Roadmap](#roadmap)
+- [Documentation](docs/README.md)
+
+## Learning loop
+
+```mermaid
+flowchart TD
+  start[Empty profile] --> onboard[Onboarding questionnaire]
+  onboard --> connect[Connect your agent via MCP]
+  connect --> track[Agent builds a personal Track]
+  track --> lessons[Lessons from theory, code, quizzes and exercises]
+  lessons --> grill[Grill: about 15 questions in your own words]
+  grill --> mastery[Mastery 0-4 and a review pool]
+  mastery --> track
+```
+
+## Features
+
+- **Personal Tracks as a topic graph.** Topics live in your catalog, deduplicated by slug, and can be shared across tracks. A track may list sources such as a GitHub repository or documentation links.
+- **Lessons from typed blocks.** Theory (Markdown), code, callouts (gotchas, production notes, tips), documentation links, YouTube videos, short quizzes, and exercises.
+- **Grill sessions.** About 15 questions, with priority for weak topics and due reviews. Answers can come from the site or through MCP; your agent records the verdict.
+- **Mastery and review.** Each topic has a mastery level from 0 (don't know) to 4 (internals), plus a Leitner-style review pool.
+- **Bring your own agent.** Per-user MCP tokens, hashed at rest. The agent sees only its owner's data. Start with `get_guide` for a state-aware next step.
+- **Self-hosted or cloud.** MIT licensed. The cloud at [startodel.ru](https://startodel.ru) already has GitHub login and a deployed database.
 
 ## Stack
 
-The pnpm workspace contains the Nuxt 4 web app, the framework-free domain types in `@startodel/core`, and the Drizzle ORM schema, migrations, and client factory in `@startodel/db`. Vite+ provides linting, formatting, and tests.
+The pnpm workspace contains the Nuxt 4 web app, the framework-free domain types in `@startodel/core`, and the Drizzle ORM schema, migrations, and client factory in `@startodel/db`. Authentication uses nuxt-auth-utils with GitHub OAuth. The MCP server uses `@modelcontextprotocol/sdk` over Streamable HTTP. Vite+ provides linting, formatting, and tests. The production image is Docker, deployed with Dokploy.
 
-## Quickstart
+## Roadmap
+
+Work is grouped by [milestones](https://github.com/startodel/startodel/milestones): Foundation, Learning core, Learning UI, and Agent skills.
+
+### Done
+
+- [x] Monorepo skeleton ([#1](https://github.com/startodel/startodel/pull/1))
+- [x] PostgreSQL and Drizzle schema ([#2](https://github.com/startodel/startodel/pull/2))
+- [x] GitHub login and per-user isolation ([#3](https://github.com/startodel/startodel/pull/3))
+- [x] MCP server with per-user tokens ([#4](https://github.com/startodel/startodel/pull/4))
+- [x] Production Docker image and deploy to [startodel.ru](https://startodel.ru) ([#5](https://github.com/startodel/startodel/pull/5))
+- [x] Learning core data model: topic graph, lessons, mastery, reviews, grill sessions ([#6](https://github.com/startodel/startodel/pull/6))
+- [x] MCP tools for the learning core and the agent guide ([#7](https://github.com/startodel/startodel/pull/7))
+
+### Now
+
+- [ ] Onboarding, track graph, and lesson page ([#15](https://github.com/startodel/startodel/issues/15))
+
+### Next
+
+- [ ] Quizzes, grill, progress, and reviews in the UI ([#16](https://github.com/startodel/startodel/issues/16))
+- [ ] Agent skills in `packages/skills`, generated from `docs/agent-guide` ([#17](https://github.com/startodel/startodel/issues/17))
+
+Later: [import topic graphs from roadmap.sh](https://github.com/startodel/startodel/issues/18), a [stream overlay page](https://github.com/startodel/startodel/issues/19) for the current plan, and a [server-side model as a paid option](https://github.com/startodel/startodel/issues/20).
+
+## Quick start
 
 From the repository root, install the pinned Node.js and pnpm versions, then start the local PostgreSQL database and Nuxt.
 
@@ -44,10 +103,10 @@ Run Startodel as a single Docker image with a separate PostgreSQL database. The 
 
 1. Sign in to Startodel. Under **MCP tokens**, enter a name for your agent and select **Create token**. Copy the MCP Token while it is visible.
 2. Set your MCP client's transport to **Streamable HTTP** and copy the MCP URL from the page (`https://<host>/mcp`). Send `Authorization: Bearer <token>` on every request.
-3. Connect and start with `get_guide`. It reads your current learning state and suggests the next step, from completing your Onboarding Questionnaire to reviewing a due Topic.
+3. Connect and start with `get_guide`. It reads your current learning state and suggests the next step, from completing your onboarding questionnaire to reviewing a due topic.
 4. To remove access, select **Revoke** beside the matching name and prefix. To replace a lost MCP Token, revoke it and create another.
 
-Read the [agent guide](docs/agent-guide/README.md) or open individual sections as MCP resources under `startodel://guide/<section>`. Each Tool acts for the Owner of the MCP Token.
+Read the [agent guide](docs/agent-guide/README.md) or open individual sections as MCP resources under `startodel://guide/<section>`. Each tool acts for the owner of the MCP token.
 
 | Workflow             | Tools                                                                                                                                                 |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -82,4 +141,10 @@ For clients that use the editor-managed `mcp.json` format, replace the example h
 }
 ```
 
-See the [documentation index](docs/README.md) and [contribution guide](CONTRIBUTING.md).
+## Contributing
+
+See the [contribution guide](CONTRIBUTING.md). Issues and pull requests are welcome.
+
+## License
+
+[MIT](LICENSE)
