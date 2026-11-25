@@ -5,7 +5,7 @@ const { data, error, refresh } = await useFetch(`/api/grills/${id}`);
 if (error.value)
   throw createError({
     statusCode: error.value.statusCode,
-    statusMessage: "GrillSession unavailable",
+    statusMessage: "Grill session unavailable",
   });
 useHead({ title: () => data.value?.title });
 const questions = computed(() => data.value?.questions ?? []);

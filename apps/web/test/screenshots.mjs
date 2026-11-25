@@ -230,7 +230,7 @@ try {
   await page.getByText("Verdict · weak").waitFor();
   await shot("pr9-grill-open");
   await page.goto(origin + "/");
-  await page.getByRole("link", { name: "Continue GrillSession" }).waitFor();
+  await page.getByRole("link", { name: "Continue grill session" }).waitFor();
   await shot("pr9-dashboard-next-up");
   await page.goto(origin + "/grills");
   await page.getByRole("link", { name: finished.title }).waitFor();
