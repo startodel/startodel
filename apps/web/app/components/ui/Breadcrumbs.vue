@@ -3,7 +3,7 @@ import type { RouteLocationRaw } from "vue-router";
 defineProps<{ items: { label: string; to?: RouteLocationRaw }[] }>();
 </script>
 <template>
-  <nav class="s-crumbs" aria-label="Breadcrumb">
+  <nav class="s-crumbs" :aria-label="$t('nav.breadcrumb')">
     <ol class="s-crumbs__list">
       <li v-for="(item, i) in items" :key="i" class="s-crumbs__item">
         <span v-if="i" class="s-crumbs__sep" aria-hidden="true">/</span>

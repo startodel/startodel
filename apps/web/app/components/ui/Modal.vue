@@ -34,7 +34,12 @@ watch(open, sync, { flush: "post" });
     <div class="s-modal__panel">
       <header class="s-modal__header">
         <h2 :id="titleId" class="s-modal__title">{{ title }}</h2>
-        <button type="button" class="s-modal__close" aria-label="Close" @click="open = false">
+        <button
+          type="button"
+          class="s-modal__close"
+          :aria-label="$t('ui.close')"
+          @click="open = false"
+        >
           <UiIcon name="x" />
         </button>
       </header>

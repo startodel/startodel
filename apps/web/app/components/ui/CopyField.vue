@@ -24,7 +24,7 @@ async function run() {
     <div class="s-copy__head">
       <span class="s-copy__label">{{ label }}</span>
       <span class="s-copy__status" role="status">{{
-        state === "copied" ? "Copied" : state === "failed" ? "Select and copy the text" : ""
+        state === "copied" ? $t("common.copied") : state === "failed" ? $t("ui.copyManual") : ""
       }}</span>
     </div>
     <div class="s-copy__row">
@@ -33,14 +33,14 @@ async function run() {
         v-if="secret"
         type="button"
         class="s-copy__action"
-        :aria-label="revealed ? 'Hide ' + label : 'Show ' + label"
+        :aria-label="revealed ? $t('ui.hide', { label }) : $t('ui.show', { label })"
         :aria-pressed="revealed"
         @click="revealed = !revealed"
       >
         <UiIcon :name="revealed ? 'eye-off' : 'eye'" />
       </button>
       <button type="button" class="s-copy__action s-copy__action--copy" @click="run">
-        <UiIcon :name="state === 'copied' ? 'check' : 'copy'" /><span>Copy</span
+        <UiIcon :name="state === 'copied' ? 'check' : 'copy'" /><span>{{ $t("ui.copy") }}</span
         ><span class="s-sr"> {{ label }}</span>
       </button>
     </div>

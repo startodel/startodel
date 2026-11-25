@@ -4,7 +4,8 @@ defineProps<{ label: string; for?: string; hint?: string; error?: string; option
 <template>
   <div class="s-field" :class="{ 'is-invalid': error }">
     <label class="s-field__label" :for="$props.for"
-      >{{ label }}<span v-if="optional" class="s-field__optional">optional</span></label
+      >{{ label
+      }}<span v-if="optional" class="s-field__optional">{{ $t("ui.optional") }}</span></label
     >
     <slot />
     <p v-if="error" class="s-field__note s-field__note--error" role="alert">

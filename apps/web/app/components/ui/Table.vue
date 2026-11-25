@@ -93,7 +93,7 @@ const ariaSort = (key: string) =>
         </tr>
         <tr v-if="!rows.length">
           <td :colspan="columns.length" class="s-table__empty">
-            <slot name="empty">No rows.</slot>
+            <slot name="empty">{{ $t("ui.noRows") }}</slot>
           </td>
         </tr>
       </tbody>

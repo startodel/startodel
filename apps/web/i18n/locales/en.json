@@ -8,7 +8,13 @@
     "settings": "Settings",
     "logout": "Log out",
     "main": "Main navigation",
-    "breadcrumb": "Breadcrumb"
+    "breadcrumb": "Breadcrumb",
+    "tracks": "Tracks",
+    "home": "Startodel home",
+    "skip": "Skip to content",
+    "expand": "Expand navigation",
+    "collapse": "Collapse navigation",
+    "pending": "pending"
   },
   "legal": {
     "terms": "Terms",
@@ -23,6 +29,25 @@
     "notFound": "Page not found",
     "error": "Could not open this page",
     "home": "Home"
+  },
+  "ui": {
+    "copy": "Copy",
+    "copyManual": "Select and copy the text",
+    "show": "Show {label}",
+    "hide": "Hide {label}",
+    "optional": "optional",
+    "remove": "Remove",
+    "close": "Close",
+    "dismiss": "Dismiss",
+    "loading": "Loading",
+    "noRows": "No rows.",
+    "mastery": "Mastery {level} of 4, {name}",
+    "verdictPending": "awaiting verdict",
+    "verdictNone": "unanswered",
+    "theme": "Theme",
+    "themeAuto": "System theme",
+    "themeLight": "Light theme",
+    "themeDark": "Dark theme"
   },
   "dashboard": {
     "load": "Could not load your Tracks.",

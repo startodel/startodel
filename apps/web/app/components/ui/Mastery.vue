@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MASTERY_LABELS } from "@startodel/core";
+const { t } = useI18n();
 const props = withDefaults(
   defineProps<{
     level: number;
@@ -10,14 +10,14 @@ const props = withDefaults(
   { size: "md", show: "level" },
 );
 const level = computed(() => Math.min(Math.max(Math.trunc(props.level) || 0, 0), 4));
-const name = computed(() => MASTERY_LABELS[level.value]!);
+const name = computed(() => t(`mastery.level${level.value}`));
 </script>
 <template>
   <span
     class="s-mastery"
     :class="['s-mastery--' + size, 's-mastery--l' + level]"
     role="img"
-    :aria-label="`Mastery ${level} of 4, ${name}`"
+    :aria-label="t('ui.mastery', { level, name })"
   >
     <span class="s-mastery__bars" aria-hidden="true">
       <i v-for="n in 4" :key="n" :class="{ 'is-on': n <= level }" />

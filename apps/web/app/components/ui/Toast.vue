@@ -28,7 +28,7 @@ const icon = computed<IconName>(
       v-if="dismissible"
       type="button"
       class="s-toast__close"
-      aria-label="Dismiss"
+      :aria-label="$t('ui.dismiss')"
       @click="$emit('dismiss')"
     >
       <UiIcon name="x" :size="14" />

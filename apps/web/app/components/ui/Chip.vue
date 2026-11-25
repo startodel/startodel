@@ -8,7 +8,7 @@ defineEmits<{ remove: [] }>();
       v-if="removable"
       type="button"
       class="s-chip__remove"
-      aria-label="Remove"
+      :aria-label="$t('ui.remove')"
       @click="$emit('remove')"
     >
       <UiIcon name="x" :size="12" />

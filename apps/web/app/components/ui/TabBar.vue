@@ -3,7 +3,7 @@ import type { NavItem } from "./nav";
 defineProps<{ items: NavItem[]; current?: string }>();
 </script>
 <template>
-  <nav class="s-tabbar" aria-label="Main navigation">
+  <nav class="s-tabbar" :aria-label="$t('nav.main')">
     <NuxtLink
       v-for="item in items.slice(0, 5)"
       :key="item.id"
@@ -15,7 +15,7 @@ defineProps<{ items: NavItem[]; current?: string }>();
       <span class="s-tabbar__icon">
         <UiIcon :name="item.icon" :size="18" />
         <span v-if="item.count" class="s-tabbar__count"
-          >{{ item.count }}<span class="s-sr"> pending</span></span
+          >{{ item.count }}<span class="s-sr">{{ " " + $t("nav.pending") }}</span></span
         >
       </span>
       <span class="s-tabbar__label">{{ item.short ?? item.label }}</span>

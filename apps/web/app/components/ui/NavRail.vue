@@ -18,20 +18,20 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
 <template>
   <aside class="s-rail" :class="{ 's-rail--collapsed': collapsed }">
     <div class="s-rail__brand">
-      <NuxtLink :to="home" class="s-rail__home" aria-label="Startodel home">
+      <NuxtLink :to="home" class="s-rail__home" :aria-label="$t('nav.home')">
         <UiLogo :variant="collapsed ? 'mark' : 'full'" :size="22" />
       </NuxtLink>
       <button
         type="button"
         class="s-rail__toggle"
-        :aria-label="collapsed ? 'Expand navigation' : 'Collapse navigation'"
+        :aria-label="collapsed ? $t('nav.expand') : $t('nav.collapse')"
         :aria-expanded="!collapsed"
         @click="collapsed = !collapsed"
       >
         <UiIcon name="rail" />
       </button>
     </div>
-    <nav class="s-rail__nav" aria-label="Main navigation">
+    <nav class="s-rail__nav" :aria-label="$t('nav.main')">
       <ul class="s-rail__list">
         <li v-for="item in items" :key="item.id">
           <NuxtLink
@@ -44,13 +44,13 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
             <UiIcon :name="item.icon" class="s-rail__icon" />
             <span class="s-rail__label">{{ item.label }}</span>
             <span v-if="item.count" class="s-rail__count"
-              >{{ item.count }}<span class="s-sr"> pending</span></span
+              >{{ item.count }}<span class="s-sr">{{ " " + $t("nav.pending") }}</span></span
             >
           </NuxtLink>
         </li>
       </ul>
       <template v-if="tracks?.length">
-        <p class="s-rail__heading">Tracks</p>
+        <p class="s-rail__heading">{{ $t("nav.tracks") }}</p>
         <ul class="s-rail__list">
           <li v-for="t in tracks" :key="t.id">
             <NuxtLink
@@ -83,8 +83,8 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
         <button
           type="button"
           class="s-rail__toggle"
-          aria-label="Log out"
-          title="Log out"
+          :aria-label="$t('nav.logout')"
+          :title="$t('nav.logout')"
           @click="$emit('logout')"
         >
           <UiIcon name="logout" />

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ lines?: number; label?: string }>(), { lines: 3, label: "Loading" });
+withDefaults(defineProps<{ lines?: number; label?: string }>(), { lines: 3 });
 </script>
 <template>
-  <div class="s-skeleton" role="status" :aria-label="label">
+  <div class="s-skeleton" role="status" :aria-label="label ?? $t('ui.loading')">
     <i v-for="n in lines" :key="n" :style="{ width: n === lines && lines > 1 ? '62%' : '100%' }" />
   </div>
 </template>

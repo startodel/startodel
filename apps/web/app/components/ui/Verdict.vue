@@ -5,14 +5,14 @@ const props = withDefaults(
   defineProps<{ verdict: VerdictState; size?: "sm" | "md" | "lg"; glyphOnly?: boolean }>(),
   { size: "md" },
 );
-const words: Record<VerdictState, string> = {
-  strong: "strong",
-  partial: "partial",
-  weak: "weak",
-  pending: "awaiting verdict",
-  none: "unanswered",
-};
-const word = computed(() => words[props.verdict]);
+const { t } = useI18n();
+const word = computed(() =>
+  props.verdict === "pending"
+    ? t("ui.verdictPending")
+    : props.verdict === "none"
+      ? t("ui.verdictNone")
+      : t(`verdict.${props.verdict}`),
+);
 </script>
 <template>
   <span

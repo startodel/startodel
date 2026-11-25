@@ -28,6 +28,8 @@ The existing pages keep their current look until each one is migrated separately
 
 **A showcase documents the system.** `/design` shows the tokens and every component state, and holds sample screens built from sample data. It is served in development, or when `NUXT_PUBLIC_DESIGN_SHOWCASE=true`. Otherwise it returns 404. The authentication middleware lets these paths through only when the showcase is enabled. The showcase reads no learning data and calls no API.
 
+**Component text comes from the message catalogs.** A label that a component supplies itself, such as “Copy” or a Mastery name, is a message under `ui.*` or an existing key, in Russian and English, as [ADR 0016](0016-internationalisation.md) requires. Text that a page passes in is the page’s to translate. The showcase follows the same locale routing: `/design` renders this text in Russian and `/en/design` in English. The showcase’s own copy is sample content in English, so `pnpm i18n:check` skips `pages/design/` and `components/showcase/` and still checks every `Ui` component.
+
 **Browser baseline.** The system relies on `light-dark()`, container queries, `:has()` and the native `dialog` element. All have shipped in current Chrome, Firefox and Safari since mid-2024.
 
 ## Consequences
@@ -36,7 +38,7 @@ Existing pages render exactly as before. Each page can adopt the system in its o
 
 A token change reaches every component and both themes at once. A new colour needs a light and a dark value and a contrast pair in the test.
 
-The showcase is the place to review visual changes. A new component needs a specimen there.
+The showcase is the place to review visual changes. A new component needs a specimen there, and its built-in text needs a message in both catalogs.
 
 Three font packages are added to the web app. The build bundles their files, so the image grows by the size of the subsets in use.
 

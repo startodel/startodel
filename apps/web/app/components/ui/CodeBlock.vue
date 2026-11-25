@@ -30,7 +30,11 @@ onMounted(() =>
       <button type="button" class="s-code__copy" @click="copy(code)">
         <UiIcon :name="state === 'copied' ? 'check' : 'copy'" :size="14" />
         <span role="status">{{
-          state === "copied" ? "Copied" : state === "failed" ? "Select to copy" : "Copy"
+          state === "copied"
+            ? $t("common.copied")
+            : state === "failed"
+              ? $t("ui.copyManual")
+              : $t("ui.copy")
         }}</span>
       </button>
     </figcaption>

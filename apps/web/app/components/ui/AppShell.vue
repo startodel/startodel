@@ -22,7 +22,7 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
 <template>
   <div class="s-shell">
     <div class="s-shell__frame" :class="{ 'is-collapsed': collapsed }">
-      <a class="s-shell__skip" href="#s-main">Skip to content</a>
+      <a class="s-shell__skip" href="#s-main">{{ $t("nav.skip") }}</a>
       <UiNavRail
         v-model:collapsed="collapsed"
         class="s-shell__rail"

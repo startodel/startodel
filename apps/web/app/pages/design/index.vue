@@ -120,8 +120,8 @@ const replay = ref(0);
           <a class="s-link s-mono" :href="'/brand/' + f">/brand/{{ f }}</a>
         </li>
         <li>
-          <NuxtLink class="s-link s-mono" to="/design/og">/design/og</NuxtLink> renders the Open
-          Graph template.
+          <NuxtLinkLocale class="s-link s-mono" to="/design/og">/design/og</NuxtLinkLocale> renders
+          the Open Graph template.
         </li>
       </ul>
     </ShowcaseSection>

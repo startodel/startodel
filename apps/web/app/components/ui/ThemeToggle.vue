@@ -1,25 +1,29 @@
 <script setup lang="ts">
 const theme = useTheme();
-const tabs = [
-  { id: "auto", label: "System theme", icon: "auto" },
-  { id: "light", label: "Light theme", icon: "sun" },
-  { id: "dark", label: "Dark theme", icon: "moon" },
-] as const;
+const { t } = useI18n();
+const options = computed(
+  () =>
+    [
+      { id: "auto", label: t("ui.themeAuto"), icon: "auto" },
+      { id: "light", label: t("ui.themeLight"), icon: "sun" },
+      { id: "dark", label: t("ui.themeDark"), icon: "moon" },
+    ] as const,
+);
 </script>
 <template>
-  <div class="s-theme" role="radiogroup" aria-label="Theme">
+  <div class="s-theme" role="radiogroup" :aria-label="t('ui.theme')">
     <button
-      v-for="t in tabs"
-      :key="t.id"
+      v-for="option in options"
+      :key="option.id"
       type="button"
       class="s-theme__option"
       role="radio"
-      :aria-checked="theme === t.id"
-      :aria-label="t.label"
-      :title="t.label"
-      @click="theme = t.id"
+      :aria-checked="theme === option.id"
+      :aria-label="option.label"
+      :title="option.label"
+      @click="theme = option.id"
     >
-      <UiIcon :name="t.icon" :size="14" />
+      <UiIcon :name="option.icon" :size="14" />
     </button>
   </div>
 </template>

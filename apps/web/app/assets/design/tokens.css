@@ -1,5 +1,5 @@
 /*
- * Startodel design tokens. See docs/design/CONCEPT.md and ADR 0016.
+ * Startodel design tokens. See docs/design/CONCEPT.md and ADR 0017.
  *
  * Every colour is declared once as light-dark(<light>, <dark>). Any element with
  * data-theme="light" or data-theme="dark" re-themes its whole subtree. The tokens are declared on

@@ -1,7 +1,8 @@
 import type { NavItem, NavTrack, NavUser } from "../ui/nav";
 
 /** Sample data for the showcase. Nothing here is read from or written to the database. */
-const here = (hash: string) => ({ path: "/design/components", hash });
+// A hash on the current page, so that a sample link keeps the locale of the showcase.
+const here = (hash: string) => ({ hash });
 
 export const sampleUser: NavUser = { name: "Alice Petrova", login: "alice" };
 

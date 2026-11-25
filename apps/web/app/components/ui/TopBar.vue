@@ -12,7 +12,7 @@ withDefaults(
 </script>
 <template>
   <header class="s-topbar">
-    <NuxtLink :to="home" class="s-topbar__home" aria-label="Startodel home">
+    <NuxtLink :to="home" class="s-topbar__home" :aria-label="$t('nav.home')">
       <UiLogo variant="mark" :size="22" />
     </NuxtLink>
     <UiBreadcrumbs v-if="crumbs?.length" :items="crumbs" class="s-topbar__crumbs" />

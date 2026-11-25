@@ -288,7 +288,7 @@ const prompt =
           ><strong>Live</strong>
           <p class="s-muted">The one thing to do next.</p></UiCard
         >
-        <UiCard tag="T03" :to="{ path: '/design/components', hash: '#surfaces' }"
+        <UiCard tag="T03" :to="{ hash: '#surfaces' }"
           ><strong>Link card</strong>
           <p class="s-muted">The whole plate is the target.</p></UiCard
         >
@@ -473,10 +473,10 @@ const prompt =
       <ShowcaseSpecimen label="Breadcrumbs" note="A path, in the system voice">
         <UiBreadcrumbs
           :items="[
-            { label: 'Tracks', to: { path: '/design/components', hash: '#navigation' } },
+            { label: 'Tracks', to: { hash: '#navigation' } },
             {
               label: 'TypeScript internals',
-              to: { path: '/design/components', hash: '#navigation' },
+              to: { hash: '#navigation' },
             },
             { label: 'T03 Control flow narrowing' },
           ]"
@@ -596,7 +596,7 @@ const prompt =
             :tracks="sampleNavTracks"
             current-track="ts"
             :user="sampleUser"
-            :home="{ path: '/design/components', hash: '#shell' }"
+            :home="{ hash: '#shell' }"
             :crumbs="[{ label: 'Dashboard' }]"
           >
             <template #actions><UiThemeToggle /></template>
@@ -613,7 +613,7 @@ const prompt =
             current="reviews"
             :tracks="sampleNavTracks"
             :user="sampleUser"
-            :home="{ path: '/design/components', hash: '#shell' }"
+            :home="{ hash: '#shell' }"
             :crumbs="[{ label: 'Reviews' }]"
           >
             <UiPageHeader title="Reviews" kicker="4 due today" />
@@ -628,7 +628,7 @@ const prompt =
             current="grills"
             :tracks="sampleNavTracks"
             :user="sampleUser"
-            :home="{ path: '/design/components', hash: '#shell' }"
+            :home="{ hash: '#shell' }"
             :crumbs="[{ label: 'Grills' }]"
           >
             <UiPageHeader title="Grills" kicker="3 sessions" />
@@ -641,9 +641,9 @@ const prompt =
             current="progress"
             :tracks="sampleNavTracks"
             :user="sampleUser"
-            :home="{ path: '/design/components', hash: '#shell' }"
+            :home="{ hash: '#shell' }"
             :crumbs="[
-              { label: 'Tracks', to: { path: '/design/components', hash: '#shell' } },
+              { label: 'Tracks', to: { hash: '#shell' } },
               { label: 'TypeScript internals' },
             ]"
           >
