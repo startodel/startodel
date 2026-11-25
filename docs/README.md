@@ -18,3 +18,4 @@
 - [ADR 0013 — Mastery auto-raise](adr/0013-mastery-auto-raise.md) — reading and Quiz evidence that raises Topic Mastery.
 - [ADR 0014 — Practice Quiz scoring and UI Grill answers](adr/0014-review-practice-and-ui-answers.md) — review scoring, scheduling and read-only Grill answers.
 - [ADR 0015 — Public read layer](adr/0015-public-read-layer.md) — public projections, Forks and Terms Acceptance.
+- [ADR 0016 — Internationalisation](adr/0016-internationalisation.md) — Russian and English routes, language preferences and content authorship.

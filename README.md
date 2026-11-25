@@ -16,6 +16,8 @@ The project is free to use with your own agent. You can [self-host](#quick-start
 - [Roadmap](#roadmap)
 - [Documentation](docs/README.md)
 
+The interface opens in Russian by default. Choose **EN** in the header or footer for English. Both languages have shareable URLs, and learning content stays in the language its author used.
+
 ## Learning loop
 
 ```mermaid

@@ -52,3 +52,22 @@ Reading every Lesson in a Topic with at least one Lesson raises Mastery from 0 t
 ## Activity history
 
 Each Quiz Attempt has its own row. A Grill Question retains its answer and judgment times. Lesson Progress, ReviewItems and Mastery retain their latest observation for each Lesson or Topic. Progress uses those timestamps, so a later update replaces the earlier observation from the same row.
+
+## Russian UI terms
+
+| Domain term              | Russian UI                                                                    |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| Track                    | трек                                                                          |
+| Public Track             | публичный трек                                                                |
+| Topic                    | тема                                                                          |
+| Lesson                   | урок                                                                          |
+| Quiz / Practice Quiz     | тест / тренировочный тест                                                     |
+| Grill / GrillSession     | опрос                                                                         |
+| Review                   | повторение                                                                    |
+| Mastery                  | уровень освоения                                                              |
+| Mastery 0–4              | Пока не знаю · Читал · Применяю · Могу объяснить · Знаю внутреннее устройство |
+| Fork                     | форк                                                                          |
+| Profile                  | профиль                                                                       |
+| Onboarding Questionnaire | анкета при настройке профиля                                                  |
+| MCP Token                | MCP-токен                                                                     |
+| External agent           | агент                                                                         |
