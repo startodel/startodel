@@ -17,12 +17,18 @@ const props = withDefaults(
     compact?: boolean;
     /** Scale the whole board to the container width instead of scrolling. */
     fit?: boolean;
+    /** Draw the graph alone, with no Mastery and no locks. A Public Track has neither. */
+    outline?: boolean;
   }>(),
   { flow: true },
 );
 const selected = defineModel<string | undefined>("selected");
 const board = computed(() =>
-  boardModel(props.topics, props.edges, { compact: props.compact, selected: selected.value }),
+  boardModel(props.topics, props.edges, {
+    compact: props.compact,
+    selected: selected.value,
+    outline: props.outline,
+  }),
 );
 </script>
 <template>

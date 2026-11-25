@@ -411,6 +411,7 @@
   "board": {
     "after": "after {topics}",
     "part": "{tag} {title}. Mastery {level} of 4. {state}.",
+    "partOutline": "{tag} {title}.",
     "view": "View",
     "viewBoard": "Board",
     "viewList": "List",

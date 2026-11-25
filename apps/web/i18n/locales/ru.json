@@ -411,6 +411,7 @@
   "board": {
     "after": "после {topics}",
     "part": "{tag} {title}. Уровень освоения {level} из 4. {state}.",
+    "partOutline": "{tag} {title}.",
     "view": "Вид",
     "viewBoard": "Схема",
     "viewList": "Список",

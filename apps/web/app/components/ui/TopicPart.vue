@@ -3,7 +3,8 @@ import type { BoardTopic, TopicState } from "./board";
 /** One Topic on the Track board: designator, state, Mastery and title on a small plate. */
 const props = defineProps<{
   topic: BoardTopic;
-  state: TopicState;
+  /** outline: the Topic alone, as a Public Track shows it. */
+  state: TopicState | "outline";
   selected?: boolean;
   faded?: boolean;
   compact?: boolean;
@@ -14,12 +15,14 @@ defineEmits<{ select: [id: string] }>();
 const { t } = useI18n();
 const { topicWord } = useStateWords();
 const label = computed(() =>
-  t("board.part", {
-    tag: props.topic.tag,
-    title: props.topic.title,
-    level: props.topic.level,
-    state: topicWord(props.state),
-  }),
+  props.state === "outline"
+    ? t("board.partOutline", { tag: props.topic.tag, title: props.topic.title })
+    : t("board.part", {
+        tag: props.topic.tag,
+        title: props.topic.title,
+        level: props.topic.level,
+        state: topicWord(props.state),
+      }),
 );
 </script>
 <template>
@@ -31,7 +34,7 @@ const label = computed(() =>
       'is-' + state,
       {
         'is-selected': selected,
-        'is-full': topic.level === 4,
+        'is-full': topic.level === 4 && state !== 'outline',
         'is-faded': faded,
         's-part--compact': compact,
       },
@@ -46,6 +49,7 @@ const label = computed(() =>
       <UiIcon v-if="state === 'blocked'" name="lock" :size="11" class="s-part__lock" />
       <span v-else-if="state === 'ready'" class="s-part__ready">{{ topicWord("ready") }}</span>
       <UiMastery
+        v-if="state !== 'outline'"
         :level="topic.level"
         show="bars"
         :size="compact ? 'sm' : 'md'"

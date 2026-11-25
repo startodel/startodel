@@ -190,7 +190,12 @@ export const BOARD_SIZES = {
 export function boardModel(
   topics: BoardTopic[],
   edges: BoardEdge[],
-  options: { compact?: boolean; selected?: string } = {},
+  options: {
+    compact?: boolean;
+    selected?: string;
+    /** Draw the graph alone, with no Mastery and no locks. A Public Track has neither. */
+    outline?: boolean;
+  } = {},
 ) {
   const size = BOARD_SIZES[options.compact ? "compact" : "regular"];
   const board = layoutBoard(topics, edges, size);
@@ -211,7 +216,7 @@ export function boardModel(
     parts: board.nodes.map((n) => ({
       ...n,
       topic: byId.get(n.id)!,
-      state: states.get(n.id)!,
+      state: options.outline ? ("outline" as const) : states.get(n.id)!,
       selected: options.selected === n.id,
       faded: near.size > 0 && !near.has(n.id),
     })),
@@ -219,7 +224,7 @@ export function boardModel(
       const lit = options.selected === t.from || options.selected === t.to;
       return {
         ...t,
-        live: byId.get(t.from)!.level >= COMPLETE_LEVEL,
+        live: !options.outline && byId.get(t.from)!.level >= COMPLETE_LEVEL,
         lit,
         faded: near.size > 0 && !lit,
       };
