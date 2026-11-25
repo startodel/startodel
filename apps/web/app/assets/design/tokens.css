@@ -1,11 +1,14 @@
 /*
  * Startodel design tokens. See docs/design/CONCEPT.md and ADR 0015.
  *
- * Every colour is declared once as light-dark(<light>, <dark>). The value resolves where it is
- * used, so any element with data-theme="light" or data-theme="dark" re-themes its whole subtree.
- * test/design-tokens.test.ts parses this file and checks the contrast of the pairs it documents.
+ * Every colour is declared once as light-dark(<light>, <dark>). Any element with
+ * data-theme="light" or data-theme="dark" re-themes its whole subtree. The tokens are declared on
+ * those elements as well as on the root: the production build lowers light-dark() to variables
+ * that resolve where a token is declared, so a nested theme needs its own declarations.
+ * test/design-system.test.ts parses this file and checks the contrast of the pairs it documents.
  */
-:root {
+:root,
+[data-theme] {
   /* Board: the layers a screen is built from, back to front. */
   --s-bg: light-dark(#f3f0e8, #0b100f);
   --s-surface: light-dark(#faf8f2, #121816);
@@ -152,7 +155,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :root {
+  :root,
+  [data-theme] {
     --s-dur-1: 0ms;
     --s-dur-2: 0ms;
     --s-dur-3: 0ms;
