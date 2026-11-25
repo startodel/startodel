@@ -4,6 +4,7 @@
 - [Deployment guide](deploy.md) — run the image with Docker or Dokploy.
 - [Domain glossary](CONTEXT.md) — the terms used in Startodel's learning model.
 - [Design concept](design/CONCEPT.md) — the visual identity, its metaphor and the rules that follow from it.
+- [Design migration plan](design/MIGRATION.md) — the order in which pages move onto the design system and what to delete afterwards.
 - [ADR 0001 — Record architecture decisions](adr/0001-record-architecture-decisions.md) — how and why this project records decisions.
 - [ADR 0002 — Database module placement](adr/0002-database-module-placement.md) — ownership of the schema, migrations, and client.
 - [ADR 0003 — PostgreSQL and Drizzle](adr/0003-postgresql-and-drizzle.md) — database, ORM, and driver choices.
@@ -20,4 +21,4 @@
 - [ADR 0014 — Practice Quiz scoring and UI Grill answers](adr/0014-review-practice-and-ui-answers.md) — review scoring, scheduling and read-only Grill answers.
 - [ADR 0015 — Public read layer](adr/0015-public-read-layer.md) — public projections, Forks and Terms Acceptance.
 - [ADR 0016 — Internationalisation](adr/0016-internationalisation.md) — Russian and English routes, language preferences and content authorship.
-- [ADR 0017 — Design system](adr/0017-design-system.md) — tokens, themes, fonts, component placement and the showcase.
+- [ADR 0017 — Design system](adr/0017-design-system.md) — tokens, themes, fonts, component placement, the behaviour layer and the showcase.
