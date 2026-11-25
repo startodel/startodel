@@ -1,6 +1,6 @@
 import { MasteryLevel, scheduleReview, Verdict } from "@startodel/core";
 import { and, eq, lte } from "drizzle-orm";
-import type { Database } from "./index.ts";
+import type { Connection } from "./index.ts";
 import { ownedId, referencedRow, type Transaction } from "./owned.ts";
 import { topics, topicMastery, reviewItems } from "./schema.ts";
 
@@ -42,7 +42,7 @@ export async function recordReview(
   )[0];
 }
 
-export function masteryForUser(db: Database, userId: string) {
+export function masteryForUser(db: Connection, userId: string) {
   return {
     setMastery(topicId: string, level: MasteryLevel, evidence?: string) {
       const values = { level: MasteryLevel.parse(level), evidence: evidence ?? null };

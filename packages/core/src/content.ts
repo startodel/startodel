@@ -90,3 +90,8 @@ export const LessonBlocks = z
     "Block ids must be unique within a Lesson",
   );
 export type LessonBlocks = z.infer<typeof LessonBlocks>;
+
+export const TrackSlug = z
+  .string()
+  .max(120)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);

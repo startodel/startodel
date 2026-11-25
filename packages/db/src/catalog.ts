@@ -1,3 +1,4 @@
+import { forkCount, forkedFrom } from "./public.ts";
 import { TopicSlug, type MasteryLevel } from "@startodel/core";
 import {
   and,
@@ -11,7 +12,7 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import type { Database } from "./index.ts";
+import type { Connection } from "./index.ts";
 import { ownedId, referencedRow, type Transaction } from "./owned.ts";
 import {
   lessonProgress,
@@ -23,7 +24,7 @@ import {
   trackTopics,
 } from "./schema.ts";
 
-function edgesFor(db: Database | Transaction, userId: string, ids?: string[]) {
+function edgesFor(db: Connection | Transaction, userId: string, ids?: string[]) {
   return db
     .select()
     .from(topicEdges)
@@ -38,7 +39,7 @@ function edgesFor(db: Database | Transaction, userId: string, ids?: string[]) {
 
 const level = sql<MasteryLevel>`coalesce(${topicMastery.level},0)`;
 
-function blockedTopics(db: Database | Transaction, userId: string, memberIds?: string[]) {
+function blockedTopics(db: Connection | Transaction, userId: string, memberIds?: string[]) {
   return db
     .selectDistinct({ id: topicEdges.toTopicId })
     .from(topicEdges)
@@ -66,7 +67,7 @@ async function idsBySlug(tx: Transaction, userId: string, slugs: string[]) {
 
 type TopicInput = { slug: string; title: string; summary?: string | null };
 
-export function catalogForUser(db: Database, userId: string) {
+export function catalogForUser(db: Connection, userId: string) {
   const owned = eq(topics.userId, userId);
   async function resolveTopic(tx: Transaction, ref: string) {
     const slug = eq(topics.slug, ref);
@@ -100,6 +101,24 @@ export function catalogForUser(db: Database, userId: string) {
   }
   return {
     upsertTopics,
+    async reuseOrCreateTopic(input: TopicInput) {
+      await db
+        .insert(topics)
+        .values({
+          userId,
+          slug: TopicSlug.parse(input.slug),
+          title: input.title,
+          summary: input.summary,
+        })
+        .onConflictDoNothing({ target: [topics.userId, topics.slug] });
+      const [row] = await db
+        .select({ id: topics.id })
+        .from(topics)
+        .where(and(owned, eq(topics.slug, input.slug)))
+        .for("update");
+      if (!row) throw new Error("Topic unavailable");
+      return row;
+    },
     async upsertTopic(input: TopicInput) {
       const [row] = await upsertTopics([input]);
       if (!row) throw new Error("Topic upsert did not return a Topic");
@@ -314,7 +333,7 @@ export function catalogForUser(db: Database, userId: string) {
       return db.transaction(
         async (tx) => {
           const [track] = await tx
-            .select()
+            .select({ ...getTableColumns(tracks), forkCount, forkedFrom })
             .from(tracks)
             .where(ownedId(tracks, userId, id));
           if (!track) return undefined;

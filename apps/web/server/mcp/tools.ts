@@ -1,12 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ProfileQuestionnaire, TrackSources } from "@startodel/core";
+import { ProfileQuestionnaire, TrackSlug, TrackSources } from "@startodel/core";
 import { z } from "zod";
 import { empty, id, registerTools, summary, title, type UserData } from "./register";
 import { registerCatalog } from "./catalog";
 import { registerPractice } from "./practice";
 import { guide, instructions, sections } from "./guide";
 
-export function createToolServer(data: UserData) {
+export function createToolServer(data: UserData, origin: string) {
   const server = new McpServer({ name: "Startodel", version: "1.0.0" }, { instructions });
   const register = registerTools(server);
   register(
@@ -36,7 +36,12 @@ export function createToolServer(data: UserData) {
     z.strictObject({ id }),
     ({ id }) => data.getTrack(id),
   );
-  const track = z.strictObject({ title, description: summary, sources: TrackSources.optional() });
+  const track = z.strictObject({
+    title,
+    slug: TrackSlug.optional(),
+    description: summary,
+    sources: TrackSources.optional(),
+  });
   register(
     "create_track",
     "Create a Track for a learning goal. Optionally supply a description and sources (one GitHub repo and up to 20 documentation links). Returns the Track.",
@@ -48,6 +53,27 @@ export function createToolServer(data: UserData) {
     "Revise a Track by ID. Supplied sources replace previous sources. Returns the updated Track.",
     track.partial().extend({ id }),
     ({ id, ...patch }) => data.updateTrack(id, patch),
+  );
+  register(
+    "set_track_visibility",
+    "Never publish or unpublish unless the user explicitly asked in this conversation. Publishing requires current Terms Acceptance in the Startodel app.",
+    z.strictObject({ trackId: id, public: z.boolean() }),
+    async ({ trackId, public: visible }) => {
+      try {
+        return await data.setTrackVisibility(trackId, visible);
+      } catch (error) {
+        if (error instanceof RangeError)
+          throw new RangeError(
+            error.message +
+              " Ask them to open " +
+              origin +
+              "/tracks/" +
+              trackId +
+              " and publish there once.",
+          );
+        throw error;
+      }
+    },
   );
   registerCatalog(register, data);
   registerPractice(register, data);

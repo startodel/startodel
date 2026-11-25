@@ -4,9 +4,10 @@ import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import { Graph, layout } from "@dagrejs/dagre";
 const props = defineProps<{
-  topics: { id: string; title: string; level: number }[];
+  topics: { id: string; title: string; level?: number }[];
   edges: { id: string; fromTopicId: string; toTopicId: string }[];
   selected?: string;
+  readOnly?: boolean;
 }>();
 defineEmits<{ select: [id: string] }>();
 const positions = computed(() => {
@@ -22,8 +23,8 @@ const positions = computed(() => {
       id: t.id,
       label: t.title,
       position: { x: x - 95, y: y - 32 },
-      class: "level-" + t.level,
-      ariaLabel: t.title + ", Mastery " + t.level,
+      class: props.readOnly ? undefined : "level-" + t.level,
+      ariaLabel: props.readOnly ? t.title : t.title + ", Mastery " + t.level,
       style: { width: "190px", height: "64px" },
     };
   });
@@ -47,10 +48,17 @@ const edges = computed(() =>
       fit-view-on-init
       :max-zoom="1.5"
       :min-zoom="0.1"
-      @node-click="$emit('select', $event.node.id)"
+      :elements-selectable="!readOnly"
+      @node-click="!readOnly && $emit('select', $event.node.id)"
     >
       <template #node-default="{ id, label }"
-        ><button class="node" :aria-pressed="selected === id" @click.stop="$emit('select', id)">
+        ><span v-if="readOnly" class="read-node">{{ label }}</span
+        ><button
+          v-else
+          class="node"
+          :aria-pressed="selected === id"
+          @click.stop="$emit('select', id)"
+        >
           {{ label }}</button
         ><Handle type="target" :position="Position.Top" /><Handle
           type="source"
@@ -70,10 +78,15 @@ const edges = computed(() =>
 }
 .canvas :deep(.vue-flow__node-default) {
   border-color: #75887b;
-  background: var(--level-color);
+  background: var(--level-color, white);
   border-radius: 8px;
   padding: 0;
   box-shadow: 0 2px 4px #24372814;
+}
+.read-node {
+  display: grid;
+  place-items: center;
+  height: 100%;
 }
 .node {
   border: 0;

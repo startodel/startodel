@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, isNull, sql } from "drizzle-orm";
-import type { Database } from "./index.ts";
+import type { Connection } from "./index.ts";
 import { mcpTokens } from "./schema.ts";
 
 const metadata = {
@@ -16,7 +16,7 @@ function hashToken(plaintext: string) {
   return createHash("sha256").update(plaintext).digest("hex");
 }
 
-export function tokensForUser(db: Database, userId: string) {
+export function tokensForUser(db: Connection, userId: string) {
   const owned = eq(mcpTokens.userId, userId);
   return {
     async create(name: string) {
@@ -46,7 +46,7 @@ export function tokensForUser(db: Database, userId: string) {
   };
 }
 
-export async function resolveMcpToken(db: Database, plaintext: string) {
+export async function resolveMcpToken(db: Connection, plaintext: string) {
   if (!/^sto_[A-Za-z0-9_-]{43}$/.test(plaintext)) return null;
   const [row] = await db
     .update(mcpTokens)

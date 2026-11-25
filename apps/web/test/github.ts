@@ -10,7 +10,7 @@ export async function localGitHub() {
   const users = [
     { id, login: "alice", name: "Alice", avatar_url: "https://example.org/alice.png" },
     { id: id - 1, login: "bob", name: "Bob", avatar_url: null },
-    ...["practice", "reader", "guide", "schedule"].map((login, i) => ({
+    ...["practice", "reader", "guide", "schedule", "publisher", "forker"].map((login, i) => ({
       id: id - 2 - i,
       login,
       name: login,

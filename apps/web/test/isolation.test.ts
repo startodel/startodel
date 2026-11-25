@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 
 import { createDatabase, forUser } from "@startodel/db";
 import { localGitHub } from "./github";
+import { publicHttpTests } from "./public-http";
 import { practiceHttpTests } from "./practice-http";
 import { learningMcpTests } from "./learning-mcp";
 
@@ -30,6 +31,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
     });
   }
 
+  publicHttpTests(() => ({ db, origin }), request, signIn);
   practiceHttpTests(() => ({ db, origin }), request, signIn);
 
   async function signIn(login: string) {
@@ -477,6 +479,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
         "record_review_result",
         "remove_edge",
         "set_mastery",
+        "set_track_visibility",
         "start_grill",
         "submit_grill_answer",
         "update_lesson",
@@ -495,14 +498,40 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       expect(await (await request("/api/profile", a)).json()).toEqual(updated);
       expect(await (await request("/api/profile", b)).json()).toEqual(profileB);
 
-      const own = await call("create_track", { title: "Databases" });
+      const own = await call("create_track", { title: "Databases", slug: "db-foundations" });
       expect(own).toMatchObject({ title: "Databases", userId: profileA.userId });
       expect(await call("get_track", { id: own.id })).toEqual(own);
       expect(await call("list_tracks")).toEqual([...before, own]);
       const renamed = await call("update_track", { id: own.id, title: "Database design" });
-      expect(renamed).toMatchObject({ id: own.id, title: "Database design" });
+      expect(renamed).toMatchObject({
+        id: own.id,
+        title: "Database design",
+        slug: "db-foundations",
+      });
       expect(await (await request("/api/tracks/" + own.id, a)).json()).toEqual(renamed);
+      expect(await call("update_track", { id: own.id, slug: "database-design" })).toMatchObject({
+        slug: "database-design",
+      });
+      const visibility = { trackId: own.id, public: true };
+      expect(await call("set_track_visibility", visibility, true)).toEqual({
+        error: `The user must accept the current Publishing rules and Terms of Use in the Startodel app before publishing. Ask them to open ${publicOrigin}/tracks/${own.id} and publish there once.`,
+      });
+      expect(
+        (
+          await request("/api/tracks/" + own.id + "/visibility", a, "PATCH", {
+            public: true,
+            acceptTerms: true,
+          })
+        ).status,
+      ).toBe(200);
+      for (const visible of [false, true, false])
+        expect(
+          await call("set_track_visibility", { ...visibility, public: visible }),
+        ).toMatchObject({ public: visible });
       for (const id of [foreign.id, crypto.randomUUID()]) {
+        expect(await call("set_track_visibility", { trackId: id, public: true }, true)).toEqual({
+          error: "Not found",
+        });
         expect(await call("get_track", { id }, true)).toEqual({ error: "Not found" });
         expect(await call("update_track", { id, title: "changed" }, true)).toEqual({
           error: "Not found",
@@ -511,6 +540,9 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       for (const [name, args] of [
         ["get_profile", { userId: profileB.userId }],
         ["create_track", { title: "   " }],
+        ["create_track", { title: "Invalid slug", slug: "a/b" }],
+        ["update_track", { id: own.id, slug: "Upper" }],
+        ["set_track_visibility", { ...visibility, acceptTerms: true }],
         ["update_profile", { goals: [7] }],
         ["get_track", { id: "invalid" }],
         ["update_track", { id: foreign.id, title: "other", ownerId: profileB.userId }],

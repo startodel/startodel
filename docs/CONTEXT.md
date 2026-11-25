@@ -37,6 +37,13 @@
 | Practice Quiz            | A review using all Quiz questions from a Topic’s Lessons. All correct gives a strong Verdict, at least half gives partial, and fewer than half gives weak.                                                                                  |
 | Next Step                | The current learning action shared by the dashboard and the external agent. In priority order, complete onboarding, build a first Track, continue a GrillSession, review due Topics, study an eligible Topic or plan when nothing is ready. |
 | Activity                 | A dated observation of a Lesson read, Quiz Attempt, Grill answer or judgment, review result or Mastery assessment. Progress shows the latest 30 observations.                                                                               |
+| Public Track             | A Track its Owner has published for anyone to read, including the Lessons of every member Topic.                                                                                                                                            |
+| Track Slug               | A lowercase, hyphen-separated URL name unique among one Owner’s Tracks. Renaming the Track preserves it.                                                                                                                                    |
+| Fork                     | A one-time copy of a Public Track into another Owner’s Topic Catalog, private on creation.                                                                                                                                                  |
+| Forked From              | The source attribution captured when a Fork is created, linked while the source is public.                                                                                                                                                  |
+| Public Profile           | A User’s public login, name, avatar and list of Public Tracks.                                                                                                                                                                              |
+| Terms Acceptance         | The version of the Publishing rules and Terms of Use a User accepted and the time of acceptance.                                                                                                                                            |
+| Public Fork              | A Fork its Owner has published. It appears in its source Track’s public list of Forks.                                                                                                                                                      |
 
 ## Mastery
 

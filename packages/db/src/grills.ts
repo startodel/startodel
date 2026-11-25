@@ -1,6 +1,6 @@
 import { AnswerSource, DEFAULT_GRILL_SIZE, type MasteryLevel, Verdict } from "@startodel/core";
 import { and, count, desc, eq, inArray, isNotNull, isNull, lte, max, sql } from "drizzle-orm";
-import type { Database } from "./index.ts";
+import type { Connection } from "./index.ts";
 import { recordReview } from "./mastery.ts";
 import { ownedId, referencedRow, referencedRows, type Transaction } from "./owned.ts";
 import {
@@ -15,12 +15,12 @@ import {
 
 type GrillInput = { trackId?: string | null; title: string; targetSize?: number };
 
-export function grillsForUser(db: Database, userId: string) {
+export function grillsForUser(db: Connection, userId: string) {
   const ownSessions = eq(grillSessions.userId, userId);
   const ownQuestions = eq(grillQuestions.userId, userId);
   const openSession = (id: string) =>
     and(ownedId(grillSessions, userId, id), eq(grillSessions.status, "open"));
-  async function finishGrill(connection: Database | Transaction, id: string) {
+  async function finishGrill(connection: Connection | Transaction, id: string) {
     return (
       await connection
         .update(grillSessions)
@@ -34,7 +34,7 @@ export function grillsForUser(db: Database, userId: string) {
     )[0];
   }
   function insertGrill(
-    connection: Database | Transaction,
+    connection: Connection | Transaction,
     { trackId, title, targetSize = DEFAULT_GRILL_SIZE }: GrillInput,
   ) {
     return connection

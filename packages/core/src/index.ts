@@ -18,6 +18,11 @@ export interface TopicEdge extends OwnedRecord {
   toTopicId: string;
 }
 export interface Track extends OwnedRecord {
+  slug: string;
+  public: boolean;
+  forkedFromTrackId: string | null;
+  forkedFromSlug: string | null;
+  forkedFromLogin: string | null;
   title: string;
   description: string | null;
   sources: TrackSources;
@@ -42,3 +47,5 @@ export interface ReviewItem extends OwnedRecord, ReviewSchedule {
   reason: string | null;
   lastReviewedAt: Date | null;
 }
+export * from "./legal.ts";
+export * from "./public.ts";

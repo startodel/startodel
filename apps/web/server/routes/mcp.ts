@@ -8,13 +8,13 @@ export default defineHandler(async ({ req }) => {
   const data = token && (await mcpData(token));
   if (!data) return new Response(null, { status: 401, headers: { "WWW-Authenticate": "Bearer" } });
   const origin = req.headers.get("origin");
+  const publicOrigin = new URL(useRuntimeConfig().oauth.github.redirectURL || req.url).origin;
   if (origin !== null) {
-    const callback = useRuntimeConfig().oauth.github.redirectURL;
-    if (origin !== new URL(callback || req.url).origin) return new Response(null, { status: 403 });
+    if (origin !== publicOrigin) return new Response(null, { status: 403 });
   }
   if (req.method !== "POST") return new Response(null, { status: 405, headers: { Allow: "POST" } });
 
-  const server = createToolServer(data);
+  const server = createToolServer(data, publicOrigin);
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,

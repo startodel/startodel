@@ -15,6 +15,8 @@ import {
   jsonb,
   smallint,
   bigint,
+  boolean,
+  index,
   pgTable,
   text,
   timestamp,
@@ -32,6 +34,8 @@ function rowColumns() {
 
 export const users = pgTable("users", {
   ...rowColumns(),
+  acceptedTermsVersion: text("accepted_terms_version"),
+  acceptedTermsAt: timestamp("accepted_terms_at", { withTimezone: true }),
   githubId: bigint("github_id", { mode: "bigint" }).notNull().unique(),
   login: text("login").notNull(),
   name: text("name"),
@@ -85,11 +89,26 @@ export const tracks = pgTable(
   "tracks",
   {
     ...ownedColumns(),
+    slug: text("slug").notNull(),
+    public: boolean("public").notNull().default(false),
+    forkedFromTrackId: uuid("forked_from_track_id").references((): AnyPgColumn => tracks.id, {
+      onDelete: "set null",
+    }),
+    forkedFromLogin: text("forked_from_login"),
+    forkedFromSlug: text("forked_from_slug"),
     title: text("title").notNull(),
     description: text("description"),
     sources: jsonb("sources").$type<TrackSources>().default({}).notNull(),
   },
-  (t) => [unique().on(t.userId, t.id)],
+  (t) => [
+    unique().on(t.userId, t.id),
+    unique().on(t.userId, t.slug),
+    check(
+      "tracks_slug_check",
+      sql`length(${t.slug}) <= 120 and ${t.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`,
+    ),
+    index("tracks_fork_source_idx").on(t.forkedFromTrackId),
+  ],
 );
 
 export const topics = pgTable(

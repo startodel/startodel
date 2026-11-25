@@ -53,16 +53,22 @@ try {
     deviceScaleFactor: 1,
   });
   const request = context.request;
-  const start = await request.get(origin + "/auth/github", { maxRedirects: 0 });
-  const state = new URL(start.headers().location).searchParams.get("state");
-  assert.equal(
-    (
-      await request.get(origin + "/auth/github?code=bob&state=" + encodeURIComponent(state), {
-        maxRedirects: 0,
-      })
-    ).status(),
-    302,
-  );
+  async function signIn(login) {
+    const start = await request.get(origin + "/auth/github", { maxRedirects: 0 });
+    const state = new URL(start.headers().location).searchParams.get("state");
+    assert.equal(
+      (
+        await request.get(
+          origin + "/auth/github?code=" + login + "&state=" + encodeURIComponent(state),
+          {
+            maxRedirects: 0,
+          },
+        )
+      ).status(),
+      302,
+    );
+  }
+  await signIn("bob");
   const me = await (await request.get(origin + "/api/me")).json();
   const owner = forUser(db, me.user.id);
   const page = await context.newPage();
@@ -79,7 +85,13 @@ try {
   );
   await mkdir(directory, { recursive: true });
   const shot = async (name) => {
-    if (!name.startsWith("pr9-") && !process.argv.includes("--include-pr8")) return;
+    if (process.argv.includes("--pr11") && !name.startsWith("pr11-")) return;
+    if (
+      !name.startsWith("pr11-") &&
+      !name.startsWith("pr9-") &&
+      !process.argv.includes("--include-pr8")
+    )
+      return;
     await page.screenshot({
       path: directory + "/" + name + ".png",
       fullPage: true,
@@ -254,6 +266,44 @@ try {
   await page.getByLabel("Sort by").selectOption("mastery");
   await page.getByRole("heading", { name: "Recent activity" }).waitFor();
   await shot("pr9-progress");
+  if (process.argv.includes("--pr11")) {
+    await page.goto(origin + "/tracks/" + track.id);
+    await page.getByRole("button", { name: "Make public" }).click();
+    await page.getByRole("dialog").waitFor();
+    await shot("pr11-publish-dialog");
+    await page
+      .getByRole("checkbox", { name: "I agree to the Publishing rules and Terms of Use" })
+      .check();
+    await page.getByRole("button", { name: "Publish", exact: true }).click();
+    await page.getByRole("button", { name: "Copy public URL" }).waitFor();
+    const publicPath = "/u/bob/" + track.slug;
+    await page.goto(origin + "/terms?lang=en");
+    await page.getByRole("heading", { name: "Terms of Use", exact: true }).waitFor();
+    await shot("pr11-terms");
+    await context.clearCookies();
+    await page.goto(origin + "/u/bob");
+    await page.getByRole("link", { name: track.title }).waitFor();
+    await shot("pr11-public-profile");
+    await page.getByRole("link", { name: track.title }).click();
+    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await shot("pr11-public-track");
+    await page.getByRole("link", { name: lesson.title }).click();
+    await page.getByText("Fork this track to practice").waitFor();
+    assert.equal(await page.getByText("Show solution", { exact: true }).count(), 0);
+    await shot("pr11-public-lesson");
+    await signIn("forker");
+    await page.goto(origin + publicPath);
+    await page.getByRole("button", { name: "Fork", exact: true }).click();
+    await page.waitForURL("**/tracks/*");
+    await page.getByText("Forked from", { exact: false }).waitFor();
+    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await shot("pr11-fork-result");
+    await signIn("bob");
+    await page.goto(origin + "/tracks/" + track.id);
+    await page.getByText("1 fork", { exact: true }).waitFor();
+    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await shot("pr11-track-visibility");
+  }
   assert.deepEqual(errors, []);
 } finally {
   await browser?.close();

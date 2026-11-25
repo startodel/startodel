@@ -1,6 +1,11 @@
 <script setup lang="ts">
-const { user, clear } = useUserSession();
+import { isPublicPage } from "./utils/public-pages";
+const { user, clear, fetch: fetchSession } = useUserSession();
 const route = useRoute();
+usePublicOrigin();
+onMounted(() => {
+  if (isPublicPage(route.path)) void fetchSession();
+});
 useHead({
   htmlAttrs: { lang: "en" },
   titleTemplate: (title) => (title ? title + " · Startodel" : "Startodel"),
@@ -31,6 +36,11 @@ async function logout() {
     </div>
   </header>
   <NuxtPage :page-key="route.path" />
+  <footer class="bar">
+    <nav aria-label="Legal">
+      <NuxtLink to="/terms">Terms</NuxtLink><NuxtLink to="/rules">Publishing rules</NuxtLink>
+    </nav>
+  </footer>
 </template>
 <style>
 :root {
