@@ -18,3 +18,5 @@ Start with `get_guide` to find the next action for this learner. Read a section 
 - [Continue a GrillSession](08-grill-session.md)
 - [Review due Topics](09-review-loop.md)
 - [Rules for external agents](10-rules.md)
+
+The installable agent skills are generated from these files. Each skill combines its workflow sections with the shared rules.

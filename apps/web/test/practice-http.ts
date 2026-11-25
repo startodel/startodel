@@ -54,9 +54,15 @@ export function practiceHttpTests(
       expect((await step("agent-workflow")).suggestions[0].id).toBe(topic.id);
       await data.recordReviewResult(topic.id, "weak");
       await env().db.$client.query("update review_items set due_at=now() where user_id=$1", [id]);
-      await step("review-loop");
+      expect(await step("review-loop")).toMatchObject({
+        label: "Review due topics",
+        why: "1 topic is due for review.",
+      });
       const grill = (await data.startGrill({ title: "Recall" }))!;
-      expect((await step("grill-session")).href).toBe("/grills/" + grill.id);
+      expect(await step("grill-session")).toMatchObject({
+        href: "/grills/" + grill.id,
+        label: "Continue grill session",
+      });
       const q = (await data.addGrillQuestion(grill.id, { prompt: "Explain delivery" }))!;
       await step("grill-session");
       await data.answerGrillQuestion(q.id, "at least once", "ui");

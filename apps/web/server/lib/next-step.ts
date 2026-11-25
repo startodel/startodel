@@ -34,7 +34,7 @@ export async function nextStep(data: ReturnType<typeof forUser>) {
       state,
       id: "grill-session",
       why: `Continue “${active.title}” (${active.id}): ${active.questionCount - active.answered} unanswered, ${active.answered - active.judged} answered and awaiting a Verdict.`,
-      label: "Continue GrillSession",
+      label: "Continue grill session",
       href: "/grills/" + active.id,
       title: active.title,
       unanswered: active.questionCount - active.answered,
@@ -44,8 +44,8 @@ export async function nextStep(data: ReturnType<typeof forUser>) {
     return {
       state,
       id: "review-loop",
-      why: `${dueReviewsCount} ReviewItems are due.`,
-      label: "Go to reviews",
+      why: `${dueReviewsCount} ${dueReviewsCount === 1 ? "topic is" : "topics are"} due for review.`,
+      label: "Review due topics",
       href: "/reviews",
     };
   const suggestions = await data.suggestedTopics(15);

@@ -1,3 +1,5 @@
+import { readdir, readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { randomInt, randomUUID } from "node:crypto";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -42,6 +44,18 @@ export function learningMcpTests(environment: () => { origin: string; db: Databa
       await environment().db.$client.query("delete from users where id = any($1::uuid[])", [
         owners.splice(0),
       ]);
+    });
+
+    test("every Tool named in an installable skill is available over MCP", async () => {
+      const { client } = await connect();
+      const names = (await client.listTools()).tools.map((tool) => tool.name);
+      const skills = "packages/skills/skills";
+      for (const folder of await readdir(skills)) {
+        const skill = await readFile(join(skills, folder, "SKILL.md"), "utf8");
+        const references = skill.match(/\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/g) ?? [];
+        expect(references).toContain("get_guide");
+        for (const reference of references) expect(names, folder).toContain(reference);
+      }
     });
 
     test("guide resources, questionnaire, graph, Lessons, assessment and Leitner review form a complete learning loop", async () => {

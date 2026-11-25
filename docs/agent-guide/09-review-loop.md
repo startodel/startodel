@@ -2,6 +2,7 @@
 id: review-loop
 title: Review due Topics
 order: 9
+skillDescription: Use when Topics are due for review. Guide practice, record the result and assess demonstrated Mastery.
 ---
 
 # Review due Topics

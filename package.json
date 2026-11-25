@@ -5,13 +5,15 @@
   "scripts": {
     "dev": "pnpm --filter @startodel/web dev",
     "build": "pnpm --filter @startodel/web build",
-    "check": "pnpm guide:check && pnpm --filter @startodel/web typecheck && vp check",
+    "check": "pnpm guide:check && pnpm skills:check && pnpm --filter @startodel/web typecheck && vp check",
     "test": "vp test run",
     "db:generate": "pnpm --filter @startodel/db db:generate",
     "db:migrate": "pnpm --filter @startodel/db db:migrate",
     "db:studio": "pnpm --filter @startodel/db db:studio",
     "guide:build": "node scripts/guide.mjs",
-    "guide:check": "node scripts/guide.mjs --check"
+    "guide:check": "node scripts/guide.mjs --check",
+    "skills:build": "node scripts/skills.mjs",
+    "skills:check": "node scripts/skills.mjs --check"
   },
   "devDependencies": {
     "vite-plus": "1.8.0"

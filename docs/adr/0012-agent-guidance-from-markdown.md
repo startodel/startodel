@@ -19,3 +19,9 @@ Expose the sections as named Markdown resources under `startodel://guide/<id>` u
 ## Consequences
 
 The runtime serves the same guidance from a production image or a checkout. It needs no filesystem access to the documentation. Adding a Tool requires updating the guide and verifying isolation over HTTP. The generated artifact makes guide changes reviewable and adds a freshness check to the contributor workflow.
+
+## Amendment — installable agent skills
+
+Generate the installable workflows in `packages/skills/skills/` from the same Markdown as the MCP resources. Each entry in `scripts/skills.mjs` selects a primary section and any supporting sections. The primary section supplies the skill description through its `skillDescription` field. Every workflow ends with the shared rules.
+
+Commit the output of `pnpm guide:build && pnpm skills:build` with the source. CI runs `skills:check` through `pnpm check` and reports edited, missing and extra files.
