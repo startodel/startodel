@@ -59,6 +59,20 @@ const pairs: [foreground: string, background: string, minimum: number][] = [
   ]),
 ];
 
+test("light-dark() holds colours only, so a token works without the production build", () => {
+  // A browser accepts nothing but colours here. The production build lowers the function to plain
+  // variables and so hides the mistake: the token then works when deployed and not in development.
+  const colour = /^(#[0-9a-f]{3,8}|rgb\([^()]*\)|transparent)$/;
+  const declarations = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const wrong = [...declarations.matchAll(/light-dark\(((?:[^()]|\([^()]*\))*)\)/g)]
+    .map(([, body]) => body!)
+    .filter((body) => {
+      const parts = body.split(/,(?![^(]*\))/).map((part) => part.trim());
+      return parts.length !== 2 || !parts.every((part) => colour.test(part));
+    });
+  expect(wrong).toEqual([]);
+});
+
 test("design tokens define a light and a dark value for every colour pair in use", () => {
   const missing = pairs.flatMap(([a, b]) => [a, b]).filter((name) => !tokens.has(name));
   expect([...new Set(missing)]).toEqual([]);
