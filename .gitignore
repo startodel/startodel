@@ -1,0 +1,9 @@
+node_modules/
+.nuxt/
+.output/
+.vite/
+.vite-plus/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
