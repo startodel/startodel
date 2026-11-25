@@ -200,7 +200,7 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
       alice.markLessonRead(first.id),
       alice.markLessonRead(second.id),
     ]);
-    expect(reads.map((r) => r?.mastery).sort()).toEqual([0, 1]);
+    expect(reads.map((r) => r?.mastery)).toEqual(expect.arrayContaining([0, 1]));
     const attempt = (id: string, answer: number) =>
       alice.recordQuizAttempt(id, "check", [answer], "ui");
     expect(await attempt(first.id, 0)).toMatchObject({ mastery: 1 });

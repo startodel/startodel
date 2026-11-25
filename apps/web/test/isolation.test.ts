@@ -100,10 +100,19 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
     expect(await (await request("/login")).text()).toContain("Sign in with GitHub");
     const cookie = await signIn("alice");
     const page = await request("/", cookie);
-    expect(page.status).toBe(200);
-    const html = await page.text();
+    expect(page.headers.get("location")).toBe("/onboarding");
+    for (const path of [
+      "/settings",
+      "/tracks/" + crypto.randomUUID(),
+      "/lessons/" + crypto.randomUUID(),
+      "/login",
+    ]) {
+      expect((await request(path, cookie)).headers.get("location"), path).toBe("/onboarding");
+    }
+    expect((await request("/onboarding", cookie)).status).toBe(200);
+    const html = await (await request("/onboarding", cookie)).text();
     expect(html).toContain("Alice");
-    expect(html).toContain("MCP tokens");
+    expect(html).toContain("stack");
     const { user } = await (await request("/api/_auth/session", cookie)).json();
     expect(user).toEqual({
       id: expect.any(String),
@@ -168,6 +177,104 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       200,
     );
     expect((await request(`/api/tracks/${own.id}`, a, "DELETE")).status).toBe(204);
+  });
+
+  test("learning pages and writes bind each Session to its own Profile, Track, Topic and Lesson", async () => {
+    const a = await signIn("alice");
+    const b = await signIn("bob");
+    const me = await (await request("/api/me", b)).json();
+    expect(me).toMatchObject({ user: { login: "bob" }, onboarded: false });
+    const bob = forUser(db, me.user.id);
+    const track = await bob.createTrack("Private learning");
+    const topic = await bob.upsertTopic({ slug: "queues", title: "Queues" });
+    await bob.attachTopicToTrack(track.id, topic.id, 0);
+    const lesson = (await bob.createLesson({
+      topicId: topic.id,
+      title: "Delivery",
+      blocks: [
+        {
+          type: "quiz",
+          id: "q",
+          questions: [{ prompt: "Pick", options: ["A", "B"], correctIndex: 1 }],
+        },
+      ],
+    }))!;
+    const questionnaire = { stack: ["Rust"], goals: ["Learn"], experience: "junior" };
+    const routes = (trackId: string, topicId: string, lessonId: string) =>
+      [
+        ["/api/tracks/" + trackId + "/graph", "GET"],
+        ["/api/topics/" + topicId, "GET"],
+        ["/api/lessons/" + lessonId, "GET"],
+        ["/api/lessons/" + lessonId + "/read", "POST"],
+        ["/api/lessons/" + lessonId + "/quiz/q", "POST", { answers: [1] }],
+      ] as const;
+    const own = routes(track.id, topic.id, lesson.id);
+    for (const [path, method, body] of [
+      ...own,
+      ["/api/me", "GET"],
+      ["/api/dashboard", "GET"],
+      ["/api/profile/questionnaire", "PUT", questionnaire],
+    ] as const) {
+      expect((await request(path, "", method, body)).status, path).toBe(401);
+    }
+    const missing = crypto.randomUUID();
+    for (const [path, method, body] of [...own, ...routes(missing, missing, missing)]) {
+      expect((await request(path, a, method, body)).status, path).toBe(404);
+    }
+    for (const path of ["/api/me", "/api/dashboard"]) {
+      expect((await request(path + "?userId=" + me.user.id, a)).status).toBe(400);
+    }
+    expect((await (await request("/api/me", a)).json()).user.id).not.toBe(me.user.id);
+    const before = await bob.getProfile();
+    for (const patch of [
+      { userId: me.user.id },
+      { stack: [] },
+      { goals: [" "] },
+      { experience: "other" },
+      { notes: "extra" },
+    ]) {
+      expect(
+        (await request("/api/profile/questionnaire", a, "PUT", { ...questionnaire, ...patch }))
+          .status,
+      ).toBe(400);
+    }
+    expect((await request("/api/profile/questionnaire", a, "PUT", questionnaire)).status).toBe(200);
+    expect(await bob.getProfile()).toEqual(before);
+    expect(await (await request("/api/me", a)).json()).toMatchObject({
+      onboarded: true,
+      profile: { ...questionnaire, onboardedAt: expect.any(String) },
+    });
+    expect((await request("/", a)).status).toBe(200);
+    expect((await request("/onboarding/connect", a)).status).toBe(200);
+    expect((await (await request("/api/dashboard", a)).json()).tracks).not.toContainEqual(
+      expect.objectContaining({ trackId: track.id }),
+    );
+    expect(await (await request(own[0][0], b)).json()).toMatchObject({
+      topics: [{ id: topic.id, level: 0 }],
+    });
+    expect(await (await request(own[1][0], b)).json()).toMatchObject({
+      topic: { id: topic.id },
+      lessons: [{ id: lesson.id, readAt: null }],
+      prerequisites: [],
+      dependents: [],
+    });
+    expect(await (await request(own[2][0], b)).json()).toMatchObject({
+      lesson: { id: lesson.id },
+      readAt: null,
+      mastery: 0,
+    });
+    expect(await (await request(own[3][0], b, "POST")).json()).toMatchObject({ mastery: 1 });
+    expect((await request(own[4][0], b, "POST", { answers: [20] })).status).toBe(400);
+    expect(await (await request(own[4][0], b, "POST", { answers: [1] })).json()).toEqual({
+      correct: 1,
+      total: 1,
+      perQuestion: [true],
+      mastery: 2,
+    });
+    expect((await bob.getProgress()).recentQuizAttempts[0]).toMatchObject({ source: "ui" });
+    expect((await (await request("/api/dashboard", b)).json()).tracks).toContainEqual(
+      expect.objectContaining({ trackId: track.id, total: 1, completed: 1, percent: 100 }),
+    );
   });
 
   async function issueToken(cookie: string) {

@@ -133,6 +133,27 @@ export function lessonsForUser(db: Database, userId: string) {
           .where(ownedId(lessons, userId, id))
       )[0];
     },
+    async getLessonDetails(id: string) {
+      const [row] = await db
+        .select({
+          lesson: lessons,
+          topic: { id: topics.id, title: topics.title },
+          readAt: lessonProgress.readAt,
+          mastery: sql<number>`coalesce(${topicMastery.level},0)`,
+        })
+        .from(lessons)
+        .innerJoin(topics, and(eq(topics.userId, userId), eq(topics.id, lessons.topicId)))
+        .leftJoin(
+          lessonProgress,
+          and(eq(lessonProgress.userId, userId), eq(lessonProgress.lessonId, lessons.id)),
+        )
+        .leftJoin(
+          topicMastery,
+          and(eq(topicMastery.userId, userId), eq(topicMastery.topicId, topics.id)),
+        )
+        .where(ownedId(lessons, userId, id));
+      return row;
+    },
     listLessonSummaries(topicId: string) {
       return db
         .select({

@@ -50,14 +50,8 @@ export function registerCatalog(register: Register, data: UserData) {
       .strictObject({ slug: TopicSlug.optional(), id: id.optional() })
       .refine((r) => (r.slug !== undefined) !== (r.id !== undefined), "Supply a slug or an ID"),
     async ({ slug, id }) => {
-      const topic = slug ? await data.getTopicBySlug(slug) : await data.getTopic(id!);
-      if (!topic) return undefined;
-      const [assessment, lessons, related] = await Promise.all([
-        data.getMastery(topic.id),
-        data.listLessonSummaries(topic.id),
-        data.relatedTopics(topic.id),
-      ]);
-      return { topic, mastery: assessment ?? { level: 0, evidence: null }, lessons, ...related };
+      const topicId = id ?? (await data.getTopicBySlug(slug!))?.id;
+      if (topicId) return data.getTopicDetails(topicId);
     },
   );
   register(
