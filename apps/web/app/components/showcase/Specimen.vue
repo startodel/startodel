@@ -20,7 +20,7 @@ withDefaults(
       class="specimen__stage"
       :class="[
         'specimen__stage--' + layout,
-        'specimen__stage--' + surface,
+        'specimen__stage--on-' + surface,
         { 's-grid': surface === 'grid', 'specimen__stage--flush': flush },
       ]"
     >
@@ -58,10 +58,10 @@ withDefaults(
 .specimen__stage {
   min-width: 0;
   padding: var(--s-6);
-  background: var(--s-bg);
+  background-color: var(--s-bg);
 }
-.specimen__stage--surface {
-  background: var(--s-surface);
+.specimen__stage--on-surface {
+  background-color: var(--s-surface);
 }
 .specimen__stage--flush {
   padding: 0;

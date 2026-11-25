@@ -1,11 +1,24 @@
 <script setup lang="ts">
 import type { TableColumn } from "../../components/ui/Table.vue";
+import type { QuizResult } from "../../components/ui/Quiz.vue";
+import { topicStates } from "../../components/ui/board";
 import {
+  type SampleBlock,
+  sampleBoxes,
   sampleCode,
+  sampleEdges,
+  sampleLesson,
+  sampleMasteryCounts,
   sampleNav,
   sampleNavTracks,
+  sampleQuestions,
+  sampleReviews,
+  sampleTopicLessons,
   sampleTopics,
+  sampleTracks,
   sampleUser,
+  sampleWeek,
+  screenPath,
 } from "../../components/showcase/sample";
 definePageMeta({ middleware: "design" });
 useHead({ title: "Design components" });
@@ -19,6 +32,10 @@ const sections = [
   { id: "data", title: "Data" },
   { id: "code", title: "Code and copy" },
   { id: "shell", title: "App shell" },
+  { id: "board", title: "Track board" },
+  { id: "lesson", title: "Lesson" },
+  { id: "grill", title: "Grill and review" },
+  { id: "public", title: "Progress and public" },
 ];
 const { push: notify } = useToast();
 const text = ref("PostgreSQL");
@@ -27,12 +44,35 @@ const answer = ref(
   "A timer callback is queued as a task once its delay elapses. It runs only after the current task and all microtasks finish.",
 );
 const grade = ref("senior");
+const none = ref<string>();
+const grades = [
+  { value: "middle", label: "Middle" },
+  { value: "senior", label: "Senior" },
+  { value: "staff", label: "Staff" },
+];
+const gradeCards = [
+  {
+    value: "middle",
+    label: "Middle",
+    hint: "Three to five years. Knows the stack, not yet its edges.",
+  },
+  {
+    value: "senior",
+    label: "Senior",
+    hint: "Owns systems. Wants the internals and the trade-offs.",
+  },
+  { value: "staff", label: "Staff", hint: "Works across teams. Wants breadth and judgment." },
+];
+const languages = ["TypeScript", "Go", "Rust", "Python", "Kotlin", "Elixir", "C#"];
+const language = ref("Go");
+const noLanguage = ref<string>();
+const agreed = ref(true);
+const publicTrack = ref(true);
 const goal = ref<string | null>("depth");
 const stack = ref<string[]>(["TypeScript", "PostgreSQL"]);
 const chips = ref(["TypeScript", "Vue", "PostgreSQL"]);
 const tab = ref("lessons");
 const segment = ref<"board" | "list">("board");
-const locale = ref("en");
 const page = ref(3);
 const modal = ref(false);
 const collapsed = ref(true);
@@ -46,6 +86,69 @@ const columns: TableColumn<Topic>[] = [
   { key: "lessons", label: "Lessons", align: "right", sortable: true },
   { key: "due", label: "Next review" },
 ];
+const step = ref("goals");
+const steps = [
+  { id: "stack", label: "Stack", hint: "What you work with" },
+  { id: "goals", label: "Goals", hint: "What you want next" },
+  { id: "grade", label: "Grade", hint: "Where you stand" },
+];
+const hintOpen = ref(true);
+
+const boardTopics = sampleTopics.slice(0, 8);
+const boardIds = new Set(boardTopics.map((t) => t.id));
+const boardEdges = sampleEdges.filter((e) => boardIds.has(e.from) && boardIds.has(e.to));
+const states = topicStates(sampleTopics, sampleEdges);
+const selectedTopic = ref<string | undefined>("t04");
+const partOf = (level: number) => sampleTopics.find((t) => t.level === level)!;
+const blockedTopic = sampleTopics.find((t) => states.get(t.id) === "blocked")!;
+const readyTopic = sampleTopics.find((t) => states.get(t.id) === "ready")!;
+
+function blockOf<K extends SampleBlock["type"]>(type: K) {
+  return sampleLesson.blocks.find((b) => b.type === type) as Extract<SampleBlock, { type: K }>;
+}
+const quiz = blockOf("quiz");
+const exercise = blockOf("exercise");
+const { title: linkTitle, url: linkUrl, note: linkNote } = blockOf("link");
+const linkBlock = { title: linkTitle, url: linkUrl, note: linkNote };
+const { title: videoTitle, url: videoUrl, note: videoNote } = blockOf("video");
+const videoBlock = { title: videoTitle, url: videoUrl, note: videoNote };
+const theoryMarkdown = blockOf("theory").markdown;
+const calloutMarkdown = blockOf("callout").markdown;
+const quizQuestions = quiz.questions;
+const { prompt: exercisePrompt, hints: exerciseHints, solution: exerciseSolution } = exercise;
+const grillPrompt = sampleQuestions[10]!.prompt;
+const reviewCards = sampleReviews.slice(0, 2);
+const boxCounts = sampleBoxes.map((b) => b.count);
+const quizOpen = ref<(number | undefined)[]>([1]);
+const quizDone = ref<(number | undefined)[]>(quiz.questions.map((q, i) => (i ? 0 : q.correct)));
+const quizResult: QuizResult = {
+  perQuestion: quiz.questions.map((q, i) => quizDone.value[i] === q.correct),
+  feedback: quiz.questions.map((q) => ({ correctIndex: q.correct, explanation: q.explanation })),
+};
+const solution = ref<string>();
+const lessons = sampleTopicLessons.map((l, i) => ({
+  id: l.tag,
+  title: l.title,
+  blocks: l.blocks,
+  minutes: l.minutes,
+  read: i < 2,
+  to: screenPath("lesson"),
+}));
+
+const pads = sampleQuestions.map((q, i) => ({
+  id: q.tag,
+  state: i < 9 ? q.verdict : i === 9 ? ("pending" as const) : ("none" as const),
+}));
+const pad = ref(5);
+const draft = ref("");
+const week = sampleWeek.map((d) => ({
+  label: d.day,
+  date: String(d.date),
+  count: d.count,
+  today: d.today,
+}));
+const forked = ref(false);
+
 const token = "stm_4f1c9a7be2d04c6f8a3b5d1e7c9f2a6b";
 const prompt =
   "Use the Startodel MCP server. Read my Profile, then create a Track for my goal and write the first Lesson.";
@@ -84,7 +187,7 @@ const prompt =
         <UiButton loading>Checking</UiButton>
         <UiButton variant="primary" disabled>Submit answer</UiButton>
         <UiButton disabled>Reveal solution</UiButton>
-        <UiButton href="https://github.com/hmbanan666/startodel" icon="github" icon-right="external"
+        <UiButton href="https://github.com/startodel/startodel" icon="github" icon-right="external"
           >Link button</UiButton
         >
       </ShowcaseSpecimen>
@@ -103,58 +206,201 @@ const prompt =
         >Labels sit above fields. Errors say what happened and how to fix it. Anything the learner
         writes at length is set in the reading face.</template
       >
-      <ShowcaseSpecimen label="Field and Input" layout="grid">
-        <UiField label="Stack" for="f-stack" hint="Languages and tools you use at work.">
-          <UiInput id="f-stack" v-model="text" />
+      <ShowcaseSpecimen
+        label="Field and Input"
+        note="A Field wires its label, hint and error to the control inside it"
+        layout="grid"
+      >
+        <UiField label="Stack" hint="Languages and tools you use at work.">
+          <UiInput v-model="text" />
         </UiField>
-        <UiField label="Search topics" for="f-search" optional>
-          <UiInput id="f-search" v-model="empty" icon="search" placeholder="Event loop" />
+        <UiField label="Search topics" optional>
+          <UiInput v-model="empty" type="search" icon="search" placeholder="Event loop" />
+        </UiField>
+        <UiField label="Token name" error="Enter a name so you can tell tokens apart.">
+          <UiInput v-model="empty" placeholder="Laptop" />
+        </UiField>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Input · states" layout="grid">
+        <UiField label="Empty" hint="The placeholder is an example, never the label.">
+          <UiInput v-model="empty" placeholder="TypeScript, Go, Rust" />
+        </UiField>
+        <UiField label="Filled">
+          <UiInput v-model="text" />
+        </UiField>
+        <UiField label="Invalid, filled" error="A Track with this Track Slug already exists.">
+          <UiInput model-value="postgres-internals" mono />
+        </UiField>
+        <UiField label="Read only" hint="Can be selected and copied.">
+          <UiInput model-value="https://startodel.ru/mcp" mono readonly />
+        </UiField>
+        <UiField label="Disabled" hint="Set by GitHub.">
+          <UiInput model-value="hmbanan666" disabled />
+        </UiField>
+        <UiField label="Disabled, empty">
+          <UiInput model-value="" placeholder="Not available yet" disabled />
+        </UiField>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Input · sizes" layout="grid">
+        <UiField label="Small">
+          <UiInput v-model="text" size="sm" icon="search" />
+        </UiField>
+        <UiField label="Medium">
+          <UiInput v-model="text" icon="search" />
+        </UiField>
+        <UiField label="Large">
+          <UiInput v-model="text" size="lg" icon="search" />
+        </UiField>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        label="Input · icon and trailing action"
+        note="A click on the icon or the padding lands in the field"
+        layout="grid"
+      >
+        <UiField label="Server URL">
+          <UiInput model-value="https://startodel.ru/mcp" icon="link" mono readonly>
+            <template #trailing>
+              <UiButton size="sm" variant="ghost" icon="copy" label="Copy" />
+            </template>
+          </UiInput>
+        </UiField>
+        <UiField label="Add a technology" hint="Enter or a comma adds it.">
+          <UiTagInput placeholder="Elixir" @add="notify({ title: 'Added ' + $event.join(', ') })" />
+        </UiField>
+        <UiField label="Filter" error="Nothing matches. Try a shorter word.">
+          <UiInput model-value="evnt loop" icon="search">
+            <template #trailing>
+              <UiButton size="sm" variant="ghost" icon="x" label="Clear" />
+            </template>
+          </UiInput>
+        </UiField>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        label="Field · long label and long error"
+        note="Text wraps. The control never moves sideways"
+        layout="grid"
+      >
+        <UiField
+          label="The name other people will see on your Public Profile"
+          optional
+          hint="Up to 60 characters. Shown next to every Public Track you publish, so pick one you are comfortable with."
+        >
+          <UiInput v-model="text" />
         </UiField>
         <UiField
-          label="Token name"
-          for="f-error"
-          error="Enter a name so you can tell tokens apart."
+          label="Track Slug"
+          error="Use lowercase Latin letters, digits and hyphens only. The address must start with a letter and be at most 60 characters long."
         >
-          <UiInput id="f-error" v-model="empty" invalid />
+          <UiInput model-value="Postgres Internals!" mono />
         </UiField>
-        <UiField label="Server URL" for="f-mono">
-          <UiInput id="f-mono" model-value="https://startodel.ru/mcp" mono readonly />
-        </UiField>
-        <UiField label="Disabled" for="f-disabled">
-          <UiInput id="f-disabled" model-value="Cannot be changed" disabled />
-        </UiField>
-        <UiField label="Large" for="f-lg">
-          <UiInput id="f-lg" v-model="text" size="lg" />
+        <UiField label="Without a note">
+          <UiInput v-model="text" />
         </UiField>
       </ShowcaseSpecimen>
-      <ShowcaseSpecimen label="Textarea" note="Answers are written in Literata" layout="stack">
-        <UiField label="Your answer" for="f-answer" hint="Explain it as you would to a colleague.">
-          <UiTextarea id="f-answer" v-model="answer" :rows="4" />
+      <ShowcaseSpecimen
+        label="Form row"
+        note="Fields with and without notes share a baseline"
+        layout="block"
+      >
+        <form class="s-form-row" @submit.prevent>
+          <UiField label="Token name" hint="For example, the machine it lives on.">
+            <UiInput v-model="text" name="token-name" autocomplete="off" />
+          </UiField>
+          <UiField label="Grade">
+            <UiSelect v-model="grade" :options="grades" />
+          </UiField>
+          <UiButton class="s-form-row__action" variant="primary" icon="plus">Create token</UiButton>
+        </form>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Textarea" note="Answers are written in Literata" layout="grid">
+        <UiField label="Your answer" hint="Explain it as you would to a colleague.">
+          <UiTextarea v-model="answer" :rows="4" />
+        </UiField>
+        <UiField label="Empty">
+          <UiTextarea v-model="empty" :rows="4" placeholder="Start with the short version." />
+        </UiField>
+        <UiField label="Invalid" error="Write an answer before you submit.">
+          <UiTextarea v-model="empty" :rows="4" />
+        </UiField>
+        <UiField label="Read only" hint="Submitted answers cannot be edited.">
+          <UiTextarea :model-value="answer" :rows="4" readonly />
+        </UiField>
+        <UiField label="Disabled">
+          <UiTextarea :model-value="answer" :rows="4" disabled />
         </UiField>
       </ShowcaseSpecimen>
-      <ShowcaseSpecimen label="Select" layout="grid">
-        <UiField label="Grade" for="f-grade">
-          <UiSelect
-            id="f-grade"
-            v-model="grade"
-            :options="[
-              { value: 'middle', label: 'Middle' },
-              { value: 'senior', label: 'Senior' },
-              { value: 'staff', label: 'Staff' },
-            ]"
-          />
+      <ShowcaseSpecimen label="Select" note="Typeahead, arrow keys, Home and End" layout="grid">
+        <UiField label="Grade" hint="Sets the depth of new Lessons.">
+          <UiSelect v-model="grade" :options="grades" />
         </UiField>
-        <UiField label="Small" for="f-grade-sm">
-          <UiSelect
-            id="f-grade-sm"
-            v-model="grade"
-            size="sm"
-            :options="[
-              { value: 'middle', label: 'Middle' },
-              { value: 'senior', label: 'Senior' },
-            ]"
-          />
+        <UiField label="Nothing chosen">
+          <UiSelect v-model="none" :options="grades" placeholder="Choose a grade" />
         </UiField>
+        <UiField label="Invalid" error="Choose a grade to continue.">
+          <UiSelect v-model="none" :options="grades" placeholder="Choose a grade" />
+        </UiField>
+        <UiField label="Disabled">
+          <UiSelect v-model="grade" :options="grades" disabled />
+        </UiField>
+        <UiField label="Small">
+          <UiSelect v-model="grade" size="sm" :options="grades" />
+        </UiField>
+        <UiField label="Large">
+          <UiSelect v-model="grade" size="lg" :options="grades" />
+        </UiField>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Combobox" note="Filters as you type" layout="grid">
+        <UiField label="Main language" hint="Pick one or type to filter.">
+          <UiCombobox v-model="language" :options="languages" placeholder="TypeScript" />
+        </UiField>
+        <UiField label="Invalid" error="Choose a language from the list.">
+          <UiCombobox v-model="noLanguage" :options="languages" placeholder="TypeScript" />
+        </UiField>
+        <UiField label="Disabled">
+          <UiCombobox v-model="language" :options="languages" disabled />
+        </UiField>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Checkbox, Switch" layout="grid">
+        <div class="s-stack">
+          <UiCheckbox v-model="agreed">I accept the terms for Public Tracks</UiCheckbox>
+          <UiCheckbox :model-value="false" invalid>Required and not ticked</UiCheckbox>
+          <UiCheckbox :model-value="true" disabled>Ticked and disabled</UiCheckbox>
+          <UiCheckbox :model-value="false" disabled>Disabled</UiCheckbox>
+        </div>
+        <div class="s-stack">
+          <UiSwitch v-model="publicTrack">Public Track</UiSwitch>
+          <UiSwitch :model-value="false">Show my Public Profile</UiSwitch>
+          <UiSwitch :model-value="true" disabled>Disabled, on</UiSwitch>
+        </div>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Radio group" layout="grid">
+        <UiRadioGroup v-model="grade" label="Grade" :options="grades" />
+        <UiRadioGroup v-model="grade" label="Grade" variant="cards" :options="gradeCards" />
+        <UiRadioGroup v-model="grade" label="Grade" :options="grades" disabled />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        label="Form error summary"
+        note="Shown above a form after a failed submit. Each line jumps to its field"
+        layout="stack"
+      >
+        <UiFormErrors
+          :errors="[
+            { field: 'f-summary-name', message: 'Enter a name so you can tell tokens apart.' },
+            { field: 'f-summary-grade', message: 'Choose a grade to continue.' },
+          ]"
+        />
+        <div class="s-columns">
+          <UiField
+            label="Token name"
+            for="f-summary-name"
+            error="Enter a name so you can tell tokens apart."
+          >
+            <UiInput v-model="empty" />
+          </UiField>
+          <UiField label="Grade" for="f-summary-grade" error="Choose a grade to continue.">
+            <UiSelect v-model="none" :options="grades" placeholder="Choose a grade" />
+          </UiField>
+        </div>
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Choice chips · one" layout="stack">
         <UiChoiceChips
@@ -416,7 +662,7 @@ const prompt =
       </ShowcaseSpecimen>
       <ShowcaseSpecimen
         label="Modal"
-        note="Native dialog: focus is trapped and Escape closes it"
+        note="Focus is trapped, Escape closes it and focus returns to the trigger"
         layout="stack"
         surface="grid"
       >
@@ -435,6 +681,49 @@ const prompt =
             ><UiButton variant="primary" @click="modal = false">Finish grill</UiButton></template
           >
         </UiModal>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Tooltip" note="On hover and on keyboard focus">
+        <UiTooltip text="Copy the prompt"><UiButton icon="copy" label="Copy" /></UiTooltip>
+        <UiTooltip text="Submit the answer" kbd="Ctrl Enter" side="right"
+          ><UiButton variant="primary">Submit</UiButton></UiTooltip
+        >
+        <UiTooltip text="Mastery 2 of 4: you can apply it" side="bottom"
+          ><button type="button" class="plain"><UiMastery :level="2" /></button
+        ></UiTooltip>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Popover" note="Detail that would crowd the page">
+        <UiPopover title="Your agent starts a Grill" align="start">
+          <template #trigger><UiButton icon="plus">New Grill</UiButton></template>
+          <div class="s-stack" style="--s-gap: var(--s-3)">
+            <p>Startodel has no model of its own. Ask your agent to open a GrillSession.</p>
+            <UiAgentPrompt
+              compact
+              text="Start a GrillSession of 15 questions on my Track Node.js runtime internals."
+              tool="start_grill"
+            />
+          </div>
+        </UiPopover>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Collapsible" layout="stack">
+        <UiCollapsible v-model:open="hintOpen" title="Hint 1" icon="info">
+          <p>Measure the gap between the tick you asked for and the tick you got.</p>
+        </UiCollapsible>
+        <UiCollapsible title="T04 · Timers and scheduling">
+          <template #meta>3 Lessons</template>
+          <UiLessonList :lessons="lessons" />
+        </UiCollapsible>
+        <UiCollapsible title="Solution" icon="lock" disabled>
+          <p>Hidden until you ask.</p>
+        </UiCollapsible>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        label="Skeleton list"
+        note="Match the shape of what will arrive"
+        layout="grid"
+      >
+        <UiSkeletonList :rows="3" label="Loading Tracks" />
+        <UiSkeletonList variant="cards" :rows="2" label="Loading Public Tracks" />
+        <UiSkeletonList variant="table" :rows="4" label="Loading reviews" />
       </ShowcaseSpecimen>
     </ShowcaseSection>
 
@@ -469,7 +758,7 @@ const prompt =
           ]"
         />
         <UiThemeToggle />
-        <UiLanguageSwitcher v-model="locale" variant="inline" />
+        <UiLanguageSwitcher variant="inline" />
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Menu" note="Opens on click, Enter or the down arrow">
         <UiMenu
@@ -485,7 +774,7 @@ const prompt =
         >
           <UiButton icon="more">Track actions</UiButton>
         </UiMenu>
-        <UiLanguageSwitcher v-model="locale" />
+        <UiLanguageSwitcher />
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Pagination" layout="stack">
         <UiPagination v-model:page="page" :total="240" :per-page="20" label="Forks" />
@@ -499,6 +788,41 @@ const prompt =
               to: { hash: '#navigation' },
             },
             { label: 'T03 Control flow narrowing' },
+          ]"
+        />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        label="Stepper"
+        note="Completed steps can be revisited. Steps ahead cannot be pressed"
+        layout="stack"
+      >
+        <UiStepper v-model="step" :steps="steps" label="Onboarding steps" />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Site header · signed out and signed in" layout="block" flush>
+        <UiSiteHeader
+          :home="{ hash: '#navigation' }"
+          sign-in="#navigation"
+          :dashboard="{ hash: '#navigation' }"
+          :links="[
+            { label: 'How it works', to: { hash: '#navigation' } },
+            { label: 'Public Tracks', to: { hash: '#navigation' } },
+            { label: 'GitHub', href: 'https://github.com/startodel/startodel' },
+          ]"
+        />
+        <UiSiteHeader
+          :home="{ hash: '#navigation' }"
+          sign-in="#navigation"
+          :dashboard="{ hash: '#navigation' }"
+          :user="{ name: 'Alice Petrova', login: 'alice' }"
+          :links="[{ label: 'Public Tracks', to: { hash: '#navigation' } }]"
+        />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Footer" layout="block" flush>
+        <UiFooter
+          :links="[
+            { label: 'Terms of Use', to: { hash: '#navigation' } },
+            { label: 'Publishing rules', to: { hash: '#navigation' } },
+            { label: 'Source', href: 'https://github.com/startodel/startodel' },
           ]"
         />
       </ShowcaseSpecimen>
@@ -673,6 +997,304 @@ const prompt =
         </div>
       </ShowcaseSpecimen>
     </ShowcaseSection>
+
+    <ShowcaseSection id="board" title="Track board" :index="10">
+      <template #lead
+        >A Track is a board. A Topic is a part, a TopicEdge is a trace, and Mastery is the signal a
+        part carries. A Topic is complete at Mastery 2, and blocked while a prerequisite is below
+        it.</template
+      >
+      <ShowcaseSpecimen label="Topic part · states" note="Shape and word first, colour second">
+        <div class="part"><UiTopicPart :topic="partOf(4)" state="complete" readonly /></div>
+        <div class="part"><UiTopicPart :topic="partOf(2)" state="complete" readonly /></div>
+        <div class="part"><UiTopicPart :topic="readyTopic" state="ready" readonly /></div>
+        <div class="part"><UiTopicPart :topic="blockedTopic" state="blocked" readonly /></div>
+        <div class="part"><UiTopicPart :topic="partOf(3)" state="complete" selected /></div>
+        <div class="part"><UiTopicPart :topic="partOf(1)" state="outline" readonly /></div>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        label="Track board"
+        note="Pan, zoom, select. The minimap appears once part of the board is out of view. A narrow container gets the list"
+        layout="block"
+      >
+        <UiTrackBoard
+          v-model:selected="selectedTopic"
+          :topics="sampleTopics"
+          :edges="sampleEdges"
+          label="Node.js runtime internals board"
+          height="24rem"
+        />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        label="Track map"
+        note="A still board rendered on the server, here in outline for a Public Track"
+        layout="block"
+        surface="grid"
+      >
+        <UiTrackMap
+          :topics="boardTopics"
+          :edges="boardEdges"
+          label="The first eight Topics of a Public Track"
+          :flow="false"
+          compact
+          outline
+        />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Track list and legend" layout="stack">
+        <UiTrackList
+          v-model:selected="selectedTopic"
+          :topics="boardTopics"
+          :edges="boardEdges"
+          label="Topics in study order"
+        />
+        <UiTrackLegend :topics="sampleTopics" :edges="sampleEdges" />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Topic card" layout="grid">
+        <UiTopicCard
+          title="Timers and scheduling"
+          tag="T04"
+          slug="node/timers"
+          :level="2"
+          state="complete"
+          :lessons="{ read: 3, total: 3 }"
+          due="Review in 2 days"
+          :after="['T02']"
+        />
+        <UiTopicCard
+          title="Streams and backpressure"
+          tag="T06"
+          :level="0"
+          state="ready"
+          :lessons="{ read: 0, total: 0 }"
+          :after="['T02', 'T05']"
+          :to="{ hash: '#board' }"
+        />
+        <UiTopicCard
+          title="Profiling in production"
+          tag="T12"
+          :level="0"
+          state="blocked"
+          :after="['T09', 'T11']"
+        />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Track strip" note="One cell per Topic" layout="stack">
+        <UiTrackStrip
+          v-for="t in sampleTracks"
+          :key="t.id"
+          :title="t.title"
+          :levels="t.levels"
+          :note="'Updated ' + t.updated"
+          :to="{ hash: '#board' }"
+        />
+      </ShowcaseSpecimen>
+    </ShowcaseSection>
+
+    <ShowcaseSection id="lesson" title="Lesson" :index="11">
+      <template #lead
+        >A Lesson is a column of Blocks. Each of the seven Block types has one renderer. Content
+        written by an agent is untrusted: Markdown is escaped, links are HTTP(S) only, and a video
+        loads nothing until it is played.</template
+      >
+      <ShowcaseSpecimen label="Lesson block · theory and callout" layout="stack">
+        <UiLessonBlock :index="1" kind="theory">
+          <UiProse :markdown="theoryMarkdown" />
+        </UiLessonBlock>
+        <UiLessonBlock :index="3" kind="callout" label="gotcha">
+          <UiCallout kind="gotcha"><UiProse :markdown="calloutMarkdown" size="sm" /></UiCallout>
+        </UiLessonBlock>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Callout · kinds" layout="stack">
+        <UiCallout kind="tip"
+          ><p>Measure before you tune. The loop is rarely the bottleneck.</p></UiCallout
+        >
+        <UiCallout kind="gotcha"
+          ><p>A zero timeout is not zero. Node.js raises it to 1 ms.</p></UiCallout
+        >
+        <UiCallout kind="production"
+          ><p>Alert on event loop lag at the 99th percentile, not on the mean.</p></UiCallout
+        >
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Link and video" layout="grid">
+        <UiResourceLink v-bind="linkBlock" />
+        <UiVideoEmbed v-bind="videoBlock" />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        label="Quiz · answering"
+        note="The correct option arrives with the result, never with the questions"
+        layout="block"
+      >
+        <UiQuiz v-model="quizOpen" name="specimen-open" :questions="quizQuestions" />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Quiz · judged" note="One right, one wrong" layout="block">
+        <UiQuiz
+          v-model="quizDone"
+          name="specimen-done"
+          :questions="quizQuestions"
+          :result="quizResult"
+        />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        label="Exercise"
+        note="Hints open one at a time. The solution is fetched on request"
+        layout="block"
+      >
+        <UiExercise
+          :prompt="exercisePrompt"
+          :hints="exerciseHints"
+          :solution="solution"
+          @reveal="solution = exerciseSolution"
+        />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Lesson list" layout="stack">
+        <UiLessonList :lessons="lessons" />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        label="Agent prompt"
+        note="How work passes to the learner's own agent"
+        layout="grid"
+      >
+        <UiAgentPrompt :text="prompt" tool="create_track" label="Prompt for your agent" />
+        <UiAgentPrompt
+          compact
+          text="Write the first Lesson for the Topic node/streams-backpressure in Startodel."
+          tool="create_lesson"
+        />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Next up" note="The only live plate on a page" layout="stack">
+        <UiNextUp
+          kind="Continue Lesson"
+          title="When does a timer actually run?"
+          why="You read four of seven Blocks. The Quiz at the end raises Timers and scheduling to Mastery 2."
+        >
+          <template #actions>
+            <UiButton variant="primary" icon-right="arrow-right">Continue Lesson</UiButton>
+          </template>
+        </UiNextUp>
+        <UiNextUp
+          kind="Study"
+          title="Streams and backpressure"
+          why="Both prerequisites are complete. The Topic has no Lessons yet, so the next step is your agent's."
+          prompt="Write the first Lesson for the Topic node/streams-backpressure. Include a Quiz and one Exercise."
+          tool="create_lesson"
+        />
+      </ShowcaseSpecimen>
+    </ShowcaseSection>
+
+    <ShowcaseSection id="grill" title="Grill and review" :index="12">
+      <template #lead
+        >A GrillSession is a row of test pads. The learner answers on the page. An external agent
+        judges, so an answer waits for its Verdict.</template
+      >
+      <ShowcaseSpecimen label="Grill strip" note="Arrow keys move between pads" layout="stack">
+        <UiGrillStrip v-model:current="pad" :questions="pads" />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Grill question and answer" layout="block">
+        <UiGrillQuestion
+          :number="11"
+          :total="15"
+          :prompt="grillPrompt"
+          :topic="{ tag: 'T06', title: 'Streams and backpressure' }"
+        >
+          <UiGrillAnswer id="specimen-answer" v-model="draft" @submit="draft = ''" />
+        </UiGrillQuestion>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Judgment · awaiting, strong, weak" layout="stack">
+        <UiGrillJudgment
+          answer="Most likely the loop was busy: a long synchronous task or a burst of promise jobs."
+          source="ui"
+          answered-at="Today, 14:02"
+        >
+          <UiAgentPrompt
+            compact
+            text="Judge my open GrillSession in Startodel and record the Verdicts."
+            tool="judge_grill_answer"
+          />
+        </UiGrillJudgment>
+        <UiGrillJudgment
+          answer="Most likely the loop was busy: a long synchronous task or a burst of promise jobs. Next, a garbage collection pause."
+          source="ui"
+          answered-at="Today, 14:02"
+          verdict="strong"
+          feedback="Right order, and you named the mechanism each time."
+          judged-at="Today, 14:20"
+        />
+        <UiGrillJudgment
+          answer="The timer is inaccurate."
+          source="mcp"
+          answered-at="Yesterday, 19:40"
+          verdict="weak"
+          feedback="That restates the symptom. Name what keeps the loop from reaching the timers phase."
+          judged-at="Yesterday, 19:41"
+        />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Verdict tally" layout="grid">
+        <UiVerdictTally :strong="9" :partial="4" :weak="2" />
+        <UiVerdictTally :strong="6" :partial="2" :weak="1" :pending="3" :unanswered="3" />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Review card" layout="stack">
+        <UiReviewCard
+          v-for="r in reviewCards"
+          :key="r.tag"
+          :title="r.title"
+          :tag="r.tag"
+          :track="r.track"
+          :level="r.level"
+          :box="r.box"
+          :due="r.due"
+          :overdue="r.overdue"
+          last-result="partial"
+        >
+          <template #actions>
+            <UiButton variant="primary" icon="quiz">Practice Quiz</UiButton>
+            <UiButton variant="ghost">Lessons</UiButton>
+          </template>
+        </UiReviewCard>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Review Boxes and the week" layout="grid">
+        <UiLeitnerRack :counts="boxCounts" :current="1" />
+        <UiLeitnerRack :counts="boxCounts" compact />
+        <UiWeekStrip :days="week" />
+      </ShowcaseSpecimen>
+    </ShowcaseSection>
+
+    <ShowcaseSection id="public" title="Progress and public" :index="13">
+      <ShowcaseSpecimen label="Mastery histogram" layout="grid">
+        <UiMasteryHistogram :counts="sampleMasteryCounts" />
+        <UiMasteryHistogram :counts="[0, 0, 0, 0, 0]" label="No Topics yet" />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Forked from" note="Plain text once the source is no longer public">
+        <UiForkedFrom login="mkarpov" slug="node-internals" :to="{ hash: '#public' }" />
+        <UiForkedFrom login="mkarpov" slug="node-internals" />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Fork button" note="A Public Track can be forked once">
+        <UiForkButton
+          :count="14 + (forked ? 1 : 0)"
+          :forked="forked ? { hash: '#public' } : undefined"
+          :count-to="{ hash: '#public' }"
+          @fork="forked = true"
+        />
+        <UiForkButton :count="0" busy />
+        <UiForkButton :count="3" disabled />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Track card" layout="grid">
+        <UiTrackCard
+          title="Node.js runtime internals"
+          :to="{ hash: '#public' }"
+          description="From the call stack to production profiling: how Node.js spends time and memory."
+          :topics="12"
+          :lessons="31"
+          :forks="14"
+          updated="3 days ago"
+        />
+        <UiTrackCard
+          title="Node.js internals for SRE"
+          :to="{ hash: '#public' }"
+          :owner="{ login: 'lena', name: 'Lena Orlova' }"
+          :forks="0"
+          updated="last week"
+        />
+      </ShowcaseSpecimen>
+    </ShowcaseSection>
   </ShowcaseDocs>
 </template>
 <style scoped>
@@ -693,6 +1315,13 @@ const prompt =
 }
 .gap {
   width: var(--s-4);
+}
+.part {
+  width: 184px;
+  height: 66px;
+}
+.plain {
+  display: inline-flex;
 }
 .push {
   margin-left: auto;
