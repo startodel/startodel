@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { expect, test } from "vite-plus/test";
 import { designShowcaseEnabled, isDesignShowcasePath } from "../app/utils/design-showcase";
 
@@ -123,4 +123,41 @@ test("only showcase paths skip the Session check", () => {
       isDesignShowcasePath,
     ),
   ).toEqual([false, false, false, false, false, false, false]);
+});
+
+// app.vue still styles these class names globally. Remove this test with those styles.
+const legacyClasses = [
+  "actions",
+  "bar",
+  "brand",
+  "brand-mark",
+  "button",
+  "choice",
+  "choices",
+  "identity",
+  "mast",
+  "muted",
+  "narrow",
+  "panel",
+  "primary",
+  "quiet",
+];
+
+test("design system files use no class name that app.vue styles globally", () => {
+  const app = new URL("../app/", import.meta.url);
+  const files = ["components/ui/", "components/showcase/", "pages/design/"].flatMap((dir) =>
+    readdirSync(new URL(dir, app), { recursive: true, encoding: "utf8" })
+      .filter((name) => name.endsWith(".vue"))
+      .map((name) => dir + name),
+  );
+  expect(files.length).toBeGreaterThan(80);
+  const name = `(?:${legacyClasses.join("|")})`;
+  const inMarkup = new RegExp(`\\bclass="(?:[^"]*[\\s'])?${name}(?:[\\s'][^"]*)?"`);
+  const inStyle = new RegExp(`\\.${name}(?![\\w-])`);
+  const found = files.filter((file) => {
+    const source = readFileSync(new URL(file, app), "utf8");
+    const style = source.slice(source.lastIndexOf("<style"));
+    return inMarkup.test(source) || inStyle.test(style);
+  });
+  expect(found).toEqual([]);
 });
