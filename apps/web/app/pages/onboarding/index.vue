@@ -44,16 +44,16 @@ async function submit() {
         :question="$t('onboarding.stack')"
         :label="$t('onboarding.technologies')"
         :presets="[
-          'TypeScript',
-          'JavaScript',
-          'React',
-          'Next.js',
-          'Vue',
-          'Nuxt',
-          'Node.js',
-          'Python',
-          'Go',
-          'Rust',
+          $t('technology.typescript'),
+          $t('technology.javascript'),
+          $t('technology.react'),
+          $t('technology.nextjs'),
+          $t('technology.vue'),
+          $t('technology.nuxt'),
+          $t('technology.nodejs'),
+          $t('technology.python'),
+          $t('technology.go'),
+          $t('technology.rust'),
         ]"
       />
       <QuestionChoices

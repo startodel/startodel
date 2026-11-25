@@ -291,5 +291,17 @@
     "middle": "Middle",
     "senior": "Senior",
     "lead": "Lead"
+  },
+  "technology": {
+    "typescript": "TypeScript",
+    "javascript": "JavaScript",
+    "react": "React",
+    "nextjs": "Next.js",
+    "vue": "Vue",
+    "nuxt": "Nuxt",
+    "nodejs": "Node.js",
+    "python": "Python",
+    "go": "Go",
+    "rust": "Rust"
   }
 }
