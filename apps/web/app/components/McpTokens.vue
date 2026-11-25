@@ -1,14 +1,11 @@
 <script setup lang="ts">
-const { data: tokens, error: listError, refresh } = await useFetch("/api/mcp-tokens");
+defineProps<{ connect?: boolean }>();
+const { data: tokens, error: listError, refresh, status } = useFetch("/api/mcp-tokens");
 const name = ref("");
-const endpoint = ref("");
+const endpoint = useMe().value?.mcpUrl;
 const issued = ref<{ id: string; token: string }>();
 const busy = ref(false);
 const message = ref("");
-onMounted(() => {
-  endpoint.value = new URL("/mcp", window.location.origin).href;
-});
-
 async function createToken() {
   busy.value = true;
   message.value = "";
@@ -63,15 +60,16 @@ async function copyToken() {
       <button type="button" @click="copyToken">Copy token</button>
       <button type="button" @click="issued = undefined">Dismiss</button>
     </div>
+    <AgentConfig v-if="connect" :token="issued?.token" />
     <p role="status">{{ message }}</p>
     <p v-if="listError">Could not load tokens. <button @click="refresh()">Retry</button></p>
-    <ul v-else-if="tokens?.length">
+    <ul v-else-if="!connect && tokens?.length">
       <li v-for="token in tokens" :key="token.id">
         {{ token.name }} (<code>{{ token.prefix }}…</code>)
         <span v-if="token.revokedAt">Revoked</span>
         <button v-else type="button" :disabled="busy" @click="revokeToken(token.id)">Revoke</button>
       </li>
     </ul>
-    <p v-else>No tokens yet.</p>
+    <p v-else-if="!connect && status === 'success'">No tokens yet.</p>
   </section>
 </template>

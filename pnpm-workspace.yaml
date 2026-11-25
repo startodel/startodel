@@ -4,3 +4,8 @@ packages:
 
 allowBuilds:
   esbuild: true
+  vue-demi: true
+
+minimumReleaseAgeExclude:
+  - "@dagrejs/dagre@3.1.4"
+  - "@dagrejs/graphlib@4.0.8"

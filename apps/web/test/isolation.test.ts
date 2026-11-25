@@ -183,11 +183,22 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
     const a = await signIn("alice");
     const b = await signIn("bob");
     const me = await (await request("/api/me", b)).json();
-    expect(me).toMatchObject({ user: { login: "bob" }, onboarded: false });
+    expect(me).toMatchObject({
+      user: { login: "bob" },
+      onboarded: false,
+      mcpUrl: publicOrigin + "/mcp",
+    });
     const bob = forUser(db, me.user.id);
     const track = await bob.createTrack("Private learning");
     const topic = await bob.upsertTopic({ slug: "queues", title: "Queues" });
     await bob.attachTopicToTrack(track.id, topic.id, 0);
+    await bob.recordReviewResult(topic.id, "weak");
+    await db.$client.query(
+      "update review_items set due_at = now() where user_id = $1 and topic_id = $2",
+      [me.user.id, topic.id],
+    );
+    expect((await (await request("/api/dashboard", a)).json()).dueReviewsCount).toBe(0);
+    expect((await (await request("/api/dashboard", b)).json()).dueReviewsCount).toBe(1);
     const lesson = (await bob.createLesson({
       topicId: topic.id,
       title: "Delivery",
