@@ -4,6 +4,17 @@ const path = (d: string) => `<path d="${d}"/>`;
 const solid = (d: string) => `<path d="${d}" fill="currentColor" stroke="none"/>`;
 
 export const icons = {
+  fork:
+    path("M4.5 5.5v1.2c0 1 .8 1.8 1.8 1.8h3.4c1 0 1.8-.8 1.8-1.8V5.5M8 8.5v2.5") +
+    dot(4.5, 4) +
+    dot(11.5, 4) +
+    dot(8, 12.5),
+  "zoom-in": path("M10.5 10.5 14 14M5 7h4M7 5v4") + `<circle cx="7" cy="7" r="4.5"/>`,
+  "zoom-out": path("M10.5 10.5 14 14M5 7h4") + `<circle cx="7" cy="7" r="4.5"/>`,
+  fit: path("M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"),
+  list:
+    path("M5.5 4h8M5.5 8h8M5.5 12h8") + dot(2.5, 4, 0.75) + dot(2.5, 8, 0.75) + dot(2.5, 12, 0.75),
+  scale: path("M8 2.5v11M4 13.5h8M3 5h10M3 5 1.5 9h3zM13 5l-1.5 4h3z"),
   dashboard: path("M2.5 2.5H7v5H2.5zM9.5 2.5h4v3h-4zM9.5 8h4v5.5h-4zM2.5 10H7v3.5H2.5z"),
   track: path("M4.5 8H7l2-4h2M7 8l2 4.5h2") + dot(3, 8) + dot(12.5, 4) + dot(12.5, 12.5),
   grill: path("M9 1.5 3.5 9H8l-1 5.5L12.5 7H8z"),

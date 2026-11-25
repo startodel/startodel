@@ -31,13 +31,16 @@ const goal = ref<string | null>("depth");
 const stack = ref<string[]>(["TypeScript", "PostgreSQL"]);
 const chips = ref(["TypeScript", "Vue", "PostgreSQL"]);
 const tab = ref("lessons");
-const segment = ref("board");
+const segment = ref<"board" | "list">("board");
+const locale = ref("en");
+const page = ref(3);
 const modal = ref(false);
 const collapsed = ref(true);
 const sort = ref<{ key: string; dir: "asc" | "desc" } | undefined>({ key: "level", dir: "desc" });
 type Topic = (typeof sampleTopics)[number];
+const tableRows = sampleTopics.slice(0, 6);
 const columns: TableColumn<Topic>[] = [
-  { key: "id", label: "Ref", width: "4rem" },
+  { key: "tag", label: "Ref", width: "4rem" },
   { key: "title", label: "Topic", sortable: true },
   { key: "level", label: "Mastery", sortable: true },
   { key: "lessons", label: "Lessons", align: "right", sortable: true },
@@ -436,39 +439,56 @@ const prompt =
     </ShowcaseSection>
 
     <ShowcaseSection id="navigation" title="Navigation" :index="6">
-      <ShowcaseSpecimen label="Tabs · line" layout="stack">
+      <ShowcaseSpecimen label="Tabs" note="Arrow keys move between tabs" layout="stack">
         <UiTabs
           v-model="tab"
           label="Topic sections"
-          id-base="demo"
           :tabs="[
             { id: 'lessons', label: 'Lessons', count: 4 },
             { id: 'grills', label: 'Grills', count: 2 },
             { id: 'history', label: 'History' },
             { id: 'notes', label: 'Notes', disabled: true },
           ]"
-        />
-        <p
-          :id="'demo-panel-' + tab"
-          role="tabpanel"
-          :aria-labelledby="'demo-tab-' + tab"
-          class="s-muted"
         >
-          Panel “{{ tab }}”. Arrow keys move between tabs.
-        </p>
+          <template #lessons><p class="s-muted">Four Lessons, two read.</p></template>
+          <template #grills
+            ><p class="s-muted">Two Grills, the last one 9 strong of 15.</p></template
+          >
+          <template #history
+            ><p class="s-muted">Every change of Mastery, newest first.</p></template
+          >
+        </UiTabs>
       </ShowcaseSpecimen>
-      <ShowcaseSpecimen label="Tabs · segment">
-        <UiTabs
+      <ShowcaseSpecimen label="Segmented" note="A view switch with no panels">
+        <UiSegmented
           v-model="segment"
           label="Track view"
-          variant="segment"
-          id-base="view"
-          :tabs="[
+          :options="[
             { id: 'board', label: 'Board', icon: 'track' },
-            { id: 'list', label: 'List', icon: 'menu' },
+            { id: 'list', label: 'List', icon: 'list' },
           ]"
         />
         <UiThemeToggle />
+        <UiLanguageSwitcher v-model="locale" variant="inline" />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Menu" note="Opens on click, Enter or the down arrow">
+        <UiMenu
+          label="Track"
+          align="start"
+          :items="[
+            { id: 'publish', label: 'Publish', icon: 'globe' },
+            { id: 'copy', label: 'Copy link', icon: 'link', hint: 'L' },
+            { id: 'archive', label: 'Archive', icon: 'box', disabled: true },
+            { id: 'delete', label: 'Delete Track', icon: 'trash', danger: true, separated: true },
+          ]"
+          @select="notify({ title: 'Menu: ' + $event })"
+        >
+          <UiButton icon="more">Track actions</UiButton>
+        </UiMenu>
+        <UiLanguageSwitcher v-model="locale" />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Pagination" layout="stack">
+        <UiPagination v-model:page="page" :total="240" :per-page="20" label="Forks" />
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Breadcrumbs" note="A path, in the system voice">
         <UiBreadcrumbs
@@ -489,11 +509,11 @@ const prompt =
         <UiTable
           v-model:sort="sort"
           :columns="columns"
-          :rows="sampleTopics"
+          :rows="tableRows"
           :row-key="(r) => r.id"
           caption="Topics by Mastery"
         >
-          <template #cell-id="{ row }"><span class="s-label">{{ row.id }}</span></template>
+          <template #cell-tag="{ row }"><span class="s-label">{{ row.tag }}</span></template>
           <template #cell-title="{ row }"><strong>{{ row.title }}</strong></template>
           <template #cell-level="{ row }"><UiMastery :level="row.level" show="full" /></template>
           <template #cell-due="{ row }">
