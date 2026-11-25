@@ -1,5 +1,5 @@
 import { AnswerSource, DEFAULT_GRILL_SIZE, type MasteryLevel, Verdict } from "@startodel/core";
-import { and, desc, eq, inArray, isNotNull, lte, max, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNotNull, isNull, lte, max, sql } from "drizzle-orm";
 import type { Database } from "./index.ts";
 import { recordReview } from "./mastery.ts";
 import { ownedId, referencedRow, referencedRows, type Transaction } from "./owned.ts";
@@ -109,6 +109,39 @@ export function grillsForUser(db: Database, userId: string) {
       }),
     );
   }
+  async function submitAnswer(
+    id: string,
+    answer: string,
+    source: AnswerSource,
+    sessionId?: string,
+  ) {
+    return db.transaction(async (tx) => {
+      const [session] = await tx
+        .select({ status: grillSessions.status })
+        .from(grillSessions)
+        .innerJoin(
+          grillQuestions,
+          and(ownedId(grillQuestions, userId, id), eq(grillQuestions.sessionId, grillSessions.id)),
+        )
+        .where(and(ownSessions, sessionId ? eq(grillSessions.id, sessionId) : undefined))
+        .for("share", { of: grillSessions });
+      if (!session) return undefined;
+      if (session.status === "finished") return "closed" as const;
+      const now = new Date();
+      const [saved] = await tx
+        .update(grillQuestions)
+        .set({ answer, answerSource: AnswerSource.parse(source), answeredAt: now, updatedAt: now })
+        .where(
+          and(
+            ownedId(grillQuestions, userId, id),
+            isNull(grillQuestions.judgedAt),
+            source === "ui" ? isNull(grillQuestions.answeredAt) : undefined,
+          ),
+        )
+        .returning();
+      return saved ?? ("closed" as const);
+    });
+  }
   return {
     startGrill(input: GrillInput) {
       return referencedRow(insertGrill(db, input));
@@ -134,38 +167,53 @@ export function grillsForUser(db: Database, userId: string) {
     ) {
       return (await addGrillQuestions(sessionId, [question]))?.[0];
     },
-    answerGrillQuestion(id: string, answer: string, source: AnswerSource) {
-      return db.transaction(async (tx) => {
-        const [open] = await tx
-          .select({ id: grillSessions.id })
-          .from(grillSessions)
-          .innerJoin(
-            grillQuestions,
-            and(
-              ownedId(grillQuestions, userId, id),
-              eq(grillSessions.id, grillQuestions.sessionId),
-            ),
-          )
-          .where(and(ownSessions, eq(grillSessions.status, "open")))
-          .for("share", { of: grillSessions });
-        if (!open) return undefined;
-        const now = new Date();
-        return (
-          await tx
-            .update(grillQuestions)
-            .set({
-              answer,
-              answerSource: AnswerSource.parse(source),
-              answeredAt: now,
-              updatedAt: now,
-              verdict: null,
-              judgedAt: null,
-              feedback: null,
-            })
-            .where(ownedId(grillQuestions, userId, id))
-            .returning()
-        )[0];
-      });
+    async answerGrillQuestion(id: string, answer: string, source: AnswerSource) {
+      const result = await submitAnswer(id, answer, source);
+      return result === "closed" ? undefined : result;
+    },
+    submitSessionAnswer(sessionId: string, questionId: string, answer: string) {
+      return submitAnswer(questionId, answer, "ui", sessionId);
+    },
+    listGrillSummaries() {
+      return db
+        .select({
+          id: grillSessions.id,
+          title: grillSessions.title,
+          status: grillSessions.status,
+          createdAt: grillSessions.createdAt,
+          track: tracks.title,
+          answered: count(grillQuestions.answeredAt),
+          judged: count(grillQuestions.judgedAt),
+          total: count(grillQuestions.id),
+        })
+        .from(grillSessions)
+        .leftJoin(tracks, and(eq(tracks.userId, userId), eq(tracks.id, grillSessions.trackId)))
+        .leftJoin(grillQuestions, and(ownQuestions, eq(grillQuestions.sessionId, grillSessions.id)))
+        .where(ownSessions)
+        .groupBy(grillSessions.id, tracks.id)
+        .orderBy(
+          desc(sql`${grillSessions.status} = 'open'`),
+          desc(grillSessions.createdAt),
+          grillSessions.id,
+        );
+    },
+    reinforceTopics(sessionId: string) {
+      return db
+        .selectDistinct({ id: topics.id, title: topics.title, dueAt: reviewItems.dueAt })
+        .from(grillQuestions)
+        .innerJoin(topics, and(eq(topics.userId, userId), eq(topics.id, grillQuestions.topicId)))
+        .leftJoin(
+          reviewItems,
+          and(eq(reviewItems.userId, userId), eq(reviewItems.topicId, topics.id)),
+        )
+        .where(
+          and(
+            ownQuestions,
+            eq(grillQuestions.sessionId, sessionId),
+            inArray(grillQuestions.verdict, ["weak", "partial"]),
+          ),
+        )
+        .orderBy(topics.title, topics.id);
     },
     judgeGrillQuestion(id: string, verdict: Verdict, feedback?: string) {
       return db.transaction(async (tx) => {

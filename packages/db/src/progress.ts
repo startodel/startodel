@@ -1,3 +1,4 @@
+import { topicActivity } from "./activity.ts";
 import { and, count, desc, eq, lte, sql } from "drizzle-orm";
 import type { MasteryLevel } from "@startodel/core";
 import type { Transaction } from "./owned.ts";
@@ -52,6 +53,19 @@ export function progressForUser(db: Database, userId: string) {
               percent: track.total ? Math.floor((100 * track.completed) / track.total) : 0,
             })),
           };
+        },
+        { isolationLevel: "repeatable read", accessMode: "read only" },
+      );
+    },
+    getProgressOverview() {
+      return db.transaction(
+        async (tx) => {
+          const { perTrack } = await dashboard(tx);
+          const { perTopic, activity } = await topicActivity(tx, userId);
+          const masteryDistribution = [0, 0, 0, 0, 0];
+          for (const topic of perTopic)
+            masteryDistribution[topic.level] = masteryDistribution[topic.level]! + 1;
+          return { perTrack, perTopic, masteryDistribution, activity };
         },
         { isolationLevel: "repeatable read", accessMode: "read only" },
       );
