@@ -13,7 +13,7 @@ The project is free to use with your own agent. You can [self-host](#quick-start
 - Cloud: [startodel.ru](https://startodel.ru)
 - [Connect your agent](#connect-your-agent)
 - [Agent guide](docs/agent-guide/README.md)
-- [Roadmap](#roadmap)
+- [Roadmap](https://github.com/orgs/startodel/projects/1/views/2)
 - [Documentation](docs/README.md)
 
 The interface opens in Russian by default. Choose **EN** in the header or footer for English. Both languages have shareable URLs, and learning content stays in the language its author used.
@@ -58,7 +58,7 @@ The pnpm workspace contains the Nuxt 4 web app, the framework-free domain types 
 
 ## Roadmap
 
-Work is grouped by [milestones](https://github.com/startodel/startodel/milestones): Foundation, Learning core, Learning UI, and Agent skills.
+The public [Startodel Roadmap](https://github.com/orgs/startodel/projects/1/views/2) board groups work by status: Done, Now, Next and Later. There is also a [Roadmap view](https://github.com/orgs/startodel/projects/1/views/3). Issues are grouped by [milestones](https://github.com/startodel/startodel/milestones).
 
 ### Done
 
@@ -69,11 +69,28 @@ Work is grouped by [milestones](https://github.com/startodel/startodel/milestone
 - [x] Production Docker image and deploy to [startodel.ru](https://startodel.ru) ([#5](https://github.com/startodel/startodel/pull/5))
 - [x] Learning core data model: topic graph, lessons, mastery, reviews, grill sessions ([#6](https://github.com/startodel/startodel/pull/6))
 - [x] MCP tools for the learning core and the agent guide ([#7](https://github.com/startodel/startodel/pull/7))
-- [x] Onboarding, dashboard, Track Graph, and Lesson pages ([#15](https://github.com/startodel/startodel/issues/15))
-- [x] Grill, progress, and reviews in the UI ([#16](https://github.com/startodel/startodel/issues/16))
-- [x] Agent skills generated from `docs/agent-guide` ([#17](https://github.com/startodel/startodel/issues/17))
+- [x] Onboarding, dashboard, Track Graph, and Lesson pages ([#22](https://github.com/startodel/startodel/pull/22))
+- [x] Grill, progress, and reviews in the UI ([#23](https://github.com/startodel/startodel/pull/23))
+- [x] Agent skills generated from `docs/agent-guide` ([#24](https://github.com/startodel/startodel/pull/24))
+- [x] Autodeploy on push to `main` ([#25](https://github.com/startodel/startodel/pull/25))
+- [x] Public tracks, forks, and public profiles ([#27](https://github.com/startodel/startodel/pull/27))
+- [x] Russian by default, with English locale ([#30](https://github.com/startodel/startodel/pull/30))
+- [x] Signal design system foundations and showcase ([#29](https://github.com/startodel/startodel/pull/29))
 
-Later: [import topic graphs from roadmap.sh](https://github.com/startodel/startodel/issues/18), a [stream overlay page](https://github.com/startodel/startodel/issues/19) for the current plan, and a [server-side model as a paid option](https://github.com/startodel/startodel/issues/20).
+### Now
+
+- [ ] Signal screen components and sample flows ([#35](https://github.com/startodel/startodel/issues/35))
+
+### Next
+
+- [ ] Migrate product pages to Signal ([#36](https://github.com/startodel/startodel/issues/36))
+
+### Later
+
+- [ ] Import topic graphs from roadmap.sh ([#18](https://github.com/startodel/startodel/issues/18))
+- [ ] Stream overlay page ([#19](https://github.com/startodel/startodel/issues/19))
+- [ ] Server-side model as a paid option ([#20](https://github.com/startodel/startodel/issues/20))
+- [ ] Points and leaderboard ([#37](https://github.com/startodel/startodel/issues/37))
 
 ## Quick start
 
