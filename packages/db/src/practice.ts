@@ -54,6 +54,8 @@ export function practiceForUser(db: Connection, userId: string) {
           dueAt: reviewItems.dueAt,
           lastResult: reviewItems.lastResult,
           reason: reviewItems.reason,
+          practiceCorrect: reviewItems.practiceCorrect,
+          practiceTotal: reviewItems.practiceTotal,
           hasQuiz: sql<boolean>`exists(select 1 from ${lessons} where ${lessons.userId}=${userId} and ${lessons.topicId}=${topics.id} and ${lessons.blocks} @> '[{"type":"quiz"}]'::jsonb)`,
         })
         .from(reviewItems)
@@ -121,13 +123,7 @@ export function practiceForUser(db: Connection, userId: string) {
         }
         const mastery = await raiseMastery(tx, userId, topicId);
         const verdict = practiceVerdict(correct, total);
-        const review = await recordReview(
-          tx,
-          userId,
-          topicId,
-          verdict,
-          `Practice Quiz: ${correct} of ${total} correct`,
-        );
+        const review = await recordReview(tx, userId, topicId, verdict, { correct, total });
         return {
           results,
           correct,

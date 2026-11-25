@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { displayDate } from "../../../../utils/dates";
+const countArgs = useCountArgs();
+const localePath = useLocalePath();
+const { t } = useI18n();
+const displayDate = useDisplayDate();
 const route = useRoute();
 const login = String(route.params.login);
 const slug = String(route.params.slug);
@@ -10,9 +13,13 @@ const { data, error } = await useFetch(
 if (!data.value)
   throw createError({
     statusCode: error.value?.statusCode ?? 404,
-    statusMessage: "Public Track unavailable",
+    message: t("common.error"),
   });
-usePublicHead(data.value.title, data.value.description || "Public Track by @" + login, path);
+usePublicHead(
+  t("public.trackTitle", { title: data.value.title }),
+  data.value.description || t("public.by", { author: "@" + login }),
+  path,
+);
 const { user } = useUserSession();
 const busy = ref(false);
 const message = ref("");
@@ -20,9 +27,9 @@ async function fork() {
   busy.value = true;
   try {
     const track = await $fetch("/api/tracks/fork", { method: "POST", body: { login, slug } });
-    await navigateTo("/tracks/" + track.id);
+    await navigateTo(localePath("/tracks/" + track.id));
   } catch {
-    message.value = "Could not fork this Track. Reload and try again.";
+    message.value = t("public.forkError");
   } finally {
     busy.value = false;
   }
@@ -49,25 +56,32 @@ const graphEdges = computed(
         height="36"
         alt=""
       />
-      <NuxtLink :to="'/u/' + encodeURIComponent(login)"
-        >{{ data.author.name ? data.author.name + " · " : "" }}@{{ login }}</NuxtLink
+      <NuxtLinkLocale :to="'/u/' + encodeURIComponent(login)"
+        >{{ data.author.name ? data.author.name + " · " : "" }}@{{ login }}</NuxtLinkLocale
       >
     </div>
     <h1>{{ data.title }}</h1>
     <p v-if="data.description">{{ data.description }}</p>
     <p class="muted">
-      Created {{ displayDate(data.createdAt) }} · Updated {{ displayDate(data.updatedAt) }} ·
-      {{ data.forkCount }} {{ data.forkCount === 1 ? "fork" : "forks" }}
+      {{
+        $t("public.created", {
+          created: displayDate(data.createdAt),
+          updated: displayDate(data.updatedAt),
+        })
+      }}
+      · {{ $t("count.forks", countArgs(data.forkCount)) }}
     </p>
     <ForkedFrom v-if="data.forkedFrom" :from="data.forkedFrom" />
     <div class="actions">
       <button v-if="user && user.login !== login" class="primary" :disabled="busy" @click="fork">
-        Fork</button
-      ><NuxtLink v-else-if="!user" class="button" to="/login">Sign in to fork</NuxtLink
+        {{ $t("public.fork") }}</button
+      ><NuxtLinkLocale v-else-if="!user" class="button" to="/login">{{
+        $t("public.loginFork")
+      }}</NuxtLinkLocale
       ><span role="status">{{ message }}</span>
     </div>
     <details v-if="data.sources.repo || data.sources.docs?.length">
-      <summary>Track Sources</summary>
+      <summary>{{ $t("track.sources") }}</summary>
       <ul>
         <li
           v-for="url in [data.sources.repo, ...(data.sources.docs ?? [])].filter(Boolean)"
@@ -78,30 +92,31 @@ const graphEdges = computed(
       </ul>
     </details>
     <template v-if="data.topics.length"
-      ><h2>Track Graph</h2>
+      ><h2>{{ $t("track.graph") }}</h2>
       <TrackGraph read-only :topics="graphTopics" :edges="graphEdges"
     /></template>
-    <h2>Topics</h2>
-    <p v-if="!data.topics.length">This Track has no Topics yet.</p>
+    <h2>{{ $t("track.topics") }}</h2>
+    <p v-if="!data.topics.length">{{ $t("track.empty") }}</p>
     <ol>
       <li v-for="topic in data.topics" :key="topic.slug">
         <h3>{{ topic.title }}</h3>
         <p v-if="topic.summary">{{ topic.summary }}</p>
         <ul>
           <li v-for="lesson in topic.lessons" :key="lesson.id">
-            <NuxtLink :to="path + '/lessons/' + lesson.id">{{ lesson.title }}</NuxtLink>
+            <NuxtLinkLocale :to="path + '/lessons/' + lesson.id">{{ lesson.title }}</NuxtLinkLocale>
           </li>
         </ul>
       </li>
     </ol>
     <section v-if="data.forks.length">
-      <h2>Public Forks</h2>
+      <h2>{{ $t("public.forks") }}</h2>
       <ul>
         <li v-for="f in data.forks" :key="f.login + '/' + f.slug">
-          <NuxtLink :to="'/u/' + encodeURIComponent(f.login)">@{{ f.login }}</NuxtLink> /
-          <NuxtLink :to="'/u/' + encodeURIComponent(f.login) + '/' + f.slug">{{
+          <NuxtLinkLocale :to="'/u/' + encodeURIComponent(f.login)">@{{ f.login }}</NuxtLinkLocale>
+          /
+          <NuxtLinkLocale :to="'/u/' + encodeURIComponent(f.login) + '/' + f.slug">{{
             f.title
-          }}</NuxtLink>
+          }}</NuxtLinkLocale>
           · {{ displayDate(f.createdAt) }}
         </li>
       </ul>

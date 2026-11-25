@@ -113,3 +113,48 @@ test.skipIf(!url)(
     }
   },
 );
+
+test.skipIf(!url)(
+  "the review score migration recognizes only complete legacy score notes",
+  async () => {
+    const db = createDatabase(url!);
+    const client = await db.$client.connect();
+    try {
+      await client.query("begin");
+      await client.query(
+        "create temporary table review_items (id serial primary key, reason text)",
+      );
+      const reasons = [
+        "Practice Quiz: 0 of 3 correct",
+        "Practice Quiz: 12 of 12 correct",
+        "Practice Quiz: 1 of 1 correct — repeat later",
+        "I wrote Practice Quiz: 1 of 1 correct",
+        "Practice Quiz: 2 of 1 correct",
+        "Practice Quiz: 1 of 2147483648 correct",
+        "Practice Quiz: 01 of 2 correct",
+        "Practice Quiz: 1 of 1 correct\n",
+        null,
+      ];
+      await client.query("insert into review_items (reason) select unnest($1::text[])", [reasons]);
+      await client.query(
+        await readFile(
+          new URL("../migrations/0005_review_practice_score.sql", import.meta.url),
+          "utf8",
+        ),
+      );
+      const { rows } = await client.query(
+        "select reason, practice_correct, practice_total from review_items order by id",
+      );
+      expect(rows.map((r) => r.reason)).toEqual(reasons);
+      expect(rows.map((r) => [r.practice_correct, r.practice_total])).toEqual([
+        [0, 3],
+        [12, 12],
+        ...reasons.slice(2).map(() => [null, null]),
+      ]);
+    } finally {
+      await client.query("rollback");
+      client.release();
+      await db.$client.end();
+    }
+  },
+);

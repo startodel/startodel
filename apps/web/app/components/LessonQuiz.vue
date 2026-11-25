@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LessonBlock } from "../../shared/types/lesson";
+const { t } = useI18n();
 const props = defineProps<{ lessonId: string; quiz: Extract<LessonBlock, { type: "quiz" }> }>();
 const emit = defineEmits<{ assessed: [level: number] }>();
 const answers = ref<(number | undefined)[]>([]);
@@ -22,7 +23,7 @@ async function submit() {
     result.value = scored;
     emit("assessed", scored.mastery);
   } catch {
-    message.value = "Could not record your answers. Try again.";
+    message.value = t("quiz.error");
   } finally {
     busy.value = false;
   }
@@ -30,7 +31,7 @@ async function submit() {
 </script>
 <template>
   <form @submit.prevent="submit">
-    <h2>Quiz</h2>
+    <h2>{{ $t("lesson.quiz") }}</h2>
     <fieldset v-for="(q, i) in quiz.questions" :key="i" :disabled="busy">
       <legend>{{ q.prompt }}</legend>
       <label v-for="(option, index) in q.options" :key="index"
@@ -45,18 +46,22 @@ async function submit() {
         {{ option }}</label
       >
       <div v-if="result" class="feedback">
-        <strong>{{ result.perQuestion[i] ? "Correct" : "Incorrect" }}</strong
+        <strong>{{ result.perQuestion[i] ? $t("quiz.right") : $t("quiz.wrong") }}</strong
         ><span v-if="!result.perQuestion[i]">
-          · Correct answer: {{ q.options[result.feedback[i]!.correctIndex] }}</span
+          · {{ $t("quiz.answer", { answer: q.options[result.feedback[i]!.correctIndex] }) }}</span
         ><LessonMarkdown
           v-if="result.feedback[i]?.explanation"
           :text="result.feedback[i]!.explanation!"
         />
       </div>
     </fieldset>
-    <button :disabled="busy" class="primary">Submit answers</button>
+    <button :disabled="busy" class="primary">{{ $t("quiz.submit") }}</button>
     <p role="status">
-      {{ result ? result.correct + " of " + result.total + " correct" : message }}
+      {{
+        result
+          ? $t("quiz.score", { correct: $n(result.correct), total: $n(result.total) })
+          : message
+      }}
     </p>
   </form>
 </template>

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { LessonBlock } from "../../shared/types/lesson";
 import { httpUrl, youtubeEmbed } from "../utils/links";
+const { t } = useI18n();
 const props = defineProps<{ block: LessonBlock; lessonId: string; readOnly?: boolean }>();
 const solution = ref("");
 const message = ref("");
 async function reveal(event: Event) {
   if (!(event.target as HTMLDetailsElement).open || solution.value) return;
-  message.value = "Loading solution…";
+  message.value = t("lesson.loading");
   try {
     const result = await $fetch(
       `/api/lessons/${props.lessonId}/exercise/${props.block.id}/solution`,
@@ -14,7 +15,7 @@ async function reveal(event: Event) {
     solution.value = result.solution;
     message.value = "";
   } catch {
-    message.value = "Could not load the solution. Close and reopen to retry.";
+    message.value = t("lesson.loadError");
   }
 }
 const loadVideo = ref(false);
@@ -29,7 +30,7 @@ defineEmits<{ assessed: [level: number] }>();
         :text="block.explanation"
     /></template>
     <aside v-else-if="block.type === 'callout'" :class="['callout', block.variant]">
-      <strong>{{ block.variant }}</strong><LessonMarkdown :text="block.markdown" />
+      <strong>{{ $t(`callout.${block.variant}`) }}</strong><LessonMarkdown :text="block.markdown" />
     </aside>
     <div v-else-if="block.type === 'link'" class="resource">
       <a
@@ -46,9 +47,9 @@ defineEmits<{ assessed: [level: number] }>();
         class="video-preview"
         type="button"
         @click="loadVideo = true"
-        :aria-label="'Load video: ' + block.title"
+        :aria-label="$t('lesson.videoTitle', { title: block.title })"
       >
-        <span aria-hidden="true">▶</span> Load video
+        <span aria-hidden="true">▶</span> {{ $t("lesson.video") }}
       </button>
       <iframe
         v-else-if="youtubeEmbed(block.url)"
@@ -62,14 +63,14 @@ defineEmits<{ assessed: [level: number] }>();
       <LessonMarkdown v-if="block.note" :text="block.note" />
     </figure>
     <section v-else-if="block.type === 'quiz' && readOnly">
-      <h2>Quiz</h2>
+      <h2>{{ $t("lesson.quiz") }}</h2>
       <div v-for="(question, i) in block.questions" :key="i">
         <LessonMarkdown :text="question.prompt" />
         <ul>
           <li v-for="(option, j) in question.options" :key="j">{{ option }}</li>
         </ul>
       </div>
-      <p class="muted">Fork this track to practice</p>
+      <p class="muted">{{ $t("lesson.forkPractice") }}</p>
     </section>
     <LessonQuiz
       v-else-if="block.type === 'quiz'"
@@ -78,14 +79,14 @@ defineEmits<{ assessed: [level: number] }>();
       @assessed="$emit('assessed', $event)"
     />
     <section v-else>
-      <h2>Exercise</h2>
+      <h2>{{ $t("lesson.exercise") }}</h2>
       <LessonMarkdown :text="block.prompt" />
       <details v-for="(hint, i) in block.hints" :key="i">
-        <summary>Hint {{ i + 1 }}</summary>
+        <summary>{{ $t("lesson.hint", { index: $n(i + 1) }) }}</summary>
         <LessonMarkdown :text="hint" />
       </details>
       <details v-if="!readOnly" @toggle="reveal">
-        <summary>Show solution</summary>
+        <summary>{{ $t("lesson.solution") }}</summary>
         <LessonMarkdown v-if="solution" :text="solution" /><span role="status">{{ message }}</span>
       </details>
     </section>

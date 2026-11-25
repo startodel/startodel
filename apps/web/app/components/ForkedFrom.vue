@@ -4,11 +4,11 @@ defineProps<{ from: ForkedFrom }>();
 </script>
 <template>
   <p class="muted">
-    Forked from
-    <NuxtLink
+    {{ $t("public.from") }}
+    <NuxtLinkLocale
       v-if="from.source"
       :to="'/u/' + encodeURIComponent(from.source.login) + '/' + from.source.slug"
-      >@{{ from.login }}/{{ from.slug }}</NuxtLink
+      >@{{ from.login }}/{{ from.slug }}</NuxtLinkLocale
     ><span v-else>@{{ from.login }}/{{ from.slug }}</span>
   </p>
 </template>

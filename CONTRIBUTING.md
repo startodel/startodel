@@ -11,3 +11,9 @@ Use `type(optional-scope): subject` for commit messages and PR titles. Allowed t
 
 - `feat(core): add TopicEdge type`
 - `docs: define Track in the glossary`
+
+## Interface languages
+
+Add each UI message under the same key in `apps/web/i18n/locales/ru.json` and `en.json`. Translate complete phrases with named parameters. Use the Russian UI terms in [the glossary](docs/CONTEXT.md#russian-ui-terms). Pass the count to the translator for plurals and use the active locale for dates and numbers. Link to app pages with `NuxtLinkLocale`.
+
+Run `pnpm i18n:check` for catalog parity, empty, missing and unused messages, and literal template text. Reference keys literally in `t()`, `$t()` or `i18n-t`. Enumerate dynamic domain values in `scripts/i18n.mjs`.

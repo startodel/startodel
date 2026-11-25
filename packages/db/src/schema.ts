@@ -217,12 +217,20 @@ export const reviewItems = pgTable(
     lastResult: verdictColumn("last_result"),
     reason: text("reason"),
     lastReviewedAt: time("last_reviewed_at"),
+    practiceCorrect: integer("practice_correct"),
+    practiceTotal: integer("practice_total"),
   },
   (t) => [
     parentKey(t.userId, t.topicId, topics),
     unique().on(t.userId, t.topicId),
     check("review_items_box_check", sql`${t.box} between 0 and 4`),
     validVerdict("review_items_result_check", t.lastResult),
+    check(
+      "review_items_practice_score_check",
+      sql`(${t.practiceCorrect} is null and ${t.practiceTotal} is null)
+      or (${t.practiceCorrect} is not null and ${t.practiceTotal} is not null
+        and ${t.practiceTotal} > 0 and ${t.practiceCorrect} between 0 and ${t.practiceTotal})`,
+    ),
   ],
 );
 

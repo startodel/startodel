@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { displayDate } from "../../../utils/dates";
+const { verdictLabel } = useLearningLabels();
+const { t } = useI18n();
+const displayDate = useDisplayDate();
 const id = String(useRoute().params.topicId);
 const url = `/api/reviews/${id}/practice` as const;
 const { data, error, refresh } = await useFetch(url);
 if (error.value)
   throw createError({
     statusCode: error.value.statusCode,
-    statusMessage: "Practice Quiz unavailable",
+    message: t("common.error"),
   });
-useHead({ title: "Practice quiz" });
+useHead({ title: t("review.practice") });
 const answers = ref<number[]>([]);
 const busy = ref(false);
 const message = ref("");
@@ -34,11 +36,12 @@ async function submit() {
   try {
     result.value = await send(data.value);
   } catch (error) {
-    stale.value =
-      !!error && typeof error === "object" && "statusCode" in error && error.statusCode === 409;
-    message.value = stale.value
-      ? "This review has changed. Load the current questions to practice again."
-      : "Could not save this Practice Quiz. Try again.";
+    const failure = practiceFailure(
+      error && typeof error === "object" && "statusCode" in error ? error.statusCode : undefined,
+      t,
+    );
+    stale.value = failure.stale;
+    message.value = failure.message;
   } finally {
     busy.value = false;
   }
@@ -52,16 +55,24 @@ async function reload() {
 </script>
 <template>
   <main v-if="data" class="narrow">
-    <NuxtLink to="/reviews">← Reviews</NuxtLink>
-    <h1>Practice quiz</h1>
+    <NuxtLinkLocale to="/reviews">← {{ $t("nav.reviews") }}</NuxtLinkLocale>
+    <h1>{{ $t("review.practice") }}</h1>
     <h2>{{ data.title }}</h2>
     <section v-if="result" class="panel" aria-live="polite">
-      <h2>{{ result.correct }} of {{ result.total }} correct · {{ result.verdict }}</h2>
+      <h2>
+        {{ $t("quiz.score", { correct: $n(result.correct), total: $n(result.total) }) }} ·
+        {{ verdictLabel(result.verdict) }}
+      </h2>
       <p>
-        Box {{ result.box }} · Next review {{ displayDate(result.dueAt) }} · Mastery
-        {{ result.mastery }}
+        {{
+          $t("review.next", {
+            box: $n(result.box),
+            date: displayDate(result.dueAt),
+            level: $n(result.mastery),
+          })
+        }}
       </p>
-      <NuxtLink to="/reviews">Return to reviews</NuxtLink>
+      <NuxtLinkLocale to="/reviews">{{ $t("review.return") }}</NuxtLinkLocale>
     </section>
     <form @submit.prevent="submit">
       <fieldset
@@ -70,7 +81,7 @@ async function reload() {
         :key="q.lessonId + q.blockId + q.index"
         :disabled="!!result || busy || stale"
       >
-        <legend>{{ i + 1 }}. {{ q.prompt }}</legend>
+        <legend>{{ $n(i + 1) }}. {{ q.prompt }}</legend>
         <label v-for="(option, j) in q.options" :key="j"
           ><input type="radio" required :name="'question-' + i" :value="j" v-model="answers[i]" />
           {{ option }}</label
@@ -78,16 +89,16 @@ async function reload() {
         <strong v-if="result">{{
           result.results.find((b) => b.lessonId === q.lessonId && b.blockId === q.blockId)
             ?.perQuestion[q.index]
-            ? "Correct"
-            : "Incorrect"
+            ? $t("quiz.right")
+            : $t("quiz.wrong")
         }}</strong>
       </fieldset>
       <button v-if="!result && !stale" class="primary" :disabled="busy">
-        Submit Practice Quiz
+        {{ $t("review.submit") }}
       </button>
     </form>
     <p role="alert" v-if="message">{{ message }}</p>
-    <button v-if="stale" @click="reload">Load current questions</button>
+    <button v-if="stale" @click="reload">{{ $t("review.reload") }}</button>
   </main>
 </template>
 <style scoped>

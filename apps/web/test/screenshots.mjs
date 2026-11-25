@@ -72,6 +72,12 @@ try {
   const me = await (await request.get(origin + "/api/me")).json();
   const owner = forUser(db, me.user.id);
   const page = await context.newPage();
+  // SSR links and form controls become visible before their click handlers are attached.
+  const hydrated = () => page.waitForFunction(() => window.useNuxtApp?.().isHydrating === false);
+  async function visit(path) {
+    await page.goto(origin + path);
+    await hydrated();
+  }
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   // Keep browser navigation and embedded resources on the local test app.
@@ -84,9 +90,12 @@ try {
       : r.abort(),
   );
   await mkdir(directory, { recursive: true });
+  const pr12 = process.argv.includes("--pr12");
   const shot = async (name) => {
+    if (pr12 && !name.startsWith("pr12-")) return;
     if (process.argv.includes("--pr11") && !name.startsWith("pr11-")) return;
     if (
+      !name.startsWith("pr12-") &&
       !name.startsWith("pr11-") &&
       !name.startsWith("pr9-") &&
       !process.argv.includes("--include-pr8")
@@ -99,12 +108,12 @@ try {
     });
     console.log(name);
   };
-  await page.goto(origin + "/");
+  await visit("/en");
   await page.getByLabel("TypeScript", { exact: true }).check();
   await page.getByLabel("Other technologies").fill("SQL,");
   await page.getByLabel("Other technologies").press("Enter");
   await page.getByLabel("Understand internals").check();
-  await page.getByLabel("senior", { exact: true }).check();
+  await page.getByLabel("Senior", { exact: true }).check();
   await shot("onboarding");
   await page.getByRole("button", { name: "Continue to connect your agent" }).click();
   await page.waitForURL("**/onboarding/connect");
@@ -159,6 +168,7 @@ try {
     blocks,
   });
   await page.reload();
+  await hydrated();
   await page.getByRole("link", { name: track.title }).waitFor();
   await shot("dashboard");
   await page.getByRole("link", { name: track.title }).click();
@@ -185,7 +195,7 @@ try {
     "https://www.youtube-nocookie.com/embed/8aGhZQkoFbQ",
   );
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto(origin + "/tracks/" + track.id);
+  await visit("/en/tracks/" + track.id);
   await page.getByRole("button", { name: "Tasks and timers", exact: true }).click();
   await page.getByRole("link", { name: lesson.title }).waitFor();
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
@@ -228,7 +238,7 @@ try {
     "weak",
     "An expired timer queues a task. The current task must finish before the callback can run.",
   );
-  await page.goto(origin + "/grills/" + grill.id);
+  await visit("/en/grills/" + grill.id);
   await page
     .getByLabel("Your answer")
     .fill("After the current task returns and before the next task starts.");
@@ -241,10 +251,10 @@ try {
   await page.getByRole("button", { name: "Previous" }).click();
   await page.getByText("Verdict · weak").waitFor();
   await shot("pr9-grill-open");
-  await page.goto(origin + "/");
+  await visit("/en");
   await page.getByRole("link", { name: "Continue grill session" }).waitFor();
   await shot("pr9-dashboard-next-up");
-  await page.goto(origin + "/grills");
+  await visit("/en/grills");
   await page.getByRole("link", { name: finished.title }).waitFor();
   await shot("pr9-grills");
   await page.getByRole("link", { name: finished.title }).click();
@@ -254,7 +264,7 @@ try {
     "update review_items set due_at=now()-interval '1 day' where user_id=$1 and topic_id=$2",
     [me.user.id, by.tasks.id],
   );
-  await page.goto(origin + "/reviews");
+  await visit("/en/reviews");
   await page.getByRole("link", { name: "Practice quiz" }).waitFor();
   await shot("pr9-reviews");
   await page.getByRole("link", { name: "Practice quiz" }).click();
@@ -262,12 +272,62 @@ try {
   await shot("pr9-review-practice");
   await page.getByRole("button", { name: "Submit Practice Quiz" }).click();
   await page.getByRole("heading", { name: "1 of 1 correct · strong" }).waitFor();
-  await page.goto(origin + "/progress");
+  await visit("/en/progress");
   await page.getByLabel("Sort by").selectOption("mastery");
   await page.getByRole("heading", { name: "Recent activity" }).waitFor();
   await shot("pr9-progress");
+  if (pr12) {
+    await visit("/");
+    await page.getByRole("heading", { name: "Главная", exact: true }).waitFor();
+    await page.getByRole("link", { name: track.title }).waitFor();
+    await shot("pr12-ru-dashboard");
+    await page.getByRole("link", { name: track.title }).click();
+    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await page.getByRole("button", { name: "Открыть доступ" }).waitFor();
+    await shot("pr12-ru-track");
+    await visit("/reviews");
+    await page.getByRole("heading", { name: by.tasks.title }).waitFor();
+    await page.getByText("Тренировочный тест: 1 из 1 верно", { exact: true }).waitFor();
+    await shot("pr12-ru-grill-or-reviews");
+
+    // Exercise the real submission handler and check the message visible after each response.
+    await page.getByRole("link", { name: "Тренировочный тест", exact: true }).click();
+    await page.getByRole("radio", { name: "sync", exact: true }).check();
+    await page.route("**/api/reviews/*/practice", (route) => route.continue({ postData: "{}" }), {
+      times: 1,
+    });
+    await page.getByRole("button", { name: "Проверить ответы" }).click();
+    await page
+      .getByText("Проверьте, что для каждого вопроса выбран один из предложенных ответов.", {
+        exact: true,
+      })
+      .waitFor();
+    await owner.recordReviewResult(by.tasks.id, "strong", "Discussed with the learner");
+    await page.getByRole("button", { name: "Проверить ответы" }).click();
+    await page
+      .getByText("Вопросы изменились. Загрузите новую версию теста.", { exact: true })
+      .waitFor();
+
+    await owner.setTrackVisibility(track.id, true, true);
+    await context.clearCookies();
+    const publicPath = "/u/bob/" + track.slug;
+    await visit(publicPath);
+    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await shot("pr12-ru-public-track");
+    await page.locator("header").getByRole("link", { name: "EN", exact: true }).click();
+    await page.waitForURL(origin + "/en" + publicPath);
+    await page.getByRole("heading", { name: "Track Graph" }).waitFor();
+    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await shot("pr12-en-public-track");
+    await visit("/");
+    await page.waitForURL(origin + "/en/login");
+    await page.locator("footer").getByRole("link", { name: "RU", exact: true }).click();
+    await page.waitForURL(origin + "/login");
+    await visit("/");
+    await page.waitForURL(origin + "/login");
+  }
   if (process.argv.includes("--pr11")) {
-    await page.goto(origin + "/tracks/" + track.id);
+    await visit("/en/tracks/" + track.id);
     await page.getByRole("button", { name: "Make public" }).click();
     await page.getByRole("dialog").waitFor();
     await shot("pr11-publish-dialog");
@@ -277,11 +337,11 @@ try {
     await page.getByRole("button", { name: "Publish", exact: true }).click();
     await page.getByRole("button", { name: "Copy public URL" }).waitFor();
     const publicPath = "/u/bob/" + track.slug;
-    await page.goto(origin + "/terms?lang=en");
+    await visit("/terms?lang=en");
     await page.getByRole("heading", { name: "Terms of Use", exact: true }).waitFor();
     await shot("pr11-terms");
     await context.clearCookies();
-    await page.goto(origin + "/u/bob");
+    await visit("/en/u/bob");
     await page.getByRole("link", { name: track.title }).waitFor();
     await shot("pr11-public-profile");
     await page.getByRole("link", { name: track.title }).click();
@@ -292,14 +352,14 @@ try {
     assert.equal(await page.getByText("Show solution", { exact: true }).count(), 0);
     await shot("pr11-public-lesson");
     await signIn("forker");
-    await page.goto(origin + publicPath);
+    await visit("/en" + publicPath);
     await page.getByRole("button", { name: "Fork", exact: true }).click();
-    await page.waitForURL("**/tracks/*");
+    await page.waitForURL("**/en/tracks/*");
     await page.getByText("Forked from", { exact: false }).waitFor();
     await page.locator(".vue-flow__edge-path").first().waitFor();
     await shot("pr11-fork-result");
     await signIn("bob");
-    await page.goto(origin + "/tracks/" + track.id);
+    await visit("/en/tracks/" + track.id);
     await page.getByText("1 fork", { exact: true }).waitFor();
     await page.locator(".vue-flow__edge-path").first().waitFor();
     await shot("pr11-track-visibility");

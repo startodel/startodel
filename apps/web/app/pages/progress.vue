@@ -1,72 +1,82 @@
 <script setup lang="ts">
-import { MASTERY_LABELS } from "@startodel/core";
-import { displayDate } from "../utils/dates";
-useHead({ title: "Progress" });
+const { t, locale } = useI18n();
+const { masteryLabel, verdictLabel } = useLearningLabels();
+const displayDate = useDisplayDate();
+useHead({ title: t("nav.progress") });
 const { data, error, refresh } = await useFetch("/api/progress");
+const activities = computed(() => ({
+  "Lesson read": t("activity.lesson"),
+  "Quiz attempt": t("activity.quiz"),
+  "Grill answer": t("activity.answer"),
+  "Grill verdict": t("activity.verdict"),
+  "Review result": t("activity.review"),
+  Mastery: t("activity.mastery"),
+}));
 const sort = ref("title");
 const topics = computed(() =>
   [...(data.value?.perTopic ?? [])].sort(
-    (a, b) => (sort.value === "mastery" ? a.level - b.level : 0) || a.title.localeCompare(b.title),
+    (a, b) =>
+      (sort.value === "mastery" ? a.level - b.level : 0) ||
+      a.title.localeCompare(b.title, locale.value),
   ),
 );
 </script>
 <template>
   <main>
-    <h1>Progress</h1>
+    <h1>{{ $t("nav.progress") }}</h1>
     <p v-if="error" role="alert">
-      Could not load your progress. <button @click="refresh()">Retry</button>
+      {{ $t("progress.load") }} <button @click="refresh()">{{ $t("common.retry") }}</button>
     </p>
     <template v-if="data"
       ><section class="panel">
-        <h2>Mastery across Topics</h2>
+        <h2>{{ $t("progress.levels") }}</h2>
         <dl class="levels">
           <div v-for="(n, i) in data.masteryDistribution" :key="i">
-            <dt>{{ i }} · {{ MASTERY_LABELS[i] }}</dt>
-            <dd>{{ n }}</dd>
+            <dt>{{ $n(i) }} · {{ masteryLabel(i) }}</dt>
+            <dd>{{ $n(n) }}</dd>
           </div>
         </dl>
       </section>
       <section class="panel">
-        <h2>Track completion</h2>
-        <p class="muted">Topics reach completion at Mastery 2.</p>
-        <p v-if="!data.perTrack.length">No Tracks yet.</p>
+        <h2>{{ $t("progress.completion") }}</h2>
+        <p class="muted">{{ $t("progress.threshold") }}</p>
+        <p v-if="!data.perTrack.length">{{ $t("progress.noTracks") }}</p>
         <div v-for="t in data.perTrack" :key="t.trackId">
-          <NuxtLink :to="'/tracks/' + t.trackId">{{ t.title }}</NuxtLink> · {{ t.completed }} of
-          {{ t.total }} Topics<progress
-            :aria-label="t.title"
-            :max="t.total || 1"
-            :value="t.completed"
-          />
+          <NuxtLinkLocale :to="'/tracks/' + t.trackId">{{ t.title }}</NuxtLinkLocale> ·
+          {{ $t("progress.ofTopics", { done: $n(t.completed), total: $n(t.total) })
+          }}<progress :aria-label="t.title" :max="t.total || 1" :value="t.completed" />
         </div>
       </section>
       <section class="panel">
-        <h2>Topics</h2>
-        <p v-if="!topics.length">No Topics yet.</p>
+        <h2>{{ $t("track.topics") }}</h2>
+        <p v-if="!topics.length">{{ $t("progress.noTopics") }}</p>
         <template v-else
           ><label
-            >Sort by
+            >{{ $t("progress.sort") }}
             <select v-model="sort">
-              <option value="title">Title</option>
-              <option value="mastery">Mastery (lowest first)</option>
+              <option value="title">{{ $t("progress.title") }}</option>
+              <option value="mastery">{{ $t("progress.lowest") }}</option>
             </select></label
           >
           <div class="scroll">
             <table>
               <thead>
                 <tr>
-                  <th>Topic</th>
-                  <th>Tracks</th>
-                  <th>Mastery</th>
-                  <th>Lessons read</th>
-                  <th>Last activity</th>
+                  <th>{{ $t("progress.topic") }}</th>
+                  <th>{{ $t("progress.tracks") }}</th>
+                  <th>{{ $t("progress.mastery") }}</th>
+                  <th>{{ $t("progress.read") }}</th>
+                  <th>{{ $t("progress.last") }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="t in topics" :key="t.id">
-                  <th scope="row"><NuxtLink :to="'/topics/' + t.id">{{ t.title }}</NuxtLink></th>
+                  <th scope="row">
+                    <NuxtLinkLocale :to="'/topics/' + t.id">{{ t.title }}</NuxtLinkLocale>
+                  </th>
                   <td>{{ t.tracks.map((track) => track.title).join(", ") || "—" }}</td>
-                  <td>{{ t.level }} · {{ MASTERY_LABELS[t.level] }}</td>
-                  <td>{{ t.read }} / {{ t.lessons }}</td>
+                  <td>{{ $n(t.level) }} · {{ masteryLabel(t.level) }}</td>
+                  <td>{{ $n(t.read) }} / {{ $n(t.lessons) }}</td>
                   <td>{{ t.lastActivity ? displayDate(t.lastActivity) : "—" }}</td>
                 </tr>
               </tbody>
@@ -75,13 +85,20 @@ const topics = computed(() =>
         >
       </section>
       <section class="panel">
-        <h2>Recent activity</h2>
-        <p v-if="!data.activity.length">No learning activity yet.</p>
+        <h2>{{ $t("progress.history") }}</h2>
+        <p v-if="!data.activity.length">{{ $t("progress.emptyHistory") }}</p>
         <ol class="feed">
           <li v-for="a in data.activity" :key="a.kind + a.id">
             <span
-              ><strong>{{ a.kind }}</strong> · {{ a.title }}
-              <span v-if="a.detail">· {{ a.detail }}</span></span
+              ><strong>{{ activities[a.kind] }}</strong> · {{ a.title }}
+              <span v-if="a.detail"
+                >·
+                {{
+                  ["Grill verdict", "Review result"].includes(a.kind)
+                    ? verdictLabel(a.detail)
+                    : a.detail
+                }}</span
+              ></span
             ><time :datetime="a.at">{{ displayDate(a.at) }}</time>
           </li>
         </ol>

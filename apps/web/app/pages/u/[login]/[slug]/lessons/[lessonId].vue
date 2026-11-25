@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n();
 const route = useRoute();
 const login = encodeURIComponent(String(route.params.login));
 const slug = encodeURIComponent(String(route.params.slug));
@@ -8,18 +9,18 @@ const { data, error } = await useFetch(`/api/public/${login}/${slug}/lessons/${i
 if (!data.value)
   throw createError({
     statusCode: error.value?.statusCode ?? 404,
-    statusMessage: "Public Lesson unavailable",
+    message: t("common.error"),
   });
 usePublicHead(
-  data.value.title,
-  data.value.summary || "A Lesson in " + data.value.trackTitle,
+  t("public.lessonTitle", { title: data.value.title }),
+  data.value.summary || t("public.lesson", { title: data.value.trackTitle }),
   path + "/lessons/" + id,
   "article",
 );
 </script>
 <template>
   <main v-if="data" class="narrow">
-    <NuxtLink :to="path">← {{ data.trackTitle }}</NuxtLink>
+    <NuxtLinkLocale :to="path">← {{ data.trackTitle }}</NuxtLinkLocale>
     <h1>{{ data.title }}</h1>
     <p v-if="data.summary">{{ data.summary }}</p>
     <article class="panel">
@@ -30,7 +31,7 @@ usePublicHead(
         :lesson-id="id"
         read-only
       />
-      <p v-if="!data.blocks.length">This Lesson has no Blocks yet.</p>
+      <p v-if="!data.blocks.length">{{ $t("lesson.empty") }}</p>
     </article>
   </main>
 </template>

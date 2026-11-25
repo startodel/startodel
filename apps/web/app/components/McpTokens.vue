@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { t } = useI18n();
 defineProps<{ connect?: boolean }>();
 const { data: tokens, error: listError, refresh, status } = useFetch("/api/mcp-tokens");
 const name = ref("");
@@ -15,7 +16,7 @@ async function createToken() {
     name.value = "";
     await refresh();
   } catch {
-    message.value = "Could not create the token. Check the list before trying again.";
+    message.value = t("token.createError");
   } finally {
     busy.value = false;
   }
@@ -29,7 +30,7 @@ async function revokeToken(id: string) {
     if (issued.value?.id === id) issued.value = undefined;
     await refresh();
   } catch {
-    message.value = "Could not revoke the token. Try again.";
+    message.value = t("token.revokeError");
   } finally {
     busy.value = false;
   }
@@ -39,37 +40,41 @@ async function copyToken() {
   if (!issued.value) return;
   try {
     await navigator.clipboard.writeText(issued.value.token);
-    message.value = "Token copied.";
+    message.value = t("token.copied");
   } catch {
-    message.value = "Select and copy the token manually.";
+    message.value = t("token.manual");
   }
 }
 </script>
 
 <template>
   <section>
-    <h2>MCP tokens</h2>
-    <p v-if="endpoint">MCP URL: <code>{{ endpoint }}</code></p>
+    <h2>{{ $t("token.title") }}</h2>
+    <p v-if="endpoint">{{ $t("token.endpoint") }} <code>{{ endpoint }}</code></p>
     <form @submit.prevent="createToken">
-      <label>Token name <input v-model="name" required /></label>
-      <button :disabled="busy || !name.trim()">Create token</button>
+      <label>{{ $t("token.name") }} <input v-model="name" required /></label>
+      <button :disabled="busy || !name.trim()">{{ $t("token.create") }}</button>
     </form>
     <div v-if="issued">
-      <p>Copy this token now. You will not see it again.</p>
+      <p>{{ $t("token.once") }}</p>
       <code>{{ issued.token }}</code>
-      <button type="button" @click="copyToken">Copy token</button>
-      <button type="button" @click="issued = undefined">Dismiss</button>
+      <button type="button" @click="copyToken">{{ $t("token.copy") }}</button>
+      <button type="button" @click="issued = undefined">{{ $t("token.dismiss") }}</button>
     </div>
     <AgentConfig v-if="connect" :token="issued?.token" />
     <p role="status">{{ message }}</p>
-    <p v-if="listError">Could not load tokens. <button @click="refresh()">Retry</button></p>
+    <p v-if="listError">
+      {{ $t("token.load") }} <button @click="refresh()">{{ $t("common.retry") }}</button>
+    </p>
     <ul v-else-if="!connect && tokens?.length">
       <li v-for="token in tokens" :key="token.id">
         {{ token.name }} (<code>{{ token.prefix }}…</code>)
-        <span v-if="token.revokedAt">Revoked</span>
-        <button v-else type="button" :disabled="busy" @click="revokeToken(token.id)">Revoke</button>
+        <span v-if="token.revokedAt">{{ $t("token.revoked") }}</span>
+        <button v-else type="button" :disabled="busy" @click="revokeToken(token.id)">
+          {{ $t("token.revoke") }}
+        </button>
       </li>
     </ul>
-    <p v-else-if="!connect && status === 'success'">No tokens yet.</p>
+    <p v-else-if="!connect && status === 'success'">{{ $t("token.none") }}</p>
   </section>
 </template>

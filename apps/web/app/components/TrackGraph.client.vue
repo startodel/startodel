@@ -3,6 +3,7 @@ import { VueFlow, MarkerType, Handle, Position } from "@vue-flow/core";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import { Graph, layout } from "@dagrejs/dagre";
+const { t: translate } = useI18n();
 const props = defineProps<{
   topics: { id: string; title: string; level?: number }[];
   edges: { id: string; fromTopicId: string; toTopicId: string }[];
@@ -24,7 +25,9 @@ const positions = computed(() => {
       label: t.title,
       position: { x: x - 95, y: y - 32 },
       class: props.readOnly ? undefined : "level-" + t.level,
-      ariaLabel: props.readOnly ? t.title : t.title + ", Mastery " + t.level,
+      ariaLabel: props.readOnly
+        ? t.title
+        : translate("topic.node", { title: t.title, level: t.level }),
       style: { width: "190px", height: "64px" },
     };
   });

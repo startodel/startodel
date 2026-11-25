@@ -182,12 +182,25 @@ export function publicReader(db: Connection) {
       if (lesson) return { ...lesson, blocks: lesson.blocks.map(publicBlock) };
     },
     sitemap() {
+      // Match the Public Profile lookup when a GitHub login has been reassigned.
+      const accounts = db
+        .selectDistinctOn([users.login], { id: users.id, login: users.login })
+        .from(users)
+        .orderBy(users.login, desc(users.updatedAt), users.id)
+        .as("public_accounts");
       return db
-        .select({ login: users.login, slug: tracks.slug, updatedAt: tracks.updatedAt })
-        .from(tracks)
-        .innerJoin(users, eq(users.id, tracks.userId))
-        .where(visible)
-        .orderBy(users.login, tracks.slug);
+        .select({
+          login: accounts.login,
+          slug: tracks.slug,
+          updatedAt: tracks.updatedAt,
+          lessonId: lessons.id,
+          lessonUpdatedAt: lessons.updatedAt,
+        })
+        .from(accounts)
+        .leftJoin(tracks, and(eq(tracks.userId, accounts.id), visible))
+        .leftJoin(trackTopics, eq(trackTopics.trackId, tracks.id))
+        .leftJoin(lessons, eq(lessons.topicId, trackTopics.topicId))
+        .orderBy(accounts.login, tracks.slug, lessons.id);
     },
   };
 }

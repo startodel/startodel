@@ -21,6 +21,8 @@ Treat agent-authored Lesson content as untrusted. Escape HTML in Markdown, allow
 
 Every MCP Tool uses the request’s `forUser(db, userId)`, bound to the Owner of the MCP Token. Never accept a `userId`, `ownerId`, or equivalent Tool argument. For every new Tool, add two-User HTTP isolation tests and describe when to call it in the [agent guide](docs/agent-guide/README.md). To change agent guidance, edit `docs/agent-guide`, then run `pnpm guide:build && pnpm skills:build`. See [ADR 0005](docs/adr/0005-mcp-transport-and-token-model.md).
 
+Add UI strings to both Russian and English message catalogs. Follow the [contributor instructions](CONTRIBUTING.md#interface-languages) and run `pnpm i18n:check`.
+
 ## Commands
 
 Run from the workspace root:

@@ -1,45 +1,52 @@
 <script setup lang="ts">
 import { isPublicPage } from "./utils/public-pages";
 const { user, clear, fetch: fetchSession } = useUserSession();
+const { locale } = useI18n();
+const localePath = useLocalePath();
 const route = useRoute();
 usePublicOrigin();
 onMounted(() => {
   if (isPublicPage(route.path)) void fetchSession();
 });
 useHead({
-  htmlAttrs: { lang: "en" },
+  htmlAttrs: { lang: locale },
   titleTemplate: (title) => (title ? title + " · Startodel" : "Startodel"),
 });
 async function logout() {
   await clear();
   clearNuxtData();
-  await navigateTo("/login");
+  await navigateTo(localePath("/login"));
 }
 </script>
 <template>
   <header class="mast">
     <div class="bar">
-      <NuxtLink class="brand" to="/"
-        ><span aria-hidden="true" class="brand-mark">S</span>Startodel</NuxtLink
+      <NuxtLinkLocale class="brand" to="/"
+        ><span aria-hidden="true" class="brand-mark">S</span>Startodel</NuxtLinkLocale
       >
-      <nav v-if="user && route.path !== '/login'" aria-label="Main navigation">
-        <NuxtLink to="/">Dashboard</NuxtLink><NuxtLink to="/grills">Grills</NuxtLink
-        ><NuxtLink to="/reviews">Reviews</NuxtLink><NuxtLink to="/progress">Progress</NuxtLink
-        ><NuxtLink to="/settings">Settings</NuxtLink>
+      <nav v-if="user && route.path !== localePath('/login')" :aria-label="$t('nav.main')">
+        <NuxtLinkLocale to="/">{{ $t("nav.dashboard") }}</NuxtLinkLocale
+        ><NuxtLinkLocale to="/grills">{{ $t("nav.grills") }}</NuxtLinkLocale
+        ><NuxtLinkLocale to="/reviews">{{ $t("nav.reviews") }}</NuxtLinkLocale
+        ><NuxtLinkLocale to="/progress">{{ $t("nav.progress") }}</NuxtLinkLocale
+        ><NuxtLinkLocale to="/settings">{{ $t("nav.settings") }}</NuxtLinkLocale>
         <span class="identity"
           ><img v-if="user.avatarUrl" :src="user.avatarUrl" alt="" width="28" height="28" />{{
             user.name || user.login
           }}</span
         >
-        <button class="quiet" @click="logout">Log out</button>
+        <button class="quiet" @click="logout">{{ $t("nav.logout") }}</button>
       </nav>
+      <LanguageSwitcher />
     </div>
   </header>
   <NuxtPage :page-key="route.path" />
   <footer class="bar">
-    <nav aria-label="Legal">
-      <NuxtLink to="/terms">Terms</NuxtLink><NuxtLink to="/rules">Publishing rules</NuxtLink>
+    <nav :aria-label="$t('legal.nav')">
+      <NuxtLinkLocale to="/terms">{{ $t("legal.terms") }}</NuxtLinkLocale
+      ><NuxtLinkLocale to="/rules">{{ $t("legal.rules") }}</NuxtLinkLocale>
     </nav>
+    <LanguageSwitcher />
   </footer>
 </template>
 <style>

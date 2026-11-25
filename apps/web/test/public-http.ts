@@ -182,52 +182,80 @@ export function publicHttpTests(
       expect(json).not.toMatch(
         /"(?:userId|githubId|mastery|level|evidence|readAt|answers|verdict|feedback|dueAt|reason|experience|stack|goals|onboardedAt|correctIndex|explanation|solution|acceptedTermsVersion)"\s*:/,
       );
-      for (const cookie of ["", a, b]) {
-        const response = await fetch(origin + "/u" + suffix, { headers: { cookie } });
-        expect(response.status).toBe(200);
-        expect(response.headers.get("cache-control")).toContain("no-store");
-        const html = await response.text();
-        for (const value of [
-          "Hidden-",
-          author.id,
-          reader.id,
-          token.prefix,
-          account.github_id,
-          "2001-02-03",
-          "2002-03-04",
-          "2003-04-05",
-          grill.id,
-          question.id,
-          token.id,
-          privateLesson.id,
-          '"mastery"',
-          '"answers"',
-          '"verdict"',
-          '"feedback"',
-          '"readAt"',
-          '"stack"',
-          '"goals"',
-          '"experience"',
-          '"onboardedAt"',
-          '"githubId"',
-          '"userId"',
-          "senior",
-          "correctIndex",
-          '"solution"',
-          '"explanation"',
-        ]) {
-          expect((html + json).includes(value), "private value in " + suffix).toBe(false);
+      for (const prefix of ["", "/en"])
+        for (const cookie of ["", a, b]) {
+          const response = await fetch(origin + prefix + "/u" + suffix, { headers: { cookie } });
+          expect(response.status).toBe(200);
+          expect(response.headers.get("cache-control")).toContain("no-store");
+          const html = await response.text();
+          for (const value of [
+            "Hidden-",
+            author.id,
+            reader.id,
+            token.prefix,
+            account.github_id,
+            "2001-02-03",
+            "2002-03-04",
+            "2003-04-05",
+            grill.id,
+            question.id,
+            token.id,
+            privateLesson.id,
+            '"mastery"',
+            '"answers"',
+            '"verdict"',
+            '"feedback"',
+            '"readAt"',
+            '"stack"',
+            '"goals"',
+            '"experience"',
+            '"onboardedAt"',
+            '"githubId"',
+            '"userId"',
+            "senior",
+            "correctIndex",
+            '"solution"',
+            '"explanation"',
+          ]) {
+            expect((html + json).includes(value), "private value in " + suffix).toBe(false);
+          }
+          const ru = "https://startodel.example/u" + suffix;
+          const en = "https://startodel.example/en/u" + suffix;
+          expect(html).toMatch(new RegExp('<html[^>]* lang="' + (prefix ? "en" : "ru") + '"'));
+          for (const [lang, href] of [
+            ["ru", ru],
+            ["en", en],
+            ["x-default", ru],
+          ]) {
+            const tag = html.match(new RegExp('<link[^>]*hreflang="' + lang + '"[^>]*>'))?.[0];
+            expect(tag).toContain('href="' + href + '"');
+          }
+          expect(html.match(/<link[^>]*rel="canonical"[^>]*>/)?.[0]).toContain(
+            'href="' + (prefix ? en : ru) + '"',
+          );
+          expect(html).toContain(prefix ? 'content="en_US"' : 'content="ru_RU"');
+          if (suffix === path) {
+            expect(html).toContain("<h1>Public curriculum</h1>");
+            expect(html).toContain(
+              "<title>Public curriculum · " +
+                (prefix ? "Public Track" : "Публичный трек") +
+                " · Startodel</title>",
+            );
+            expect(html).toContain(prefix ? "Track Graph" : "Граф тем");
+          }
+          expect(html).toContain("https://startodel.example/u" + suffix);
+          expect(html).toContain('name="description"');
+          for (const key of ["title", "description", "url", "type"])
+            expect(html).toContain('property="og:' + key + '"');
+          if (suffix.includes("/lessons/")) {
+            expect(html).toContain(
+              prefix
+                ? "Fork this track to practice"
+                : "Создайте форк трека, чтобы выполнить задания",
+            );
+            expect(html).not.toContain(prefix ? "Show solution" : "Показать решение");
+          }
         }
-        expect(html).toContain('rel="canonical"');
-        expect(html).toContain("https://startodel.example/u" + suffix);
-        expect(html).toContain('name="description"');
-        for (const key of ["title", "description", "url", "type"])
-          expect(html).toContain('property="og:' + key + '"');
-        if (suffix.includes("/lessons/")) {
-          expect(html).toContain("Fork this track to practice");
-          expect(html).not.toContain("Show solution");
-        }
-      }
     }
     const graph = await (await request(api)).json();
     expect(Object.keys(graph).sort()).toEqual([
@@ -257,13 +285,19 @@ export function publicHttpTests(
       { type: "quiz", id: "q", questions: [{ prompt: "Pick one", options: ["First", "Second"] }] },
       { type: "exercise", id: "e", prompt: "Implement it", hints: ["Start small"] },
     ]);
-    for (const prefix of ["/api/public", "/u"]) {
+    for (const prefix of ["/api/public", "/u", "/en/u"]) {
       expect((await request(prefix + path + "/lessons/" + privateLesson.id)).status).toBe(404);
       const missing = await request(prefix + "/publisher/missing"),
         inaccessible = await request(prefix + "/publisher/" + hidden.slug);
       expect(missing.status).toBe(404);
       expect(inaccessible.status).toBe(404);
-      expect(await inaccessible.text()).toBe(await missing.text());
+      const body = await missing.text();
+      expect(await inaccessible.text()).toBe(body);
+      if (prefix !== "/api/public") {
+        expect(body).toContain(
+          prefix === "/en/u" ? "<h1>Page not found</h1>" : "<h1>Страница не найдена</h1>",
+        );
+      }
     }
   });
   test("Forks preserve source content, reuse owned Topics and list only Public Forks", async () => {
@@ -358,11 +392,21 @@ export function publicHttpTests(
     await recipient.setTrackVisibility(copy.id, false);
     expect(await (await request(api)).json()).toMatchObject({ forkCount: 2, forks: [] });
     const sitemap = () => request("/sitemap.xml").then((r) => r.text());
-    expect(await sitemap()).toContain("https://startodel.example" + page);
+    for (const prefix of ["", "/en"]) {
+      expect(await sitemap()).toContain(
+        "<loc>https://startodel.example" + prefix + page + "/lessons/" + lesson.id + "</loc>",
+      );
+    }
     expect((await request(visibility, a, "PATCH", { public: false })).status).toBe(200);
     for (const p of [api, page, api + "/lessons/" + lesson.id, page + "/lessons/" + lesson.id])
       expect((await request(p)).status).toBe(404);
-    expect(await sitemap()).not.toContain("/u/publisher");
+    const afterUnpublishing = await sitemap();
+    expect(afterUnpublishing).not.toContain(page);
+    for (const prefix of ["", "/en"]) {
+      expect(afterUnpublishing).toContain(
+        "<loc>https://startodel.example" + prefix + "/u/publisher</loc>",
+      );
+    }
     expect((await recipient.getTrackGraph(copy.id))?.track.forkedFrom).toEqual({
       login: "publisher",
       slug: track.slug,
@@ -375,50 +419,69 @@ export function publicHttpTests(
       forkedFromSlug: track.slug,
     });
   });
-  test("legal pages negotiate both languages and discovery includes public routes", async () => {
+  test("legal language follows the URL, including permanent redirects for legacy links", async () => {
     const { origin } = env();
     for (const name of ["terms", "rules"]) {
-      for (const lang of ["en", "ru"]) {
-        for (const query of ["", "?lang=" + lang]) {
-          const res = await fetch(origin + "/" + name + query, {
-            headers: { "accept-language": query ? "de,en;q=1" : lang + ";q=1" },
-          });
-          expect(res.status).toBe(200);
-          const html = await res.text();
-          const title =
-            name === "terms"
-              ? lang === "en"
-                ? "Terms of Use"
-                : "Условия использования"
-              : lang === "en"
-                ? "Publishing rules"
-                : "Правила публикации";
-          expect(html).toContain("<title>" + title + " · Startodel</title>");
-          expect(html).toContain('name="description"');
-          expect(html).toContain('lang="' + lang + '"');
-          expect(html).toContain('href="/terms"');
-          expect(html).toContain('href="/rules"');
-          expect(html).not.toContain("PENDING LEGAL REVIEW");
-        }
+      for (const lang of ["ru", "en"]) {
+        const prefix = lang === "en" ? "/en" : "";
+        const path = prefix + "/" + name;
+        const redirect = await request("/" + name + "?lang=" + lang);
+        expect(redirect.status).toBe(301);
+        expect(redirect.headers.get("location")).toBe(path);
+        const res = await fetch(origin + path, {
+          headers: { "accept-language": lang === "ru" ? "en" : "ru" },
+        });
+        expect(res.status).toBe(200);
+        const html = await res.text();
+        const title =
+          name === "terms"
+            ? lang === "en"
+              ? "Terms of Use"
+              : "Условия использования"
+            : lang === "en"
+              ? "Publishing rules"
+              : "Правила публикации";
+        expect(html).toContain("<title>" + title + " · Startodel</title>");
+        expect(html).toContain('name="description"');
+        expect(html).toContain('lang="' + lang + '"');
+        for (const legal of ["terms", "rules"])
+          expect(html).toContain('href="' + prefix + "/" + legal + '"');
+        expect(html).not.toContain("PENDING LEGAL REVIEW");
       }
     }
-    const robots = await (await request("/robots.txt")).text(),
-      sitemap = await (await request("/sitemap.xml")).text();
-    for (const path of ["/u/", "/rules", "/terms"]) expect(robots).toContain("Allow: " + path);
-    for (const path of [
-      "/api/",
-      "/settings",
-      "/onboarding",
-      "/grills",
-      "/reviews",
-      "/progress",
-      "/tracks/",
-      "/lessons/",
-      "/topics/",
+  });
+  test("robots and sitemap describe both locales on the public origin", async () => {
+    const robots = await (await request("/robots.txt")).text();
+    const sitemap = await (await request("/sitemap.xml")).text();
+    for (const prefix of ["", "/en"]) {
+      for (const path of ["/u/", "/terms", "/rules"])
+        expect(robots).toContain("Allow: " + prefix + path);
+      for (const path of [
+        "/api/",
+        "/settings",
+        "/onboarding",
+        "/grills",
+        "/reviews",
+        "/progress",
+        "/tracks/",
+        "/lessons/",
+        "/topics/",
+      ]) {
+        expect(robots).toContain("Disallow: " + prefix + path);
+      }
+      for (const path of ["/login", "/terms", "/rules"]) {
+        expect(sitemap).toContain("<loc>https://startodel.example" + prefix + path + "</loc>");
+      }
+    }
+    expect(sitemap).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"');
+    for (const [lang, prefix] of [
+      ["ru", ""],
+      ["en", "/en"],
+      ["x-default", ""],
     ])
-      expect(robots).toContain("Disallow: " + path);
+      expect(sitemap).toContain(
+        'hreflang="' + lang + '" href="https://startodel.example' + prefix + '/terms"',
+      );
     expect(robots).toContain("Sitemap: https://startodel.example/sitemap.xml");
-    for (const path of ["/rules", "/terms"])
-      expect(sitemap).toContain("<loc>https://startodel.example" + path + "</loc>");
   });
 }

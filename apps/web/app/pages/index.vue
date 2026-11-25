@@ -1,39 +1,46 @@
 <script setup lang="ts">
-useHead({ title: "Dashboard" });
+const countArgs = useCountArgs();
+const { t } = useI18n();
+useHead({ title: t("nav.dashboard") });
 const { data, error, refresh } = await useFetch("/api/dashboard");
 </script>
 <template>
   <main>
-    <h1>Dashboard</h1>
+    <h1>{{ $t("nav.dashboard") }}</h1>
     <NextStep />
     <p v-if="error" role="alert">
-      Could not load your Tracks. <button @click="refresh()">Retry</button>
+      {{ $t("dashboard.load") }} <button @click="refresh()">{{ $t("common.retry") }}</button>
     </p>
     <template v-if="data"
       ><p class="muted">
-        {{ data.tracks.length }} {{ data.tracks.length === 1 ? "Track" : "Tracks" }} ·
-        {{ data.dueReviewsCount }} reviews due
+        {{ $t("count.tracks", countArgs(data.tracks.length)) }} ·
+        {{ $t("count.reviews", countArgs(data.dueReviewsCount)) }}
       </p>
       <section v-if="data.tracks.length">
-        <h2>Your Tracks</h2>
+        <h2>{{ $t("dashboard.tracks") }}</h2>
         <div class="cards">
           <article v-for="t in data.tracks" :key="t.trackId" class="panel">
-            <h3><NuxtLink :to="'/tracks/' + t.trackId">{{ t.title }}</NuxtLink></h3>
-            <p>{{ t.completed }} of {{ t.total }} Topics at Mastery 2 or higher</p>
-            <progress :aria-label="t.title + ' completion'" :value="t.percent" max="100" /><small
-              >{{ t.percent }}% complete
-              <strong v-if="t.total && t.completed === t.total"> · Track complete</strong></small
+            <h3><NuxtLinkLocale :to="'/tracks/' + t.trackId">{{ t.title }}</NuxtLinkLocale></h3>
+            <p>{{ $t("dashboard.atLevel", { done: $n(t.completed), total: $n(t.total) }) }}</p>
+            <progress
+              :aria-label="$t('dashboard.completion', { title: t.title })"
+              :value="t.percent"
+              max="100"
+            /><small
+              >{{ $t("dashboard.percent", { percent: $n(t.percent / 100, { style: "percent" }) }) }}
+              <strong v-if="t.total && t.completed === t.total">
+                · {{ $t("dashboard.completed") }}</strong
+              ></small
             >
           </article>
         </div>
       </section>
       <section v-else class="panel narrow">
-        <h2>Build your first Track</h2>
-        <p>
-          Connect your external agent, then tell it what you want to learn. Its Track and Lessons
-          will appear here.
-        </p>
-        <NuxtLink to="/onboarding/connect" class="button primary">Connect your agent</NuxtLink
+        <h2>{{ $t("dashboard.first") }}</h2>
+        <p>{{ $t("dashboard.start") }}</p>
+        <NuxtLinkLocale to="/onboarding/connect" class="button primary">{{
+          $t("agent.connect")
+        }}</NuxtLinkLocale
         ><AgentConfig />
       </section>
     </template>
