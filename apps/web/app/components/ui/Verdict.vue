@@ -5,14 +5,8 @@ const props = withDefaults(
   defineProps<{ verdict: VerdictState; size?: "sm" | "md" | "lg"; glyphOnly?: boolean }>(),
   { size: "md" },
 );
-const { t } = useI18n();
-const word = computed(() =>
-  props.verdict === "pending"
-    ? t("ui.verdictPending")
-    : props.verdict === "none"
-      ? t("ui.verdictNone")
-      : t(`verdict.${props.verdict}`),
-);
+const { verdictWord } = useStateWords();
+const word = computed(() => verdictWord(props.verdict));
 </script>
 <template>
   <span
