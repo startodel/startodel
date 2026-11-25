@@ -43,3 +43,45 @@ jobs:
           DATABASE_URL: postgresql://startodel:startodel@127.0.0.1:5432/postgres
       - run: pnpm test
       - run: pnpm build
+
+  docker:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:19
+        env:
+          POSTGRES_USER: startodel
+          POSTGRES_PASSWORD: startodel
+          POSTGRES_DB: startodel_test
+        options: >-
+          --health-cmd "pg_isready -U startodel -d startodel_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the production image
+        run: |
+          docker build -t startodel:test .
+          docker image inspect startodel:test --format 'Image size: {{.Size}} bytes' | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Start the app on the PostgreSQL service network
+        run: |
+          docker run -d --name startodel --network "${{ job.services.postgres.network }}" \
+            -p 127.0.0.1:3000:3000 \
+            -e DATABASE_URL=postgresql://startodel:startodel@postgres:5432/startodel_test \
+            -e NUXT_SESSION_PASSWORD="$(openssl rand -hex 32)" startodel:test
+      - name: Verify container health and startup migrations
+        run: |
+          for attempt in {1..60}; do
+            status=$(docker inspect -f '{{.State.Health.Status}}' startodel)
+            if [ "$status" = healthy ]; then break; fi
+            if [ "$(docker inspect -f '{{.State.Running}}' startodel)" = false ]; then break; fi
+            sleep 2
+          done
+          test "$status" = healthy
+          curl -fsS http://127.0.0.1:3000/api/health | jq -e '.ok == true and .db == "up"'
+          applied=$(docker exec "${{ job.services.postgres.id }}" psql -U startodel -d startodel_test -Atc 'select count(*) from drizzle.__drizzle_migrations')
+          test "$applied" = "$(jq '.entries | length' packages/db/migrations/meta/_journal.json)"
+      - name: Show application logs on failure
+        if: failure()
+        run: docker logs startodel

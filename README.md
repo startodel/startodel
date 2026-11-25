@@ -36,6 +36,10 @@ Open [the home page](http://localhost:3000) or request [the health endpoint](htt
 
 To run the migration and isolation tests, set `DATABASE_URL_TEST` to a dedicated PostgreSQL test database and run `pnpm test`. The suite applies the migrations, creates two Users, and exercises the built app with sealed cookies issued through a local GitHub stand-in. The database-backed tests skip when the variable is unset.
 
+## Deploy
+
+Run Startodel as a single Docker image with a separate PostgreSQL database. The [deployment guide](docs/deploy.md) covers Docker, Dokploy, HTTPS, GitHub sign-in and startup migrations.
+
 ## Connect your agent
 
 1. Sign in to Startodel. Under **MCP tokens**, enter a name for your agent and select **Create token**. Copy the MCP Token while it is visible.

@@ -11,6 +11,7 @@ import { localGitHub } from "./github";
 
 const url = process.env.DATABASE_URL_TEST;
 describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
+  const publicOrigin = "https://startodel.example";
   let app: ChildProcess;
   let origin: string;
   let github: Awaited<ReturnType<typeof localGitHub>>;
@@ -58,6 +59,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
           tokenURL: github.origin + "/token",
           apiURL: github.origin,
         }),
+        NUXT_OAUTH_GITHUB_REDIRECT_URL: publicOrigin + "/auth/github",
         NUXT_SESSION_PASSWORD: "test-only-session-password-at-least-32-characters",
       },
     });
@@ -217,6 +219,20 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
     });
   }
+
+  test("proxied OAuth and MCP requests use the configured public origin", async () => {
+    const forwarded = { "x-forwarded-host": "startodel.example", "x-forwarded-proto": "https" };
+    const start = await fetch(origin + "/auth/github", { redirect: "manual", headers: forwarded });
+    expect(new URL(start.headers.get("location")!).searchParams.get("redirect_uri")).toBe(
+      publicOrigin + "/auth/github",
+    );
+    const { token } = await issueToken(await signIn("alice"));
+    const headers = { ...forwarded, authorization: "Bearer " + token, origin: publicOrigin };
+    expect((await rpc("ping", {}, headers)).status).toBe(200);
+    expect((await rpc("ping", {}, { ...headers, origin: "https://other.example" })).status).toBe(
+      403,
+    );
+  });
 
   test("MCP challenges missing, malformed, unknown, revoked and cookie-only credentials before a Tool runs", async () => {
     const cookie = await signIn("alice");
