@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { VerdictState } from "../../ui/Verdict.vue";
+import type { VerdictState } from "../../ui/grill";
 import {
   sampleGrillPrompt,
   sampleGrills,

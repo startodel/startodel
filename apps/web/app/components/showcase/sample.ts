@@ -1,6 +1,6 @@
 import type { BoardEdge, BoardTopic } from "../ui/board";
 import type { NavItem, NavTrack, NavUser } from "../ui/nav";
-import type { VerdictState } from "../ui/Verdict.vue";
+import type { VerdictState } from "../ui/grill";
 
 /** Sample data for the showcase. Nothing here is read from or written to the database. */
 export const screenPath = (screen: string) => `/design/screens/${screen}`;

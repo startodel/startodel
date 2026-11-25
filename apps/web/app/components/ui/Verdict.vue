@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** A Verdict, or the two states before one exists. Shape and word carry it; colour repeats it. */
-export type VerdictState = "strong" | "partial" | "weak" | "pending" | "none";
+import type { VerdictState } from "./grill";
 const props = withDefaults(
   defineProps<{ verdict: VerdictState; size?: "sm" | "md" | "lg"; glyphOnly?: boolean }>(),
   { size: "md" },

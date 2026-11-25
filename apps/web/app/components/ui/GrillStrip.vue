@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { VerdictState } from "./Verdict.vue";
+import type { VerdictState } from "./grill";
 /**
  * Every Grill Question of a GrillSession as a row of test pads. Each pad shows its state:
  * unanswered, awaiting a Verdict, or the Verdict. Press a pad to go to that question.

@@ -1,5 +1,5 @@
 import type { TopicState } from "../components/ui/board";
-import type { VerdictState } from "../components/ui/Verdict.vue";
+import type { VerdictState } from "../components/ui/grill";
 
 /** The words for the states the design system draws: a Verdict pad and a Topic on the board. */
 export function useStateWords() {
