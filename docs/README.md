@@ -3,6 +3,7 @@
 - [Agent guide](agent-guide/README.md) — connect an external agent and use the learning Tools.
 - [Deployment guide](deploy.md) — run the image with Docker or Dokploy.
 - [Domain glossary](CONTEXT.md) — the terms used in Startodel's learning model.
+- [Design concept](design/CONCEPT.md) — the visual identity, its metaphor and the rules that follow from it.
 - [ADR 0001 — Record architecture decisions](adr/0001-record-architecture-decisions.md) — how and why this project records decisions.
 - [ADR 0002 — Database module placement](adr/0002-database-module-placement.md) — ownership of the schema, migrations, and client.
 - [ADR 0003 — PostgreSQL and Drizzle](adr/0003-postgresql-and-drizzle.md) — database, ORM, and driver choices.
@@ -17,3 +18,4 @@
 - [ADR 0012 — Agent guidance from Markdown](adr/0012-agent-guidance-from-markdown.md) — one source for server instructions, state-aware guidance and MCP resources.
 - [ADR 0013 — Mastery auto-raise](adr/0013-mastery-auto-raise.md) — reading and Quiz evidence that raises Topic Mastery.
 - [ADR 0014 — Practice Quiz scoring and UI Grill answers](adr/0014-review-practice-and-ui-answers.md) — review scoring, scheduling and read-only Grill answers.
+- [ADR 0015 — Design system](adr/0015-design-system.md) — tokens, themes, fonts, component placement and the showcase.

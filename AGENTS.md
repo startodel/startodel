@@ -19,6 +19,10 @@ Treat agent-authored Lesson content as untrusted. Escape HTML in Markdown, allow
 
 Every MCP Tool uses the request’s `forUser(db, userId)`, bound to the Owner of the MCP Token. Never accept a `userId`, `ownerId`, or equivalent Tool argument. For every new Tool, add two-User HTTP isolation tests and describe when to call it in the [agent guide](docs/agent-guide/README.md). To change agent guidance, edit `docs/agent-guide`, then run `pnpm guide:build && pnpm skills:build`. See [ADR 0005](docs/adr/0005-mcp-transport-and-token-model.md).
 
+## Design system
+
+Build new interface from the `Ui*` components in `apps/web/app/components/ui/` and the `--s-*` tokens in `apps/web/app/assets/design/tokens.css`. Render it inside `.s-root`. Give every new component a specimen in the showcase at `/design`, which is served in development or with `NUXT_PUBLIC_DESIGN_SHOWCASE=true`. Carry each state with a shape and a word, never with colour alone. See [the design concept](docs/design/CONCEPT.md) and [ADR 0015](docs/adr/0015-design-system.md).
+
 ## Commands
 
 Run from the workspace root:
