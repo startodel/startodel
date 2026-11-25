@@ -8,6 +8,13 @@
       "when": 1795607307925,
       "tag": "0000_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795610552283,
+      "tag": "0001_mcp_tokens",
+      "breakpoints": true
     }
   ]
 }

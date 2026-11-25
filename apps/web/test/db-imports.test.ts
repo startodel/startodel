@@ -1,10 +1,12 @@
+import * as database from "@startodel/db";
+import * as tables from "@startodel/db/schema";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 import { expect, test } from "vite-plus/test";
 
-test("web server modules never import raw database schema tables", () => {
+test("HTTP handlers and MCP Tools access the database only through its public entry point", () => {
   const server = fileURLToPath(new URL("../server/", import.meta.url));
   const violations: string[] = [];
   for (const entry of readdirSync(server, { recursive: true, withFileTypes: true })) {
@@ -12,10 +14,15 @@ test("web server modules never import raw database schema tables", () => {
     const path = join(entry.parentPath, entry.name);
     const { importedFiles } = ts.preProcessFile(readFileSync(path, "utf8"), true, true);
     for (const { fileName } of importedFiles) {
-      if (/(?:^@startodel\/db\/|(?:^|\/)packages\/db\/).*\bschema\b/.test(fileName)) {
+      if (/(?:^@startodel\/db\/|(?:^|\/)packages\/db\/)/.test(fileName)) {
         violations.push(`${relative(server, path)} imports ${fileName}`);
       }
     }
   }
   expect(violations).toEqual([]);
+});
+
+test("the public database entry point exposes no raw schema tables, including MCP Tokens", () => {
+  const exports = new Set<unknown>(Object.values(database));
+  expect(Object.entries(tables).filter(([, table]) => exports.has(table))).toEqual([]);
 });

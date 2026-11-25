@@ -9,7 +9,9 @@
 
 ## Per-user isolation
 
-Access user-owned learning data only through `forUser(db, userId)` in `@startodel/db`. In HTTP handlers, use `userData(event)` to bind the Owner from the Session. Assign that Owner on insert and include it in every SQL read, update, and delete, joining through the owning Track for child rows. Return 404 for both missing and foreign rows. Never import raw schema tables into the web server. See [ADR 0004](docs/adr/0004-authentication-and-per-user-isolation.md).
+Access user-owned learning data only through `forUser(db, userId)` in `@startodel/db`. In Session API handlers, use `userData(event)` to bind the Owner from the Session. Assign that Owner on insert and include it in every SQL read, update, and delete, joining through the owning Track for child rows. Return 404 for both missing and foreign rows. Never import raw schema tables into the web server. See [ADR 0004](docs/adr/0004-authentication-and-per-user-isolation.md).
+
+Every MCP Tool uses the request’s `forUser(db, userId)`, bound to the Owner of the MCP Token. Never accept a `userId`, `ownerId`, or equivalent Tool argument. Add two-User HTTP isolation tests with each new Tool. See [ADR 0005](docs/adr/0005-mcp-transport-and-token-model.md).
 
 ## Commands
 

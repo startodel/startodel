@@ -13,11 +13,11 @@ async function readOnlyField(event: RequestEvent, key: string): Promise<unknown>
   return Reflect.get(body, key);
 }
 
-export async function readTitle(event: RequestEvent) {
-  const title = await readOnlyField(event, "title");
-  if (typeof title !== "string" || !title.trim())
-    throw createError({ status: 400, message: "Expected a nonempty title" });
-  return title;
+export async function readNonemptyString(event: RequestEvent, field: "title" | "name") {
+  const value = await readOnlyField(event, field);
+  if (typeof value !== "string" || !value.trim())
+    throw createError({ status: 400, message: `Expected a nonempty ${field}` });
+  return value;
 }
 
 export async function readGoals(event: RequestEvent) {
@@ -28,7 +28,7 @@ export async function readGoals(event: RequestEvent) {
   return goals;
 }
 
-export function trackId(event: RequestEvent) {
+export function rowId(event: RequestEvent) {
   const id = getRouterParam(event, "id");
   if (!id || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id)) {
     throw createError({ status: 404, message: "Not found" });

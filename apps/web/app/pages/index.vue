@@ -14,5 +14,6 @@ async function logout() {
     <p v-if="user.name">{{ user.name }}</p>
     <img v-if="user.avatarUrl" :src="user.avatarUrl" alt="" width="64" height="64" />
     <button type="button" @click="logout">Log out</button>
+    <McpTokens />
   </main>
 </template>

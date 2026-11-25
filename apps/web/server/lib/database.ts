@@ -1,4 +1,10 @@
-import { createDatabase, forUser, signInWithGitHub, type GitHubIdentity } from "@startodel/db";
+import {
+  createDatabase,
+  forUser,
+  resolveMcpToken,
+  signInWithGitHub,
+  type GitHubIdentity,
+} from "@startodel/db";
 import { createError, getRequestURL, type RequestEvent } from "nuxt/server";
 import { requireUser } from "../utils/require-user";
 
@@ -23,4 +29,10 @@ export async function userData(event: RequestEvent) {
   if (getRequestURL(event).search)
     throw createError({ status: 400, message: "Unexpected query parameters" });
   return forUser(database(), userId);
+}
+
+export async function mcpData(plaintext: string) {
+  const db = database();
+  const userId = await resolveMcpToken(db, plaintext);
+  return userId === null ? null : forUser(db, userId);
 }
