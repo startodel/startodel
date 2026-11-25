@@ -7,11 +7,13 @@ md.renderer.rules.link_open = (tokens, i, options, _env, renderer) => {
   tokens[i]!.attrSet("target", "_blank");
   return renderer.renderToken(tokens, i, options);
 };
-export const renderMarkdown = (source: string) => md.render(source);
+export const renderMarkdown = (source: string, imageLabel: string) =>
+  md.render(source, { imageLabel });
 md.renderer.rules.image = (tokens, i, options, env, renderer) => {
   const token = tokens[i]!;
   const label =
-    "Image: " +
+    md.utils.escapeHtml(typeof env?.imageLabel === "string" ? env.imageLabel : "") +
+    " " +
     md.utils.escapeHtml(renderer.renderInlineAsText(token.children ?? [], options, env));
   const href = httpUrl(String(token.attrGet("src") ?? ""));
   return href

@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { displayDate } from "../../utils/dates";
+const { verdictLabel } = useLearningLabels();
+const { t } = useI18n();
+const displayDate = useDisplayDate();
 const id = String(useRoute().params.id);
 const { data, error, refresh } = await useFetch(`/api/grills/${id}`);
 if (error.value)
   throw createError({
     statusCode: error.value.statusCode,
-    statusMessage: "Grill session unavailable",
+    message: t("common.error"),
   });
 useHead({ title: () => data.value?.title });
 const questions = computed(() => data.value?.questions ?? []);
@@ -34,7 +36,7 @@ async function answer() {
     });
     delete drafts[question.id];
   } catch {
-    message.value = "Could not save your answer. Check the current question and try again.";
+    message.value = t("grill.error");
   } finally {
     await refresh();
     busy.value = false;
@@ -43,48 +45,57 @@ async function answer() {
 </script>
 <template>
   <main v-if="data" class="narrow">
-    <NuxtLink to="/grills">← Grills</NuxtLink>
+    <NuxtLinkLocale to="/grills">← {{ $t("nav.grills") }}</NuxtLinkLocale>
     <h1>{{ data.title }}</h1>
     <p>
-      {{ data.status === "finished" ? "Finished" : "Open session" }} · {{ answered }} answered ·
-      {{ judged }} judged · {{ answered - judged }} waiting for your agent
+      {{ data.status === "finished" ? $t("grill.finished") : $t("grill.openSession") }} ·
+      {{ $t("grill.stats", { answered: $n(answered), judged: $n(judged) }) }} ·
+      {{ $t("grill.waitingCount", { waiting: $n(answered - judged) }) }}
     </p>
     <section v-if="isSummary" class="panel">
-      <h2>Session summary</h2>
+      <h2>{{ $t("grill.summary") }}</h2>
       <div class="counts">
         <span v-for="v in ['strong', 'partial', 'weak'] as const" :class="v" :key="v"
-          >{{ questions.filter((q) => q.verdict === v).length }} {{ v }}</span
+          >{{ verdictLabel(v) }} · {{ $n(questions.filter((q) => q.verdict === v).length) }}</span
         >
       </div>
-      <h3>What to reinforce</h3>
+      <h3>{{ $t("grill.reinforce") }}</h3>
       <ul v-if="data.reinforce.length">
         <li v-for="t in data.reinforce" :key="t.id">
-          <NuxtLink :to="'/topics/' + t.id">{{ t.title }} Lessons</NuxtLink
-          ><span v-if="t.dueAt"> · Review due {{ displayDate(t.dueAt) }}</span>
+          <NuxtLinkLocale :to="'/topics/' + t.id">{{
+            $t("grill.lessons", { title: t.title })
+          }}</NuxtLinkLocale
+          ><span v-if="t.dueAt"> · {{ $t("grill.due", { date: displayDate(t.dueAt) }) }}</span>
         </li>
       </ul>
-      <p v-else>No Topics with weak or partial Verdicts.</p>
+      <p v-else>{{ $t("grill.allStrong") }}</p>
     </section>
     <section v-if="current" class="panel">
-      <small>Question {{ index + 1 }} of {{ questions.length }}</small
-      ><progress aria-label="Questions answered" :value="answered" :max="questions.length" />
+      <small>{{
+        $t("grill.question", { index: $n(index + 1), total: $n(questions.length) })
+      }}</small
+      ><progress :aria-label="$t('grill.answered')" :value="answered" :max="questions.length" />
       <h2>{{ current.prompt }}</h2>
       <template v-if="current.answeredAt"
-        ><h3>Your answer</h3>
+        ><h3>{{ $t("grill.answer") }}</h3>
         <p class="answer">{{ current.answer }}</p>
         <template v-if="current.verdict"
-          ><strong :class="current.verdict">Verdict · {{ current.verdict }}</strong>
+          ><strong :class="current.verdict">{{
+            $t("grill.verdict", { verdict: verdictLabel(current.verdict) })
+          }}</strong>
           <p class="answer">{{ current.feedback }}</p></template
         >
         <template v-else
-          ><h3>Waiting for your agent</h3>
-          <AgentPrompt
-            :text="`Judge my answers in grill ${data.title} (${id}) with judge_grill_answer.`"
-          /><button @click="refresh()">Refresh feedback</button></template
+          ><h3>{{ $t("grill.waiting") }}</h3>
+          <AgentPrompt :text="$t('grill.judgePrompt', { title: data.title, id })" /><button
+            @click="refresh()"
+          >
+            {{ $t("grill.feedback") }}
+          </button></template
         ></template
       >
       <form v-else-if="data.status === 'open'" @submit.prevent="answer">
-        <label :for="current.id">Your answer</label>
+        <label :for="current.id">{{ $t("grill.answer") }}</label>
         <textarea
           :id="current.id"
           v-model="drafts[current.id]"
@@ -93,28 +104,29 @@ async function answer() {
           :disabled="busy"
         />
         <button class="primary" :disabled="busy || !drafts[current.id]?.trim()">
-          Submit answer
+          {{ $t("grill.submit") }}
         </button>
       </form>
-      <p v-else>This question was unanswered when the session finished.</p>
+      <p v-else>{{ $t("grill.unansweredEnd") }}</p>
       <p v-if="message" role="alert">{{ message }}</p>
-      <nav class="actions" aria-label="Questions">
-        <button :disabled="!index || busy" @click="index--">Previous</button
-        ><button :disabled="index + 1 === questions.length || busy" @click="index++">Next</button
+      <nav class="actions" :aria-label="$t('grill.questions')">
+        <button :disabled="!index || busy" @click="index--">{{ $t("grill.previous") }}</button
+        ><button :disabled="index + 1 === questions.length || busy" @click="index++">
+          {{ $t("grill.next") }}</button
         ><button
           v-if="firstUnanswered >= 0 && data.status === 'open'"
           :disabled="busy || index === firstUnanswered"
           @click="index = firstUnanswered"
         >
-          First unanswered
+          {{ $t("grill.first") }}
         </button>
       </nav>
     </section>
     <section v-else class="panel">
-      <h2>No questions yet</h2>
+      <h2>{{ $t("grill.empty") }}</h2>
       <template v-if="data.status === 'open'"
-        ><p>Your agent adds the questions for this session.</p>
-        <AgentPrompt :text="`Use add_grill_questions to add questions to ${data.title} (${id}).`"
+        ><p>{{ $t("grill.add") }}</p>
+        <AgentPrompt :text="$t('grill.addPrompt', { title: data.title, id })"
       /></template>
     </section>
   </main>

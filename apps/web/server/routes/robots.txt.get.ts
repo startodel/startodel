@@ -15,10 +15,10 @@ export default defineHandler((event) => {
   return new Response(
     [
       "User-agent: *",
-      "Allow: /u/",
-      "Allow: /terms",
-      "Allow: /rules",
-      ...privatePaths.map((path) => "Disallow: " + path),
+      ...["", "/en"].flatMap((prefix) => [
+        ...["/u/", "/terms", "/rules", "/login"].map((path) => "Allow: " + prefix + path),
+        ...privatePaths.map((path) => "Disallow: " + prefix + path),
+      ]),
       "Sitemap: " + origin + "/sitemap.xml",
       "",
     ].join("\n"),

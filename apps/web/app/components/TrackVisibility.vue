@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { LEGAL_TERMS_VERSION, type ForkedFrom } from "@startodel/core";
-import { displayDate } from "../utils/dates";
+const countArgs = useCountArgs();
+const { t } = useI18n();
+const displayDate = useDisplayDate();
 const props = defineProps<{
   track: {
     id: string;
@@ -14,8 +16,11 @@ const props = defineProps<{
 const emit = defineEmits<{ changed: [] }>();
 const { user } = useUserSession();
 const origin = usePublicOrigin();
+const localePath = useLocalePath();
 const url = computed(
-  () => origin.value + "/u/" + encodeURIComponent(user.value?.login ?? "") + "/" + props.track.slug,
+  () =>
+    origin.value +
+    localePath("/u/" + encodeURIComponent(user.value?.login ?? "") + "/" + props.track.slug),
 );
 const accepted = computed(
   () => props.acceptance?.version === LEGAL_TERMS_VERSION && props.acceptance.at,
@@ -39,7 +44,7 @@ async function save() {
     emit("changed");
     dialog.value?.close();
   } catch {
-    message.value = "Could not change visibility. Reload the Track and try again.";
+    message.value = t("visibility.error");
   } finally {
     busy.value = false;
   }
@@ -47,50 +52,54 @@ async function save() {
 async function copy() {
   try {
     await navigator.clipboard.writeText(url.value);
-    message.value = "Copied";
+    message.value = t("common.copied");
   } catch {
-    message.value = "Select and copy the public URL.";
+    message.value = t("visibility.manual");
   }
 }
 </script>
 <template>
-  <section class="panel" aria-label="Track visibility">
+  <section class="panel" :aria-label="$t('visibility.label')">
     <div class="actions">
-      <strong>Visibility · {{ track.public ? "Public" : "Private" }}</strong>
-      <button @click="confirmVisibility">{{ track.public ? "Make private" : "Make public" }}</button
-      ><span>{{ track.forkCount }} {{ track.forkCount === 1 ? "fork" : "forks" }}</span>
+      <strong>{{ track.public ? $t("visibility.public") : $t("visibility.private") }}</strong>
+      <button @click="confirmVisibility">
+        {{ track.public ? $t("visibility.unpublish") : $t("visibility.makePublic") }}</button
+      ><span>{{ $t("count.forks", countArgs(track.forkCount)) }}</span>
     </div>
     <ForkedFrom v-if="track.forkedFrom" :from="track.forkedFrom" />
     <div v-if="track.public" class="actions">
-      <a :href="url">{{ url }}</a><button @click="copy">Copy public URL</button>
+      <a :href="url">{{ url }}</a><button @click="copy">{{ $t("visibility.copy") }}</button>
     </div>
     <span role="status">{{ message }}</span>
     <dialog ref="dialog" aria-labelledby="visibility-title">
       <form @submit.prevent="save">
         <h2 id="visibility-title">
-          {{ track.public ? "Make this Track private?" : "Publish this Track?" }}
+          {{ track.public ? $t("visibility.closeTitle") : $t("visibility.publishTitle") }}
         </h2>
-        <p v-if="track.public">
-          The public page will close immediately. Existing forks and copies remain available to
-          their owners.
-        </p>
+        <p v-if="track.public">{{ $t("visibility.closeInfo") }}</p>
         <template v-else
-          ><p>
-            Anyone can read your Track, sources, Topic graph and Lessons under your login. A
-            signed-in learner can fork the content, including Quiz answers and Exercise solutions.
-            Your learning activity stays private.
-          </p>
-          <p v-if="accepted">You accepted the terms on {{ displayDate(accepted) }}.</p>
+          ><p>{{ $t("visibility.publishInfo") }}</p>
+          <p v-if="accepted">{{ $t("visibility.accepted", { date: displayDate(accepted) }) }}</p>
           <label v-else
-            ><input v-model="agree" type="checkbox" required /> I agree to the
-            <a href="/rules" target="_blank" rel="noopener">Publishing rules</a> and
-            <a href="/terms" target="_blank" rel="noopener">Terms of Use</a></label
+            ><input v-model="agree" type="checkbox" required />
+            <i18n-t keypath="visibility.agree" scope="global">
+              <template #rules
+                ><NuxtLinkLocale to="/rules" target="_blank" rel="noopener">{{
+                  $t("visibility.rules")
+                }}</NuxtLinkLocale></template
+              >
+              <template #terms
+                ><NuxtLinkLocale to="/terms" target="_blank" rel="noopener">{{
+                  $t("visibility.terms")
+                }}</NuxtLinkLocale></template
+              >
+            </i18n-t></label
           ></template
         >
         <div class="actions">
-          <button type="button" @click="dialog?.close()">Cancel</button
+          <button type="button" @click="dialog?.close()">{{ $t("common.cancel") }}</button
           ><button class="primary" :disabled="busy || (!track.public && !accepted && !agree)">
-            {{ track.public ? "Make private" : "Publish" }}
+            {{ track.public ? $t("visibility.unpublish") : $t("visibility.publish") }}
           </button>
         </div>
         <span role="status">{{ message }}</span>

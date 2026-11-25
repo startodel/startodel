@@ -1,14 +1,16 @@
 <script setup lang="ts">
+const countArgs = useCountArgs();
+const { t } = useI18n();
 const login = encodeURIComponent(String(useRoute().params.login));
 const { data, error } = await useFetch(`/api/public/${login}`);
 if (!data.value)
   throw createError({
     statusCode: error.value?.statusCode ?? 404,
-    statusMessage: "Public Profile unavailable",
+    message: t("common.error"),
   });
 usePublicHead(
-  data.value.name || data.value.login,
-  "Public Tracks by @" + data.value.login,
+  t("public.profileTitle", { name: data.value.name || data.value.login }),
+  t("public.profile", { author: "@" + data.value.login }),
   "/u/" + login,
   "profile",
 );
@@ -22,12 +24,14 @@ usePublicHead(
         <span>@{{ data.login }}</span>
       </div>
     </div>
-    <h2>Public Tracks</h2>
-    <p v-if="!data.tracks.length">No Public Tracks yet.</p>
+    <h2>{{ $t("public.tracks") }}</h2>
+    <p v-if="!data.tracks.length">{{ $t("public.noTracks") }}</p>
     <article v-for="track in data.tracks" :key="track.slug" class="panel">
-      <h3><NuxtLink :to="'/u/' + login + '/' + track.slug">{{ track.title }}</NuxtLink></h3>
+      <h3>
+        <NuxtLinkLocale :to="'/u/' + login + '/' + track.slug">{{ track.title }}</NuxtLinkLocale>
+      </h3>
       <p v-if="track.description">{{ track.description }}</p>
-      <small>{{ track.forkCount }} {{ track.forkCount === 1 ? "fork" : "forks" }}</small>
+      <small>{{ $t("count.forks", countArgs(track.forkCount)) }}</small>
     </article>
   </main>
 </template>

@@ -5,7 +5,16 @@ const privatePage = { headers: { "cache-control": "private, no-store" } };
 export default defineNuxtConfig({
   compatibilityDate: "2026-11-25",
   typescript: { strict: true },
-  modules: ["nuxt-auth-utils"],
+  modules: ["nuxt-auth-utils", "@nuxtjs/i18n"],
+  i18n: {
+    strategy: "prefix_except_default",
+    defaultLocale: "ru",
+    detectBrowserLanguage: false,
+    locales: [
+      { code: "ru", language: "ru", file: "ru.json" },
+      { code: "en", language: "en", file: "en.json" },
+    ],
+  },
   // Resolve the deployment's secret when the server starts, including after a build.
   runtimeConfig: { appSecret: "{{NUXT_SESSION_PASSWORD}}" },
   hooks: {
@@ -24,6 +33,8 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
+    "/en": privatePage,
+    "/en/**": privatePage,
     "/u/**": privatePage,
     "/sitemap.xml": privatePage,
     "/terms": privatePage,

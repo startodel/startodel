@@ -1,19 +1,20 @@
 <script setup lang="ts">
+const { t } = useI18n();
 const props = defineProps<{ text: string }>();
 const status = ref("");
 async function copy() {
   try {
     await navigator.clipboard.writeText(props.text);
-    status.value = "Copied";
+    status.value = t("common.copied");
   } catch {
-    status.value = "Select and copy the prompt above.";
+    status.value = t("agent.manual");
   }
 }
 </script>
 <template>
   <div class="agent-prompt">
     <p>{{ text }}</p>
-    <button type="button" @click="copy">Copy prompt</button> <small role="status">{{
+    <button type="button" @click="copy">{{ $t("agent.copy") }}</button> <small role="status">{{
       status
     }}</small>
   </div>

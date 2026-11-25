@@ -1,5 +1,10 @@
 <script setup lang="ts">
-const props = defineProps<{ question: string; presets: string[]; label: string }>();
+const props = defineProps<{
+  question: string;
+  presets: string[];
+  label: string;
+  labels?: Record<string, string>;
+}>();
 const selected = defineModel<string[]>({ required: true });
 const extra = ref("");
 const options = computed(() => [...new Set([...props.presets, ...selected.value])]);
@@ -27,11 +32,14 @@ function onKey(event: KeyboardEvent) {
     <legend>{{ question }}</legend>
     <div class="choices">
       <label v-for="option in options" :key="option" class="choice"
-        ><input type="checkbox" v-model="selected" :value="option" />{{ option }}</label
+        ><input type="checkbox" v-model="selected" :value="option" />{{
+          labels?.[option] ?? option
+        }}</label
       >
     </div>
     <label class="addition"
-      >{{ label }} <input v-model="extra" placeholder="Add your own" @keydown="onKey" @blur="add"
+      >{{ label }}
+      <input v-model="extra" :placeholder="$t('onboarding.custom')" @keydown="onKey" @blur="add"
     /></label>
   </fieldset>
 </template>

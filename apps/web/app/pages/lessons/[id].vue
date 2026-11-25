@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { MASTERY_LABELS } from "@startodel/core";
+const { t } = useI18n();
+const { masteryLabel } = useLearningLabels();
 const route = useRoute();
 const { data, error } = await useFetch(`/api/lessons/${String(route.params.id)}`);
 if (error.value)
   throw createError({
     statusCode: error.value.statusCode || 500,
-    statusMessage: "Lesson unavailable",
+    message: t("common.error"),
   });
 useHead({ title: () => data.value?.lesson.title });
 const track = computed(() =>
@@ -24,7 +25,7 @@ async function read() {
     data.value.readAt = progress.readAt;
     data.value.mastery = progress.mastery;
   } catch {
-    message.value = "Could not save your read state. Try again.";
+    message.value = t("lesson.readError");
   } finally {
     busy.value = false;
   }
@@ -32,17 +33,19 @@ async function read() {
 </script>
 <template>
   <main v-if="data" class="narrow">
-    <nav aria-label="Breadcrumb">
-      <NuxtLink to="/">Dashboard</NuxtLink><span aria-hidden="true">/</span
-      ><NuxtLink v-if="track" :to="{ path: '/tracks/' + track, query: { topic: data.topic.id } }">{{
-        data.topic.title
-      }}</NuxtLink
+    <nav :aria-label="$t('nav.breadcrumb')">
+      <NuxtLinkLocale to="/">{{ $t("nav.dashboard") }}</NuxtLinkLocale
+      ><span aria-hidden="true">/</span
+      ><NuxtLinkLocale
+        v-if="track"
+        :to="{ path: '/tracks/' + track, query: { topic: data.topic.id } }"
+        >{{ data.topic.title }}</NuxtLinkLocale
       ><span v-else>{{ data.topic.title }}</span>
     </nav>
     <h1>{{ data.lesson.title }}</h1>
     <p v-if="data.lesson.summary">{{ data.lesson.summary }}</p>
     <p aria-live="polite" class="muted">
-      Topic Mastery {{ data.mastery }} · {{ MASTERY_LABELS[data.mastery] }}
+      {{ $t("topic.level", { level: $n(data.mastery) }) }} · {{ masteryLabel(data.mastery) }}
     </p>
     <article class="panel">
       <LessonContent
@@ -52,13 +55,13 @@ async function read() {
         :lesson-id="data.lesson.id"
         @assessed="data.mastery = $event"
       />
-      <p v-if="!data.lesson.blocks.length">This Lesson has no Blocks yet.</p>
+      <p v-if="!data.lesson.blocks.length">{{ $t("lesson.empty") }}</p>
     </article>
     <div class="actions">
       <button class="primary" @click="read" :disabled="busy || !!data.readAt">
-        {{ data.readAt ? "Marked as read" : "Mark as read" }}</button
+        {{ data.readAt ? $t("lesson.read") : $t("lesson.mark") }}</button
       ><span role="status">{{
-        message || (data.readAt ? "Topic Mastery " + data.mastery : "")
+        message || (data.readAt ? $t("topic.level", { level: $n(data.mastery) }) : "")
       }}</span>
     </div>
   </main>

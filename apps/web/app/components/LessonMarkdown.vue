@@ -2,7 +2,7 @@
 import { renderMarkdown } from "../utils/markdown";
 defineProps<{ text: string }>();
 </script>
-<template><div class="prose" v-html="renderMarkdown(text)" /></template>
+<template><div class="prose" v-html="renderMarkdown(text, $t('lesson.image'))" /></template>
 <style scoped>
 .prose {
   overflow-wrap: anywhere;

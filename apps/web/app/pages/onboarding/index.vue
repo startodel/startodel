@@ -1,14 +1,22 @@
 <script setup lang="ts">
-useHead({ title: "Onboarding" });
+const localePath = useLocalePath();
+const { t } = useI18n();
+useHead({ title: t("onboarding.title") });
 const profile = useMe().value?.profile;
 const stack = ref(profile?.stack ?? []);
 const goals = ref(profile?.goals ?? []);
+const goalLabels = computed<Record<string, string>>(() => ({
+  "Prepare for interviews": t("onboarding.interviews"),
+  "Get better at my current job": t("onboarding.job"),
+  "Learn a new technology": t("onboarding.technology"),
+  "Understand internals": t("onboarding.internals"),
+}));
 const grade = ref(profile?.experience ?? null);
 const busy = ref(false);
 const message = ref("");
 async function submit() {
   if (!stack.value.length || !goals.value.length || !grade.value) {
-    message.value = "Choose at least one stack item, one goal and a grade.";
+    message.value = t("onboarding.required");
     return;
   }
   busy.value = true;
@@ -18,9 +26,9 @@ async function submit() {
       method: "PUT",
       body: { stack: stack.value, goals: goals.value, experience: grade.value },
     });
-    await navigateTo("/onboarding/connect");
+    await navigateTo(localePath("/onboarding/connect"));
   } catch {
-    message.value = "Could not save your answers. Try again.";
+    message.value = t("onboarding.error");
   } finally {
     busy.value = false;
   }
@@ -28,13 +36,13 @@ async function submit() {
 </script>
 <template>
   <main class="narrow">
-    <h1>Your learning profile</h1>
-    <p class="muted">Your agent uses these answers to build your first Track.</p>
+    <h1>{{ $t("onboarding.profile") }}</h1>
+    <p class="muted">{{ $t("onboarding.intro") }}</p>
     <form @submit.prevent="submit" class="panel questionnaire">
       <QuestionChoices
         v-model="stack"
-        question="What’s in your stack?"
-        label="Other technologies"
+        :question="$t('onboarding.stack')"
+        :label="$t('onboarding.technologies')"
         :presets="[
           'TypeScript',
           'JavaScript',
@@ -50,27 +58,23 @@ async function submit() {
       />
       <QuestionChoices
         v-model="goals"
-        question="What’s your goal?"
-        label="Other goals"
-        :presets="[
-          'Prepare for interviews',
-          'Get better at my current job',
-          'Learn a new technology',
-          'Understand internals',
-        ]"
+        :question="$t('onboarding.goal')"
+        :label="$t('onboarding.goals')"
+        :presets="Object.keys(goalLabels)"
+        :labels="goalLabels"
       />
       <fieldset>
-        <legend>What’s your current grade?</legend>
+        <legend>{{ $t("onboarding.grade") }}</legend>
         <div class="choices">
           <label v-for="value in ['junior', 'middle', 'senior', 'lead']" :key="value" class="choice"
             ><input required type="radio" v-model="grade" :value="value" name="grade" />{{
-              value
+              $t(`grade.${value}`)
             }}</label
           >
         </div>
       </fieldset>
       <div>
-        <button class="primary" :disabled="busy">Continue to connect your agent</button>
+        <button class="primary" :disabled="busy">{{ $t("onboarding.continue") }}</button>
         <p v-if="message" role="alert">{{ message }}</p>
       </div>
     </form>

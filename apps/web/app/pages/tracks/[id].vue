@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { MASTERY_LABELS } from "@startodel/core";
 import { httpUrl } from "../../utils/links";
+const { t } = useI18n();
+const { masteryLabel } = useLearningLabels();
 const route = useRoute();
 const { data, error, refresh } = await useFetch(`/api/tracks/${String(route.params.id)}/graph`);
 if (error.value)
   throw createError({
     statusCode: error.value.statusCode || 500,
-    statusMessage: "Track unavailable",
+    message: t("common.error"),
   });
 useHead({ title: () => data.value?.track.title });
 const selected = ref(data.value?.topics.find((t) => t.id === route.query.topic)?.id);
@@ -20,35 +21,35 @@ const sources = computed(() =>
 </script>
 <template>
   <main v-if="data">
-    <NuxtLink to="/">← Dashboard</NuxtLink>
+    <NuxtLinkLocale to="/">← {{ $t("nav.dashboard") }}</NuxtLinkLocale>
     <h1>{{ data.track.title }}</h1>
     <p v-if="data.track.description">{{ data.track.description }}</p>
     <TrackVisibility :track="data.track" :acceptance="data.termsAcceptance" @changed="refresh()" />
     <p class="muted">
-      {{ completed }} of {{ data.topics.length }} Topics at Mastery 2 or higher
+      {{ $t("dashboard.atLevel", { done: $n(completed), total: $n(data.topics.length) }) }}
       <strong v-if="data.topics.length && completed === data.topics.length">
-        · Track complete</strong
+        · {{ $t("dashboard.completed") }}</strong
       >
     </p>
     <details v-if="sources.length">
-      <summary>Track Sources</summary>
+      <summary>{{ $t("track.sources") }}</summary>
       <ul>
         <li v-for="(url, i) in sources" :key="i">
           <a :href="url" target="_blank" rel="noopener noreferrer">{{ url }}</a>
         </li>
       </ul>
     </details>
-    <h2>Track Graph</h2>
+    <h2>{{ $t("track.graph") }}</h2>
     <template v-if="data.topics.length"
-      ><ul aria-label="Mastery legend" class="legend">
-        <li v-for="(label, i) in MASTERY_LABELS" :key="i" :class="'level-' + i">
-          <i aria-hidden="true" />{{ i }} · {{ label }}
+      ><ul :aria-label="$t('track.legend')" class="legend">
+        <li v-for="i in [0, 1, 2, 3, 4]" :key="i" :class="'level-' + i">
+          <i aria-hidden="true" />{{ $n(i) }} · {{ masteryLabel(i) }}
         </li>
       </ul>
       <div class="workspace">
         <section>
           <button type="button" class="toggle" :aria-pressed="list" @click="list = !list">
-            {{ list ? "Show graph" : "Show ordered list" }}
+            {{ list ? $t("track.showGraph") : $t("track.showList") }}
           </button>
           <div class="graph" v-if="!list">
             <TrackGraph
@@ -58,22 +59,22 @@ const sources = computed(() =>
               @select="selected = $event"
             />
           </div>
-          <ol :class="['topic-list', { alternate: !list }]" aria-label="Topics in Track order">
+          <ol :class="['topic-list', { alternate: !list }]" :aria-label="$t('track.order')">
             <li v-for="t in data.topics" :key="t.id">
               <button :aria-pressed="selected === t.id" @click="selected = t.id">
                 {{ t.title }}
-              </button> <small>Mastery {{ t.level }}</small>
+              </button> <small>{{ $t("topic.level", { level: $n(t.level) }) }}</small>
             </li>
           </ol>
         </section>
         <TopicPanel v-if="selected" :key="selected" :id="selected" :track="data.track.id" />
         <aside class="panel" v-else>
-          <h2>Topic details</h2>
-          <p>Select a Topic to see its Lessons and prerequisites.</p>
+          <h2>{{ $t("track.details") }}</h2>
+          <p>{{ $t("track.select") }}</p>
         </aside>
       </div>
     </template>
-    <p v-else>This Track has no Topics yet.</p>
+    <p v-else>{{ $t("track.empty") }}</p>
   </main>
 </template>
 <style>
