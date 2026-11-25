@@ -2,7 +2,7 @@ import { expect, test } from "vite-plus/test";
 import { createDatabase } from "@startodel/db";
 
 const url = process.env.DATABASE_URL_TEST;
-test.skipIf(!url)("the migrations create all ten learning and account tables", async () => {
+test.skipIf(!url)("the migrations create all learning and account tables", async () => {
   const db = createDatabase(url!);
   try {
     const tables = await db.execute<{ tablename: string }>(
@@ -11,6 +11,7 @@ test.skipIf(!url)("the migrations create all ten learning and account tables", a
     expect(tables.rows.map((row) => row.tablename)).toEqual([
       "grill_sessions",
       "lessons",
+      "mcp_tokens",
       "profiles",
       "progress",
       "quizzes",

@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { fork, type ChildProcess } from "node:child_process";
 import { once } from "node:events";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
@@ -157,5 +158,34 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       200,
     );
     expect((await request(`/api/tracks/${own.id}`, a, "DELETE")).status).toBe(204);
+  });
+
+  async function issueToken(cookie: string) {
+    const issued = await request("/api/mcp-tokens", cookie, "POST", { name: "Learning agent" });
+    expect(issued.status).toBe(201);
+    return issued.json() as Promise<{ token: string; id: string; prefix: string }>;
+  }
+
+  test("a Session creates an MCP Token once and lists only its metadata", async () => {
+    const a = await signIn("alice");
+    const { token, id, prefix } = await issueToken(a);
+    expect(/^sto_[A-Za-z0-9_-]{43}$/.test(token)).toBe(true);
+    expect(token.startsWith(prefix) && prefix.length < token.length).toBe(true);
+    const {
+      rows: [stored],
+    } = await db.$client.query("select * from mcp_tokens where id = $1", [id]);
+    expect(JSON.stringify(stored).includes(token)).toBe(false);
+    expect(stored.token_hash === createHash("sha256").update(token).digest("hex")).toBe(true);
+    expect(stored.token_prefix).toBe(prefix);
+    const listed = await request("/api/mcp-tokens", a);
+    expect(listed.status).toBe(200);
+    expect(await listed.json()).toContainEqual({
+      id,
+      prefix,
+      name: "Learning agent",
+      createdAt: expect.any(String),
+      lastUsedAt: null,
+      revokedAt: null,
+    });
   });
 });

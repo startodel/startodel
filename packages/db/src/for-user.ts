@@ -1,3 +1,4 @@
+import { tokensForUser } from "./mcp-tokens.ts";
 import { and, eq } from "drizzle-orm";
 import type { Database } from "./index.ts";
 import { profiles, tracks } from "./schema.ts";
@@ -8,6 +9,7 @@ export function forUser(db: Database, userId: string) {
   const ownTrack = (id: string) => and(ownTracks, eq(tracks.id, id));
 
   return {
+    mcpTokens: tokensForUser(db, userId),
     async getProfile() {
       const [profile] = await db.select().from(profiles).where(ownProfile);
       return profile;
