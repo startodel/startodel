@@ -17,3 +17,4 @@
 - [ADR 0012 — Agent guidance from Markdown](adr/0012-agent-guidance-from-markdown.md) — one source for server instructions, state-aware guidance and MCP resources.
 - [ADR 0013 — Mastery auto-raise](adr/0013-mastery-auto-raise.md) — reading and Quiz evidence that raises Topic Mastery.
 - [ADR 0014 — Practice Quiz scoring and UI Grill answers](adr/0014-review-practice-and-ui-answers.md) — review scoring, scheduling and read-only Grill answers.
+- [ADR 0015 — Public read layer](adr/0015-public-read-layer.md) — public projections, Forks and Terms Acceptance.

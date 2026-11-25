@@ -9,7 +9,9 @@
 
 ## Per-user isolation
 
-Access user-owned learning data only through `forUser(db, userId)` in `@startodel/db`. In Session API handlers, use `userData(event)` to bind the Owner from the Session. Assign that Owner on insert and include it in every SQL read, update, and delete. Return 404 for both missing and foreign rows. Never import raw schema tables into the web server. See [ADR 0004](docs/adr/0004-authentication-and-per-user-isolation.md).
+Access private learning data only through `forUser(db, userId)` in `@startodel/db`. In Session API handlers, use `userData(event)` to bind the Owner from the Session. Assign that Owner on insert and include it in every SQL read, update, and delete. Return 404 for both missing and foreign rows. Never import raw schema tables into the web server. See [ADR 0004](docs/adr/0004-authentication-and-per-user-isolation.md).
+
+Use `publicReader` for Public Profiles, Public Tracks, Lessons and the sitemap. Forks read through the public layer and write through the recipient’s `forUser` in one transaction. See [ADR 0015](docs/adr/0015-public-read-layer.md) for the fork-only Lesson projection and Terms Acceptance.
 
 Reference user-owned parents with composite foreign keys from `(user_id, parent_id)` to the parent's unique `(user_id, id)`. Test foreign references with two Users. See [ADR 0011](docs/adr/0011-composite-ownership.md).
 

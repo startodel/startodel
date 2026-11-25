@@ -38,6 +38,10 @@ flowchart TD
 - **Bring your own agent.** Per-user MCP tokens, hashed at rest. The agent sees only its owner's data. Start with `get_guide` for a state-aware next step.
 - **Self-hosted or cloud.** MIT licensed. The cloud at [startodel.ru](https://startodel.ru) already has GitHub login and a deployed database.
 
+## Public tracks
+
+Tracks start private. Open a Track to accept the current [Publishing rules](docs/legal/rules.en.md) and [Terms of Use](docs/legal/terms.en.md), publish it and copy its public URL. Your Public Profile at `/u/<login>` lists your Public Tracks. Anyone can read their graph and Lessons. Signed-in learners can fork a Track into their private catalog with working practice. Progress and questionnaire answers stay private. Unpublishing closes the public page immediately. Existing Forks remain available to their owners.
+
 ## Practice in the web app
 
 The dashboard’s **Next up** card follows the same priorities as `get_guide`. Open **Grills** to answer one question at a time, read your agent’s feedback and find Lessons for Topics to reinforce. **Reviews** shows due Topics and the next seven days. Take a Practice Quiz when the Topic has a Quiz, or copy a prompt for your agent. **Progress** shows Mastery across your catalog, Track completion, Lessons read and recent Activity.
@@ -113,7 +117,7 @@ Read the [agent guide](docs/agent-guide/README.md) or open individual sections a
 | Workflow             | Tools                                                                                                                                                 |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Guidance and Profile | `get_guide`, `get_profile`, `update_profile`                                                                                                          |
-| Tracks               | `create_track`, `get_track`, `update_track`, `list_tracks`                                                                                            |
+| Tracks               | `create_track`, `get_track`, `update_track`, `list_tracks`, `set_track_visibility`                                                                    |
 | Topic Catalog        | `upsert_topics`, `list_topics`, `get_topic`                                                                                                           |
 | Track Graph          | `add_edges`, `remove_edge`, `attach_topics_to_track`, `detach_topic_from_track`, `get_track_graph`                                                    |
 | Lessons              | `create_lesson`, `update_lesson`, `get_lesson`, `list_lessons`                                                                                        |
