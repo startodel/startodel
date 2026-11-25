@@ -16,4 +16,4 @@ Default the target size to 15. For a Track, consider its member Topics. Otherwis
 
 ## Consequences
 
-Finishing a GrillSession closes question entry and answer submission. The external agent can judge an existing answer later. A weak or partial Verdict for a Topic creates or refreshes its ReviewItem in the same transaction as the judgment.
+Deleting a Track detaches its GrillSessions so its question history remains available to the Owner. Finishing a GrillSession closes question entry and answer submission. The external agent can judge an existing answer later. A weak or partial Verdict for a Topic creates or refreshes its ReviewItem in the same transaction as the judgment.

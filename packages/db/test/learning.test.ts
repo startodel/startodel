@@ -267,6 +267,22 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     });
   });
 
+  test("deleting a Track keeps the Owner's GrillSession and Topic Catalog", async () => {
+    const track = await alice.createTrack("Temporary");
+    const topic = await alice.upsertTopic({ slug: "sql", title: "SQL" });
+    await alice.attachTopicToTrack(track.id, topic.id, 1);
+    const grill = (await alice.startGrill({ trackId: track.id, title: "SQL" }))!;
+    await alice.addGrillQuestion(grill.id, { prompt: "What is a join?", topicId: topic.id });
+    expect(await bob.deleteTrack(track.id)).toBeUndefined();
+    expect(await alice.getGrill(grill.id)).toMatchObject({ trackId: track.id });
+    await alice.deleteTrack(track.id);
+    expect(await alice.getGrill(grill.id)).toMatchObject({
+      trackId: null,
+      questions: [{ topicId: topic.id }],
+    });
+    expect(await alice.getTopic(topic.id)).toEqual(topic);
+  });
+
   test("candidates put overdue Topics first, then sort by Mastery within the requested Track", async () => {
     const track = await alice.createTrack("Catalog");
     const members = await Promise.all(

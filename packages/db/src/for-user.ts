@@ -6,7 +6,7 @@ import { catalogForUser } from "./catalog.ts";
 import { tokensForUser } from "./mcp-tokens.ts";
 import { and, eq } from "drizzle-orm";
 import type { Database } from "./index.ts";
-import { profiles, tracks } from "./schema.ts";
+import { grillSessions, profiles, tracks } from "./schema.ts";
 
 type TrackInput = { title: string; description?: string | null; sources?: TrackSources };
 function trackFields(input: string | Partial<TrackInput>) {
@@ -70,9 +70,22 @@ export function forUser(db: Database, userId: string) {
         .returning();
       return track;
     },
-    async deleteTrack(id: string) {
-      const [track] = await db.delete(tracks).where(ownTrack(id)).returning({ id: tracks.id });
-      return track;
+    deleteTrack(id: string) {
+      return db.transaction(async (tx) => {
+        // Block new references until existing GrillSessions have been detached.
+        const [track] = await tx
+          .select({ id: tracks.id })
+          .from(tracks)
+          .where(ownTrack(id))
+          .for("update");
+        if (!track) return undefined;
+        await tx
+          .update(grillSessions)
+          .set({ trackId: null, updatedAt: new Date() })
+          .where(and(eq(grillSessions.userId, userId), eq(grillSessions.trackId, id)));
+        await tx.delete(tracks).where(ownTrack(id));
+        return track;
+      });
     },
   };
 }
