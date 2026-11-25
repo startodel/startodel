@@ -8,3 +8,8 @@
 - [ADR 0004 — Authentication and per-user isolation](adr/0004-authentication-and-per-user-isolation.md) — GitHub login, sealed Sessions, and the Owner check for learning data.
 - [ADR 0005 — MCP transport and token model](adr/0005-mcp-transport-and-token-model.md) — Streamable HTTP, personal MCP Tokens and Tool isolation.
 - [ADR 0006 — Container image and startup migrations](adr/0006-container-image-and-startup-migrations.md) — the release image and coordination of schema upgrades.
+- [ADR 0007 — Topic Graph and per-User Topic Catalog](adr/0007-topic-graph-and-catalog.md) — Topic identity, Track membership and shared Lessons.
+- [ADR 0008 — Lesson Blocks and content storage](adr/0008-lesson-blocks.md) — ordered content, external links and validation.
+- [ADR 0009 — Mastery and Leitner review scheduling](adr/0009-mastery-and-leitner-reviews.md) — progress and due dates.
+- [ADR 0010 — GrillSessions and agent-judged answers](adr/0010-grill-sessions.md) — question selection, Answer Source and Verdict.
+- [ADR 0011 — Database-enforced ownership with composite foreign keys](adr/0011-composite-ownership.md) — relational integrity within each Owner's data.

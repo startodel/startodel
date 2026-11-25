@@ -1,18 +1,36 @@
 # Domain glossary
 
-| Term         | Definition                                                                                    |
-| ------------ | --------------------------------------------------------------------------------------------- |
-| User         | A learner identified by their GitHub account.                                                 |
-| Session      | A signed-in browser's association with one User.                                              |
-| Owner        | The User to whom a learning record belongs.                                                   |
-| Profile      | A learner's record of their goals and assessed level.                                         |
-| Topic        | A concept or skill a learner can study.                                                       |
-| TopicEdge    | A directed link from a prerequisite Topic to the Topic that builds on it.                     |
-| Track        | An ordered sequence of Topics chosen for a Profile.                                           |
-| Lesson       | A unit of study on a Topic within a Track.                                                    |
-| Quiz         | A set of questions that checks understanding of a Lesson.                                     |
-| GrillSession | An interactive exchange in which an agent probes a learner's reasoning about a Lesson.        |
-| ReviewItem   | A Topic set aside for a learner to revisit.                                                   |
-| Progress     | A record of Lessons completed within a Track.                                                 |
-| MCP Token    | A personal credential that lets an external agent act for one User until revoked.             |
-| Tool         | A named operation an external agent can call with an MCP Token to work with the Owner's data. |
+| Term                     | Definition                                                                                                                                                                                                     |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| User                     | A learner identified by their GitHub account.                                                                                                                                                                  |
+| Session                  | A signed-in browser's association with one User.                                                                                                                                                               |
+| Owner                    | The User to whom a learning record belongs.                                                                                                                                                                    |
+| Profile                  | The Owner's learning goals and background.                                                                                                                                                                     |
+| Onboarding Questionnaire | The part of a Profile that records stack, experience (junior, middle, senior or lead), years of experience (0–60), goals, notes and when onboarding was completed.                                             |
+| Topic                    | A concept or skill in one Owner's Topic Catalog.                                                                                                                                                               |
+| Topic Catalog            | All of one Owner's Topics, shared across their Tracks.                                                                                                                                                         |
+| Topic Slug               | A unique name within a Topic Catalog, such as `react/use-transition`. Each slash-separated segment contains lowercase letters and digits, optionally joined by hyphens. The whole name fits in 120 characters. |
+| TopicEdge                | A directed prerequisite relationship between two distinct Topics in the same Topic Catalog. Learn the source Topic before the destination Topic.                                                               |
+| Track                    | A selection of Topics assembled by the User's external agent around a learning goal. Each member has a position within the Track.                                                                              |
+| Track Graph              | A Track's Topics and the TopicEdges whose two endpoints both belong to that Track.                                                                                                                             |
+| Track Sources            | An optional GitHub repository and up to 20 documentation links that inform a Track.                                                                                                                            |
+| Lesson                   | A unit of study belonging to one Topic. Lessons have a position within their Topic and are shared by every Track containing it.                                                                                |
+| Block                    | One element of a Lesson's ordered content, identified by a stable ID unique within that Lesson.                                                                                                                |
+| Theory Block             | Lesson text written in Markdown.                                                                                                                                                                               |
+| Code Block               | Code in a named language with an optional explanation.                                                                                                                                                         |
+| Callout Block            | Markdown highlighting a gotcha, production consideration or tip.                                                                                                                                               |
+| Link Block               | A titled HTTP or HTTPS resource with an optional note.                                                                                                                                                         |
+| Video Block              | A titled YouTube watch, short or shortened video link with an optional note.                                                                                                                                   |
+| Quiz                     | A Block with one to three multiple-choice questions. Each has two to six options and one correct index.                                                                                                        |
+| Quiz Attempt             | One submission of option indices for a Quiz, with its Answer Source and score.                                                                                                                                 |
+| Exercise                 | A Block with a Markdown prompt and solution, plus optional hints. The User's external agent assesses free-text work.                                                                                           |
+| Lesson Progress          | The Owner's record of when they read a Lesson.                                                                                                                                                                 |
+| Mastery                  | The Owner's level for a Topic, with optional evidence. Levels are 0 (don't know), 1 (read), 2 (apply), 3 (explain) and 4 (internals).                                                                          |
+| ReviewItem               | A Topic scheduled for the Owner to revisit, with its Review Box, due time and latest review result.                                                                                                            |
+| Review Box               | A Leitner box numbered 0 through 4, determining the interval until the next review.                                                                                                                            |
+| GrillSession             | A stored round of questions chosen by the external agent, optionally for one Track. It has a target size and can be open or finished.                                                                          |
+| Grill Question           | An ordered prompt in a GrillSession, optionally associated with a Topic. It holds the submitted answer, Answer Source and the external agent's judgment.                                                       |
+| Verdict                  | The external agent's assessment of an answer as strong, partial or weak.                                                                                                                                       |
+| Answer Source            | Where the learner submitted an answer, either the UI (`ui`) or an MCP client (`mcp`).                                                                                                                          |
+| MCP Token                | A personal credential that lets an external agent act for one User until revoked.                                                                                                                              |
+| Tool                     | A named operation an external agent can call with an MCP Token to work with the Owner's data.                                                                                                                  |

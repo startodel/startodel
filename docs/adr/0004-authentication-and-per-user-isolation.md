@@ -23,3 +23,5 @@ Put all access to user-owned learning data in that scoped layer. Assign the Owne
 A handler cannot select an Owner from request input. Conditional writes perform the ownership check in the same statement as the mutation. A Session is stateless, so rotating its sealing secret invalidates existing cookies.
 
 PostgreSQL tests exercise concurrent first sign-ins and every scoped operation with two Users. HTTP tests build the app and substitute a loopback provider for GitHub's token and identity endpoints. Both Users complete the real callback and send its sealed cookies to the real routes. Tests check anonymous requests, public health, Profile isolation, Track lists, identical 404 status for missing and foreign Tracks, and the Owner's unchanged database row after rejected writes. A source-import test checks the web server for raw schema imports.
+
+[ADR 0011](0011-composite-ownership.md) updates child-row scoping for the per-User Topic Catalog and shared Lessons.

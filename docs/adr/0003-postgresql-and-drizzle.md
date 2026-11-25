@@ -17,3 +17,5 @@ Use PostgreSQL for transactions, foreign keys, and uniqueness constraints. Defin
 Running migrations requires PostgreSQL and a connection URL. Contributors can inspect the SQL before applying it. A Progress row records one completed Lesson for a user and identifies the Track through that Lesson. The client factory takes a URL and leaves connection cleanup to the caller.
 
 See [Drizzle's PostgreSQL drivers](https://orm.drizzle.team/docs/get-started-postgresql) and the [node-postgres pool documentation](https://node-postgres.com/apis/pool).
+
+[ADR 0007](0007-topic-graph-and-catalog.md) and [ADR 0009](0009-mastery-and-leitner-reviews.md) supersede the original Lesson and Progress relationships.
