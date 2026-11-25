@@ -1,0 +1,13 @@
+# Domain glossary
+
+| Term         | Definition                                                                             |
+| ------------ | -------------------------------------------------------------------------------------- |
+| Profile      | A learner's record of their goals and assessed level.                                  |
+| Topic        | A concept or skill a learner can study.                                                |
+| TopicEdge    | A directed link from a prerequisite Topic to the Topic that builds on it.              |
+| Track        | An ordered sequence of Topics chosen for a Profile.                                    |
+| Lesson       | A unit of study on a Topic within a Track.                                             |
+| Quiz         | A set of questions that checks understanding of a Lesson.                              |
+| GrillSession | An interactive exchange in which an agent probes a learner's reasoning about a Lesson. |
+| ReviewItem   | A Topic set aside for a learner to revisit.                                            |
+| Progress     | A record of Lessons completed within a Track.                                          |

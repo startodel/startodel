@@ -1,0 +1,20 @@
+# Working in Startodel
+
+- `apps/web/` contains the Nuxt app. Pages live in `app/pages/` and HTTP handlers in `server/api/`.
+- `packages/core/` contains shared domain types. Keep it framework-free.
+- Put project documentation in `docs/`. Use the exact terms in [CONTEXT.md](docs/CONTEXT.md) when naming types or describing the domain. Never replace them with synonyms.
+- Record architectural decisions in numbered ADRs under `docs/adr/`. Follow [ADR 0001](docs/adr/0001-record-architecture-decisions.md).
+- Keep PRs small and focused. Keep secrets out of source, configuration examples, and logs.
+- Use Conventional Commits for commits and PR titles, for example `feat(core): add Lesson type` or `ci: run workspace checks`. See [CONTRIBUTING.md](CONTRIBUTING.md) for allowed types and the branch workflow.
+
+## Commands
+
+Run from the workspace root:
+
+- `pnpm install` installs the workspace dependencies.
+- `pnpm dev` starts the web app.
+- `pnpm check` validates formatting, lint rules, and types.
+- `pnpm test` runs the unit tests.
+- `pnpm build` builds the web app for production.
+
+Run `pnpm check` and `pnpm test` before submitting changes.
