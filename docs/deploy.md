@@ -39,6 +39,7 @@ Once startup finishes, expect `{"ok":true,"db":"up"}`. The image healthcheck rea
 4. Point the public domain's DNS at the proxy. Under **Domains**, add the host, set path `/` and **Container Port** `3000`, enable **HTTPS**, and choose **Let's Encrypt** as the certificate provider. [Dokploy domains](https://docs.dokploy.com/docs/core/domains)
 5. Deploy the application. Use the image's healthcheck at `/api/health`. Once healthy, visit `https://<domain>/api/health` and confirm the database is up. Open `https://<domain>` and sign in with GitHub.
 6. Create an MCP Token in the app and connect the agent to `https://<domain>/mcp` using Streamable HTTP. [MCP client setup](../README.md#connect-your-agent)
+7. To redeploy on every push, install the Dokploy GitHub App on the account or organization that owns the repository and grant it access to the repository. In the application, select that GitHub provider as the source with branch `main` and turn on **Autodeploy**. Each push to `main` then builds and deploys the new commit, and startup migrations run as described below. [Dokploy auto deploy](https://docs.dokploy.com/docs/core/auto-deploy)
 
 ## Migrations and rollback
 
