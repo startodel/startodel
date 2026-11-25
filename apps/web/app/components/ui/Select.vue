@@ -11,9 +11,9 @@ import {
   SelectViewport,
 } from "reka-ui";
 /** A list of options with typeahead and full keyboard support. */
-defineProps<{
+const props = defineProps<{
   options: { value: string; label: string; disabled?: boolean }[];
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   invalid?: boolean;
   disabled?: boolean;
   placeholder?: string;
@@ -25,17 +25,19 @@ defineProps<{
 }>();
 const model = defineModel<string>();
 const layer = useLayer();
+const field = useField({ id: () => props.id, invalid: () => props.invalid });
 </script>
 <template>
   <SelectRoot v-model="model" :disabled="disabled" :name="name">
     <SelectTrigger
-      :id="id"
-      class="s-select"
-      :class="['s-select--' + (size ?? 'md'), { 'is-invalid': invalid }]"
+      :id="field.id.value"
+      class="s-control s-select"
+      :class="['s-control--' + (size ?? 'md'), { 'is-invalid': field.invalid.value }]"
       :aria-label="label"
-      :aria-invalid="invalid || undefined"
+      :aria-invalid="field.invalid.value || undefined"
+      :aria-describedby="field.describedBy.value"
     >
-      <SelectValue class="s-select__value" :placeholder="placeholder ?? 'Choose'" />
+      <SelectValue class="s-select__value" :placeholder="placeholder ?? $t('ui.choose')" />
       <UiIcon name="chevron-down" :size="14" class="s-select__caret" />
     </SelectTrigger>
     <SelectPortal :to="layer">
@@ -69,45 +71,25 @@ const layer = useLayer();
   align-items: center;
   justify-content: space-between;
   gap: var(--s-3);
-  min-width: 0;
   width: 100%;
-  min-height: var(--s-control-md);
   padding: 0 var(--s-3);
-  border: 1px solid var(--s-line-strong);
-  border-radius: var(--s-radius-sm);
-  background: var(--s-raised);
-  color: var(--s-ink);
   font-size: var(--s-text-md);
+  line-height: 1.3;
   text-align: left;
-  transition: border-color var(--s-dur-1) var(--s-ease);
 }
-.s-root .s-select--sm {
-  min-height: var(--s-control-sm);
+.s-root .s-select.s-control--sm {
+  padding: 0 var(--s-2);
   font-size: var(--s-text-sm);
 }
-.s-root .s-select:hover {
-  border-color: var(--s-ink);
-}
-.s-root .s-select:focus-visible,
-.s-root .s-select[data-state="open"] {
-  outline: none;
-  border-color: var(--s-focus);
-  box-shadow: 0 0 0 1px var(--s-focus);
-  border-radius: var(--s-radius-sm);
-}
-.s-root .s-select.is-invalid {
-  border-color: var(--s-oxide);
-}
-.s-root .s-select[data-disabled] {
-  border-color: var(--s-line);
-  background: var(--s-sunken);
-  color: var(--s-ink-3);
-  cursor: not-allowed;
+.s-root .s-select.s-control--lg {
+  padding: 0 var(--s-4);
 }
 .s-root .s-select[data-placeholder] .s-select__value {
   color: var(--s-ink-3);
 }
 .s-root .s-select__value {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

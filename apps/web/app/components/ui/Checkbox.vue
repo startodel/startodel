@@ -22,7 +22,7 @@ const model = defineModel<boolean>({ default: false });
       :aria-invalid="invalid || undefined"
     >
       <CheckboxIndicator class="s-check__mark"
-        ><UiIcon name="check" :size="12"
+        ><UiIcon name="check" :size="14"
       /></CheckboxIndicator>
     </CheckboxRoot>
     <span class="s-check__label"><slot /></span>
@@ -65,8 +65,10 @@ const model = defineModel<boolean>({ default: false });
   border-color: var(--s-oxide);
 }
 .s-root .s-check__box[data-disabled] {
-  background: var(--s-sunken);
   border-color: var(--s-line);
+  background: var(--s-sunken);
+  color: var(--s-ink-3);
+  cursor: not-allowed;
 }
 .s-root .s-check__mark {
   display: grid;

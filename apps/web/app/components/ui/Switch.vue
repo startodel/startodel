@@ -10,7 +10,7 @@ const model = defineModel<boolean>({ default: false });
       <SwitchThumb class="s-switch__thumb" />
     </SwitchRoot>
     <span class="s-switch__label"><slot /></span>
-    <span class="s-switch__state" aria-hidden="true">{{ model ? "on" : "off" }}</span>
+    <span class="s-switch__state" aria-hidden="true">{{ model ? $t("ui.on") : $t("ui.off") }}</span>
   </label>
 </template>
 <style>
@@ -53,6 +53,14 @@ const model = defineModel<boolean>({ default: false });
 .s-root .s-switch__thumb[data-state="checked"] {
   background: var(--s-copper-fill);
   translate: 1rem 0;
+}
+.s-root .s-switch__track[data-disabled] {
+  border-color: var(--s-line);
+  background: var(--s-sunken);
+  cursor: not-allowed;
+}
+.s-root .s-switch__track[data-disabled] .s-switch__thumb {
+  background: var(--s-ink-3);
 }
 .s-root .s-switch__state {
   font: 500 var(--s-text-2xs) / 1 var(--s-font-mono);

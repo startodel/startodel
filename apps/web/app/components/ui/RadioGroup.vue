@@ -24,7 +24,7 @@ const model = defineModel<T | undefined>({ required: true });
       v-for="o in options"
       :key="o.value"
       class="s-radio__option"
-      :class="{ 'is-on': model === o.value }"
+      :class="{ 'is-on': model === o.value, 'is-disabled': disabled || o.disabled }"
     >
       <RadioGroupItem class="s-radio__pad" :value="o.value" :disabled="o.disabled">
         <RadioGroupIndicator class="s-radio__dot" />
@@ -84,14 +84,36 @@ const model = defineModel<T | undefined>({ required: true });
   border-radius: 50%;
   background: var(--s-copper-fill);
 }
+.s-root .s-radio__option.is-disabled {
+  color: var(--s-ink-3);
+  cursor: not-allowed;
+}
+.s-root .s-radio--cards .s-radio__option.is-disabled {
+  border-color: var(--s-line);
+  background: var(--s-sunken);
+  box-shadow: none;
+}
+.s-root .s-radio__pad[data-disabled] {
+  border-color: var(--s-line);
+  background: var(--s-sunken);
+  cursor: not-allowed;
+}
+.s-root .s-radio__pad[data-disabled] .s-radio__dot {
+  background: var(--s-ink-3);
+}
 .s-root .s-radio__text {
   display: grid;
   gap: 0.125rem;
   min-width: 0;
 }
 .s-root .s-radio__label {
-  font-weight: 600;
   line-height: 1.4;
+}
+.s-root .s-radio--cards .s-radio__label {
+  font-weight: 600;
+}
+.s-root .s-radio__option.is-disabled .s-radio__hint {
+  color: inherit;
 }
 .s-root .s-radio__hint {
   font-size: var(--s-text-sm);
