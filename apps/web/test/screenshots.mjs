@@ -72,6 +72,12 @@ try {
   const me = await (await request.get(origin + "/api/me")).json();
   const owner = forUser(db, me.user.id);
   const page = await context.newPage();
+  // SSR links and form controls become visible before their click handlers are attached.
+  const hydrated = () => page.waitForFunction(() => window.useNuxtApp?.().isHydrating === false);
+  async function visit(path) {
+    await page.goto(origin + path);
+    await hydrated();
+  }
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   // Keep browser navigation and embedded resources on the local test app.
@@ -102,7 +108,7 @@ try {
     });
     console.log(name);
   };
-  await page.goto(origin + "/en");
+  await visit("/en");
   await page.getByLabel("TypeScript", { exact: true }).check();
   await page.getByLabel("Other technologies").fill("SQL,");
   await page.getByLabel("Other technologies").press("Enter");
@@ -162,6 +168,7 @@ try {
     blocks,
   });
   await page.reload();
+  await hydrated();
   await page.getByRole("link", { name: track.title }).waitFor();
   await shot("dashboard");
   await page.getByRole("link", { name: track.title }).click();
@@ -188,7 +195,7 @@ try {
     "https://www.youtube-nocookie.com/embed/8aGhZQkoFbQ",
   );
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto(origin + "/en/tracks/" + track.id);
+  await visit("/en/tracks/" + track.id);
   await page.getByRole("button", { name: "Tasks and timers", exact: true }).click();
   await page.getByRole("link", { name: lesson.title }).waitFor();
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
@@ -231,7 +238,7 @@ try {
     "weak",
     "An expired timer queues a task. The current task must finish before the callback can run.",
   );
-  await page.goto(origin + "/en/grills/" + grill.id);
+  await visit("/en/grills/" + grill.id);
   await page
     .getByLabel("Your answer")
     .fill("After the current task returns and before the next task starts.");
@@ -244,10 +251,10 @@ try {
   await page.getByRole("button", { name: "Previous" }).click();
   await page.getByText("Verdict · weak").waitFor();
   await shot("pr9-grill-open");
-  await page.goto(origin + "/en");
+  await visit("/en");
   await page.getByRole("link", { name: "Continue grill session" }).waitFor();
   await shot("pr9-dashboard-next-up");
-  await page.goto(origin + "/en/grills");
+  await visit("/en/grills");
   await page.getByRole("link", { name: finished.title }).waitFor();
   await shot("pr9-grills");
   await page.getByRole("link", { name: finished.title }).click();
@@ -257,7 +264,7 @@ try {
     "update review_items set due_at=now()-interval '1 day' where user_id=$1 and topic_id=$2",
     [me.user.id, by.tasks.id],
   );
-  await page.goto(origin + "/en/reviews");
+  await visit("/en/reviews");
   await page.getByRole("link", { name: "Practice quiz" }).waitFor();
   await shot("pr9-reviews");
   await page.getByRole("link", { name: "Practice quiz" }).click();
@@ -265,12 +272,12 @@ try {
   await shot("pr9-review-practice");
   await page.getByRole("button", { name: "Submit Practice Quiz" }).click();
   await page.getByRole("heading", { name: "1 of 1 correct · strong" }).waitFor();
-  await page.goto(origin + "/en/progress");
+  await visit("/en/progress");
   await page.getByLabel("Sort by").selectOption("mastery");
   await page.getByRole("heading", { name: "Recent activity" }).waitFor();
   await shot("pr9-progress");
   if (pr12) {
-    await page.goto(origin + "/");
+    await visit("/");
     await page.getByRole("heading", { name: "Главная", exact: true }).waitFor();
     await page.getByRole("link", { name: track.title }).waitFor();
     await shot("pr12-ru-dashboard");
@@ -278,14 +285,14 @@ try {
     await page.locator(".vue-flow__edge-path").first().waitFor();
     await page.getByRole("button", { name: "Открыть доступ" }).waitFor();
     await shot("pr12-ru-track");
-    await page.goto(origin + "/reviews");
+    await visit("/reviews");
     await page.getByRole("heading", { name: by.tasks.title }).waitFor();
     await shot("pr12-ru-grill-or-reviews");
 
     await owner.setTrackVisibility(track.id, true, true);
     await context.clearCookies();
     const publicPath = "/u/bob/" + track.slug;
-    await page.goto(origin + publicPath);
+    await visit(publicPath);
     await page.locator(".vue-flow__edge-path").first().waitFor();
     await shot("pr12-ru-public-track");
     await page.locator("header").getByRole("link", { name: "EN", exact: true }).click();
@@ -293,15 +300,15 @@ try {
     await page.getByRole("heading", { name: "Track Graph" }).waitFor();
     await page.locator(".vue-flow__edge-path").first().waitFor();
     await shot("pr12-en-public-track");
-    await page.goto(origin + "/");
+    await visit("/");
     await page.waitForURL(origin + "/en/login");
     await page.locator("footer").getByRole("link", { name: "RU", exact: true }).click();
     await page.waitForURL(origin + "/login");
-    await page.goto(origin + "/");
+    await visit("/");
     await page.waitForURL(origin + "/login");
   }
   if (process.argv.includes("--pr11")) {
-    await page.goto(origin + "/en/tracks/" + track.id);
+    await visit("/en/tracks/" + track.id);
     await page.getByRole("button", { name: "Make public" }).click();
     await page.getByRole("dialog").waitFor();
     await shot("pr11-publish-dialog");
@@ -311,11 +318,11 @@ try {
     await page.getByRole("button", { name: "Publish", exact: true }).click();
     await page.getByRole("button", { name: "Copy public URL" }).waitFor();
     const publicPath = "/u/bob/" + track.slug;
-    await page.goto(origin + "/terms?lang=en");
+    await visit("/terms?lang=en");
     await page.getByRole("heading", { name: "Terms of Use", exact: true }).waitFor();
     await shot("pr11-terms");
     await context.clearCookies();
-    await page.goto(origin + "/en/u/bob");
+    await visit("/en/u/bob");
     await page.getByRole("link", { name: track.title }).waitFor();
     await shot("pr11-public-profile");
     await page.getByRole("link", { name: track.title }).click();
@@ -326,14 +333,14 @@ try {
     assert.equal(await page.getByText("Show solution", { exact: true }).count(), 0);
     await shot("pr11-public-lesson");
     await signIn("forker");
-    await page.goto(origin + "/en" + publicPath);
+    await visit("/en" + publicPath);
     await page.getByRole("button", { name: "Fork", exact: true }).click();
     await page.waitForURL("**/en/tracks/*");
     await page.getByText("Forked from", { exact: false }).waitFor();
     await page.locator(".vue-flow__edge-path").first().waitFor();
     await shot("pr11-fork-result");
     await signIn("bob");
-    await page.goto(origin + "/en/tracks/" + track.id);
+    await visit("/en/tracks/" + track.id);
     await page.getByText("1 fork", { exact: true }).waitFor();
     await page.locator(".vue-flow__edge-path").first().waitFor();
     await shot("pr11-track-visibility");
