@@ -235,7 +235,7 @@ const prompt =
           <UiInput model-value="https://startodel.ru/mcp" mono readonly />
         </UiField>
         <UiField label="Disabled" hint="Set by GitHub.">
-          <UiInput model-value="hmbanan666" disabled />
+          <UiInput model-value="alice" disabled />
         </UiField>
         <UiField label="Disabled, empty">
           <UiInput model-value="" placeholder="Not available yet" disabled />
