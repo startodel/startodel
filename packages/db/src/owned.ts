@@ -10,9 +10,9 @@ export const ownedId = (
 ) => and(eq(table.userId, userId), eq(table.id, id));
 
 // A composite FK treats missing and foreign parents identically, including concurrent deletes.
-export async function referencedRow<T>(write: PromiseLike<T[]>): Promise<T | undefined> {
+export async function referencedRows<T>(write: PromiseLike<T[]>): Promise<T[] | undefined> {
   try {
-    return (await write)[0];
+    return await write;
   } catch (error) {
     if (
       error instanceof Error &&
@@ -24,4 +24,8 @@ export async function referencedRow<T>(write: PromiseLike<T[]>): Promise<T | und
       return undefined;
     throw error;
   }
+}
+
+export async function referencedRow<T>(write: PromiseLike<T[]>): Promise<T | undefined> {
+  return (await referencedRows(write))?.[0];
 }
