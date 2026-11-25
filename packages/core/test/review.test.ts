@@ -1,5 +1,5 @@
 import { expect, test } from "vite-plus/test";
-import { scheduleReview } from "@startodel/core";
+import { lessonMastery, scheduleReview } from "@startodel/core";
 
 test("a first weak result schedules tomorrow at the same instant", () => {
   expect(scheduleReview(null, "weak", new Date("2026-03-28T12:00:00Z"))).toEqual({
@@ -31,5 +31,18 @@ test.each([
         dueAt: new Date(`2026-${dates[box]}T13:30:00Z`),
       });
     }
+  },
+);
+
+test.each([
+  [0, 0, 0, 0, 0],
+  [2, 1, 0, 0, 0],
+  [2, 2, 0, 0, 1],
+  [2, 2, 2, 1, 1],
+  [2, 0, 2, 2, 2],
+])(
+  "reading %s Lessons (%s read) and %s Quizzes (%s passed) supports level %s",
+  (lessons, read, quizzes, passed, level) => {
+    expect(lessonMastery(lessons!, read!, quizzes!, passed!)).toBe(level);
   },
 );

@@ -8,11 +8,15 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
+    "@dagrejs/dagre": "3.1.4",
     "@modelcontextprotocol/sdk": "1.32.2",
     "@startodel/core": "workspace:*",
     "@startodel/db": "workspace:*",
+    "@vue-flow/core": "1.48.2",
+    "markdown-it": "15.0.3",
     "nuxt": "4.7.0",
     "nuxt-auth-utils": "0.6.2",
+    "shiki": "4.6.0",
     "zod": "4.6.7"
   },
   "devDependencies": {

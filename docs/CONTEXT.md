@@ -6,7 +6,7 @@
 | Session                  | A signed-in browser's association with one User.                                                                                                                                                               |
 | Owner                    | The User to whom a learning record belongs.                                                                                                                                                                    |
 | Profile                  | The Owner's learning goals and background.                                                                                                                                                                     |
-| Onboarding Questionnaire | The part of a Profile that records stack, experience (junior, middle, senior or lead), years of experience (0–60), goals, notes and when onboarding was completed.                                             |
+| Onboarding Questionnaire | The three required Profile answers are stack, goals and grade (junior, middle, senior or lead, stored as experience). Submission records the completion time.                                                  |
 | Topic                    | A concept or skill in one Owner's Topic Catalog.                                                                                                                                                               |
 | Topic Catalog            | All of one Owner's Topics, shared across their Tracks.                                                                                                                                                         |
 | Topic Slug               | A unique name within a Topic Catalog, such as `react/use-transition`. Each slash-separated segment contains lowercase letters and digits, optionally joined by hyphens. The whole name fits in 120 characters. |
@@ -34,3 +34,7 @@
 | Answer Source            | Where the learner submitted an answer, either the UI (`ui`) or an MCP client (`mcp`).                                                                                                                          |
 | MCP Token                | A personal credential that lets an external agent act for one User until revoked.                                                                                                                              |
 | Tool                     | A named operation an external agent can call with an MCP Token to work with the Owner's data.                                                                                                                  |
+
+## Mastery
+
+Reading every Lesson in a Topic with at least one Lesson raises Mastery from 0 to 1. When every Quiz in the Topic has a fully correct latest Quiz Attempt, Mastery rises to 2. This requires at least one Quiz. Neither rule lowers Mastery. The external agent assesses levels 3 and 4 with evidence. [ADR 0013](adr/0013-mastery-auto-raise.md)

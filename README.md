@@ -8,7 +8,7 @@ You study Lessons made of typed blocks: theory, code, production callouts, links
 
 The project is free to use with your own agent. You can [self-host](#quick-start) it, or use the cloud at [startodel.ru](https://startodel.ru) with GitHub login.
 
-**Status: early.** GitHub sign-in gives each user a private profile and tracks. An external agent can build track graphs, write lessons, record progress, and run grill sessions with a personal MCP token. The learning UI is next.
+**Status: early.** GitHub sign-in gives each user a private profile and tracks. An external agent can build track graphs, write lessons, record progress, and run grill sessions with a personal MCP token. After sign-in, answer three questions about your stack, goals and grade, then connect your agent or skip to the dashboard. Open a Track to explore prerequisites and select a Topic. Its Lessons support reading, scored Quizzes and Exercises with hints and solutions.
 
 - Cloud: [startodel.ru](https://startodel.ru)
 - [Connect your agent](#connect-your-agent)
@@ -55,14 +55,11 @@ Work is grouped by [milestones](https://github.com/startodel/startodel/milestone
 - [x] Production Docker image and deploy to [startodel.ru](https://startodel.ru) ([#5](https://github.com/startodel/startodel/pull/5))
 - [x] Learning core data model: topic graph, lessons, mastery, reviews, grill sessions ([#6](https://github.com/startodel/startodel/pull/6))
 - [x] MCP tools for the learning core and the agent guide ([#7](https://github.com/startodel/startodel/pull/7))
-
-### Now
-
-- [ ] Onboarding, track graph, and lesson page ([#15](https://github.com/startodel/startodel/issues/15))
+- [x] Onboarding, dashboard, Track Graph, and Lesson pages ([#15](https://github.com/startodel/startodel/issues/15))
 
 ### Next
 
-- [ ] Quizzes, grill, progress, and reviews in the UI ([#16](https://github.com/startodel/startodel/issues/16))
+- [ ] Grill, progress, and reviews in the UI ([#16](https://github.com/startodel/startodel/issues/16))
 - [ ] Agent skills in `packages/skills`, generated from `docs/agent-guide` ([#17](https://github.com/startodel/startodel/issues/17))
 
 Later: [import topic graphs from roadmap.sh](https://github.com/startodel/startodel/issues/18), a [stream overlay page](https://github.com/startodel/startodel/issues/19) for the current plan, and a [server-side model as a paid option](https://github.com/startodel/startodel/issues/20).
@@ -101,7 +98,7 @@ Run Startodel as a single Docker image with a separate PostgreSQL database. The 
 
 ## Connect your agent
 
-1. Sign in to Startodel. Under **MCP tokens**, enter a name for your agent and select **Create token**. Copy the MCP Token while it is visible.
+1. Sign in to Startodel. On **Connect your agent** or in **Settings → MCP tokens**, enter a name for your agent and select **Create token**. Copy the MCP Token while it is visible.
 2. Set your MCP client's transport to **Streamable HTTP** and copy the MCP URL from the page (`https://<host>/mcp`). Send `Authorization: Bearer <token>` on every request.
 3. Connect and start with `get_guide`. It reads your current learning state and suggests the next step, from completing your onboarding questionnaire to reviewing a due topic.
 4. To remove access, select **Revoke** beside the matching name and prefix. To replace a lost MCP Token, revoke it and create another.

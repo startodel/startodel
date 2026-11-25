@@ -23,12 +23,30 @@ export function forUser(db: Database, userId: string) {
   const ownTracks = eq(tracks.userId, userId);
   const ownTrack = (id: string) => and(ownTracks, eq(tracks.id, id));
 
+  const catalog = catalogForUser(db, userId);
+  const lessons = lessonsForUser(db, userId);
+  const mastery = masteryForUser(db, userId);
   return {
-    ...catalogForUser(db, userId),
+    ...catalog,
+    async getTopicDetails(id: string) {
+      const topic = await catalog.getTopic(id);
+      if (!topic) return undefined;
+      const [assessment, summaries, related] = await Promise.all([
+        mastery.getMastery(id),
+        lessons.listLessonSummaries(id),
+        catalog.relatedTopics(id),
+      ]);
+      return {
+        topic,
+        mastery: assessment ?? { level: 0 as const, evidence: null },
+        lessons: summaries,
+        ...related,
+      };
+    },
     ...progressForUser(db, userId),
     ...grillsForUser(db, userId),
-    ...lessonsForUser(db, userId),
-    ...masteryForUser(db, userId),
+    ...lessons,
+    ...mastery,
     mcpTokens: tokensForUser(db, userId),
     async getProfile() {
       const [profile] = await db.select().from(profiles).where(ownProfile);

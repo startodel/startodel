@@ -13,14 +13,7 @@ export const instructions = introduction(section("platform").body);
 export async function guide(data: UserData) {
   const [profile, progress] = await Promise.all([data.getProfile(), data.getProgress()]);
   const { perTrack, openGrills, dueReviewsCount, masteryDistribution } = progress;
-  const onboarded = !!(
-    profile?.onboardedAt &&
-    (profile.goals.length ||
-      profile.stack.length ||
-      profile.experience ||
-      profile.yearsOfExperience !== null ||
-      profile.notes)
-  );
+  const onboarded = !!profile?.onboardedAt;
   const state = {
     onboarded,
     tracks: perTrack.length,

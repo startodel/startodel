@@ -67,3 +67,5 @@ For example, a Lesson on browser tasks can use this Block array.
 ```
 
 Use a gotcha, production or tip Callout. A Quiz has one to three questions with two to six options each. Submit one zero-based option index per question. Assess Exercise reasoning in chat and record demonstrated Mastery with evidence.
+
+Reading every Lesson in a Topic raises Mastery from 0 to 1. Passing every Quiz in the Topic on its latest Quiz Attempt raises Mastery to 2. The Topic must contain at least one relevant Lesson or Quiz. Both Tools return the resulting Mastery. The external agent assesses levels 3 and 4.

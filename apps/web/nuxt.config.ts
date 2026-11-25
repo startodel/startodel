@@ -1,5 +1,7 @@
 import { fileURLToPath } from "node:url";
 
+const privatePage = { headers: { "cache-control": "private, no-store" } };
+
 export default defineNuxtConfig({
   compatibilityDate: "2026-11-25",
   typescript: { strict: true },
@@ -13,8 +15,14 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
-    "/": { headers: { "cache-control": "private, no-store" } },
-    "/mcp": { headers: { "cache-control": "private, no-store" } },
-    "/api/**": { headers: { "cache-control": "private, no-store" } },
+    "/": privatePage,
+    "/settings": privatePage,
+    "/login": privatePage,
+    "/onboarding": privatePage,
+    "/onboarding/**": privatePage,
+    "/tracks/**": privatePage,
+    "/lessons/**": privatePage,
+    "/mcp": privatePage,
+    "/api/**": privatePage,
   },
 });
