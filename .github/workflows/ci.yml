@@ -11,6 +11,22 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:19
+        env:
+          POSTGRES_USER: startodel
+          POSTGRES_PASSWORD: startodel
+          POSTGRES_DB: startodel_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U startodel -d startodel_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL_TEST: postgresql://startodel:startodel@127.0.0.1:5432/startodel_test
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -19,5 +35,8 @@ jobs:
       - uses: pnpm/action-setup@v6
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - run: pnpm db:migrate
+        env:
+          DATABASE_URL: postgresql://startodel:startodel@127.0.0.1:5432/postgres
       - run: pnpm test
       - run: pnpm build

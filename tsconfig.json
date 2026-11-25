@@ -4,7 +4,8 @@
     "target": "ESNext",
     "strict": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true
   },
-  "include": ["packages/core/**/*.ts", "vite.config.ts"]
+  "include": ["packages/*/**/*.ts", "vite.config.ts"]
 }
