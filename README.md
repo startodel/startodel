@@ -2,7 +2,7 @@
 
 Startodel is an open-source framework for personal, agent-driven developer learning. The goal is for each developer to bring an external agent that builds a Track around their goals and guides them through Lessons, practice, and review. The framework is intended for both self-hosted and cloud use.
 
-**Status: early.** GitHub sign-in gives each User a private Profile and Tracks. An external agent can read and update them with a personal MCP Token. The database health endpoint is public.
+**Status: early.** GitHub sign-in gives each User a private Profile and Tracks. An external agent can build Track Graphs, write Lessons, record learning progress and run GrillSessions with a personal MCP Token. The database health endpoint is public.
 
 ## Stack
 
@@ -44,8 +44,21 @@ Run Startodel as a single Docker image with a separate PostgreSQL database. The 
 
 1. Sign in to Startodel. Under **MCP tokens**, enter a name for your agent and select **Create token**. Copy the MCP Token while it is visible.
 2. Set your MCP client's transport to **Streamable HTTP** and copy the MCP URL from the page (`https://<host>/mcp`). Send `Authorization: Bearer <token>` on every request.
-3. Connect and call `get_profile` to check the connection. Your agent can read and update your Profile and list, read, create and rename your Tracks.
+3. Connect and start with `get_guide`. It reads your current learning state and suggests the next step, from completing your Onboarding Questionnaire to reviewing a due Topic.
 4. To remove access, select **Revoke** beside the matching name and prefix. To replace a lost MCP Token, revoke it and create another.
+
+Read the [agent guide](docs/agent-guide/README.md) or open individual sections as MCP resources under `startodel://guide/<section>`. Each Tool acts for the Owner of the MCP Token.
+
+| Workflow             | Tools                                                                                                                                                 |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Guidance and Profile | `get_guide`, `get_profile`, `update_profile`                                                                                                          |
+| Tracks               | `create_track`, `get_track`, `update_track`, `list_tracks`                                                                                            |
+| Topic Catalog        | `upsert_topics`, `list_topics`, `get_topic`                                                                                                           |
+| Track Graph          | `add_edges`, `remove_edge`, `attach_topics_to_track`, `detach_topic_from_track`, `get_track_graph`                                                    |
+| Lessons              | `create_lesson`, `update_lesson`, `get_lesson`, `list_lessons`                                                                                        |
+| Progress             | `get_progress`, `set_mastery`, `record_quiz_result`, `mark_lesson_read`                                                                               |
+| ReviewItems          | `list_due_reviews`, `record_review_result`                                                                                                            |
+| GrillSessions        | `start_grill`, `get_grill_candidates`, `add_grill_questions`, `get_grill`, `list_grills`, `submit_grill_answer`, `judge_grill_answer`, `finish_grill` |
 
 For clients that use the editor-managed `mcp.json` format, replace the example host below and enter the MCP Token at the password prompt. [Client configuration reference](https://code.visualstudio.com/docs/agents/reference/mcp-configuration#_input-variables-for-sensitive-data)
 
