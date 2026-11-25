@@ -12,6 +12,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
     if (import.meta.server) useUserSession().session.value = null;
     return;
   }
+  // The design showcase holds no learner data. It is served only in development or behind a flag.
+  if (
+    isDesignShowcasePath(to.path) &&
+    designShowcaseEnabled(import.meta.dev, useRuntimeConfig().public.designShowcase)
+  ) {
+    if (import.meta.server) useUserSession().session.value = null;
+    return;
+  }
   const me = useMe();
   if (!useUserSession().loggedIn.value) {
     me.value = undefined;

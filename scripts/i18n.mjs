@@ -36,6 +36,12 @@ const families = {
   "callout.": ["gotcha", "production", "tip"],
   "grade.": ["junior", "middle", "senior", "lead"],
 };
+// The design showcase is an English reference built from sample copy. The components it shows are checked.
+const showcase = [
+  "apps/web/app/pages/design/",
+  "apps/web/app/pages/design.vue",
+  "apps/web/app/components/showcase/",
+];
 function inspect() {
   const load = (lang) =>
     JSON.parse(readFileSync("apps/web/i18n/locales/" + lang + ".json", "utf8"));
@@ -44,8 +50,7 @@ function inspect() {
   const web = createRequire(new URL("../apps/web/package.json", import.meta.url));
   const compiler = createRequire(web.resolve("@nuxtjs/i18n/package.json"))("@vue/compiler-sfc");
   for (const file of globSync("apps/web/{app,shared,server}/**/*.{vue,ts}")) {
-    if (file.startsWith("apps/web/app/pages/design/") || file === "apps/web/app/pages/design.vue")
-      continue;
+    if (showcase.some((path) => file.startsWith(path))) continue;
     const source = readFileSync(file, "utf8");
     for (const match of source.matchAll(/(?:\b(?:t|translate)\(\s*|\bkeypath=)(["'])([^"'\n]*)\1/g))
       references.push(match[2]);
@@ -59,7 +64,7 @@ function inspect() {
       if (
         node.type === 2 &&
         /\p{L}/u.test(node.content) &&
-        !["S", "Startodel", "Authorization:"].includes(node.content.trim())
+        !["S", "Startodel", "startodel", "Authorization:"].includes(node.content.trim())
       ) {
         errors.push(
           file + ":" + node.loc.start.line + ": untranslated text " + node.content.trim(),

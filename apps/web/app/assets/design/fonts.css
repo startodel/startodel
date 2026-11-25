@@ -1,0 +1,8 @@
+/*
+ * Self-hosted variable fonts, bundled from Fontsource. Each face is split by unicode-range, so a
+ * browser downloads only the scripts a page uses. Latin and Cyrillic are both covered.
+ */
+@import "@fontsource-variable/martian-mono/wdth.css";
+@import "@fontsource-variable/onest/wght.css";
+@import "@fontsource-variable/literata/opsz.css";
+@import "@fontsource-variable/literata/opsz-italic.css";

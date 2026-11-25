@@ -100,6 +100,16 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
     }
   });
 
+  test("the design showcase is not served unless its flag is set", async () => {
+    for (const path of ["/design", "/design/components", "/design/og", "/en/design"]) {
+      const response = await request(path);
+      expect(response.headers.get("location"), path).toBe(
+        path.startsWith("/en") ? "/en/login" : "/login",
+      );
+      expect(await response.text(), path).not.toContain("s-root");
+    }
+  });
+
   test("the landing page requires sign-in and logout expires the sealed Session", async () => {
     expect((await request("/")).headers.get("location")).toBe("/login");
     expect(await (await request("/login")).text()).toContain("Войти через GitHub");

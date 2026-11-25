@@ -1,0 +1,164 @@
+/*
+ * Startodel design tokens. See docs/design/CONCEPT.md and ADR 0017.
+ *
+ * Every colour is declared once as light-dark(<light>, <dark>). Any element with
+ * data-theme="light" or data-theme="dark" re-themes its whole subtree. The tokens are declared on
+ * those elements as well as on the root: the production build lowers light-dark() to variables
+ * that resolve where a token is declared, so a nested theme needs its own declarations.
+ * test/design-system.test.ts parses this file and checks the contrast of the pairs it documents.
+ */
+:root,
+[data-theme] {
+  /* Board: the layers a screen is built from, back to front. */
+  --s-bg: light-dark(#f3f0e8, #0b100f);
+  --s-surface: light-dark(#faf8f2, #121816);
+  --s-raised: light-dark(#ffffff, #19201e);
+  --s-sunken: light-dark(#e9e5da, #070a09);
+  --s-inverse: light-dark(#141b19, #e8ebe5);
+  --s-on-inverse: light-dark(#f3f0e8, #0b100f);
+
+  /* Tin: hairlines and control outlines. */
+  --s-line: light-dark(#d9d4c7, #252e2b);
+  --s-line-strong: light-dark(#827d6e, #66726d);
+
+  /* Ink: text. */
+  --s-ink: light-dark(#141b19, #e8ebe5);
+  --s-ink-2: light-dark(#414b47, #b7c0ba);
+  --s-ink-3: light-dark(#5e6762, #8d9892);
+
+  /* Copper: the one accent. Action, progress and anything that carries signal. */
+  --s-copper: light-dark(#a5460e, #f0935a);
+  --s-copper-fill: light-dark(#b24e18, #e8834a);
+  --s-copper-fill-hover: light-dark(#98400f, #f29a63);
+  --s-on-copper: light-dark(#ffffff, #1b0d05);
+  --s-copper-soft: light-dark(#f1dfcf, #33211a);
+  --s-copper-line: light-dark(#d9a37a, #7d4525);
+
+  /* Patina: semantic colours. Always paired with a shape and a word. */
+  --s-verdigris: light-dark(#1a6858, #63cdb4);
+  --s-verdigris-soft: light-dark(#d9ece5, #10302a);
+  --s-verdigris-line: light-dark(#8cc4b5, #2a6b5c);
+  --s-brass: light-dark(#725205, #e3c062);
+  --s-brass-soft: light-dark(#f2e6be, #332a0e);
+  --s-brass-line: light-dark(#cdb265, #6e5a1c);
+  --s-oxide: light-dark(#9c2730, #f37e84);
+  --s-oxide-soft: light-dark(#f5dcdb, #3b1719);
+  --s-oxide-line: light-dark(#de9a9c, #7c3035);
+  --s-steel: light-dark(#25568a, #86b8e4);
+  --s-steel-soft: light-dark(#dce7f1, #13283b);
+  --s-steel-line: light-dark(#94b4d3, #2b5075);
+
+  /* Mastery 0-4: one hue, rising in strength. The bar count carries the level without colour. */
+  --s-mastery-0: light-dark(#e9e5da, #19201e);
+  --s-mastery-1: light-dark(#f0dcc8, #33241a);
+  --s-mastery-2: light-dark(#e6bc97, #5c3620);
+  --s-mastery-3: light-dark(#d48a52, #96502a);
+  --s-mastery-4: light-dark(#a5460e, #f0935a);
+  --s-on-mastery-0: light-dark(#414b47, #b7c0ba);
+  --s-on-mastery-1: light-dark(#141b19, #e8ebe5);
+  --s-on-mastery-2: light-dark(#141b19, #e8ebe5);
+  --s-on-mastery-3: light-dark(#141b19, #ffffff);
+  --s-on-mastery-4: light-dark(#ffffff, #1b0d05);
+
+  /* Code: syntax colours come from the same metals. */
+  --s-code-bg: light-dark(#faf8f2, #070a09);
+  --s-code-text: light-dark(#141b19, #e8ebe5);
+  --s-code-comment: light-dark(#5e6762, #8d9892);
+  --s-code-keyword: light-dark(#a5460e, #f0935a);
+  --s-code-string: light-dark(#1a6858, #63cdb4);
+  --s-code-constant: light-dark(#25568a, #86b8e4);
+  --s-code-function: light-dark(#725205, #e3c062);
+  --s-code-parameter: light-dark(#414b47, #b7c0ba);
+  --s-code-punctuation: light-dark(#5e6762, #8d9892);
+
+  --s-focus: light-dark(#1d6bcb, #8cc0f0);
+  --s-grid: light-dark(#cdc7b8, #26302d);
+  --s-scrim: light-dark(rgb(20 27 25 / 0.45), rgb(0 0 0 / 0.65));
+
+  /* Elevation. Light surfaces print a hard edge. Dark surfaces rely on their outline. */
+  --s-shadow-1: light-dark(0 1px 0 #d9d4c7, 0 1px 0 #070a09);
+  --s-shadow-2: light-dark(
+    0 1px 0 #d9d4c7,
+    0 8px 20px -12px rgb(20 27 25 / 0.3),
+    0 1px 0 #070a09,
+    0 8px 20px -10px rgb(0 0 0 / 0.7)
+  );
+  --s-shadow-3: light-dark(
+    0 24px 48px -20px rgb(20 27 25 / 0.4),
+    0 24px 56px -16px rgb(0 0 0 / 0.85)
+  );
+  --s-glow: light-dark(0 0 0 3px rgb(178 78 24 / 0.16), 0 0 18px -2px rgb(232 131 74 / 0.45));
+
+  /* Type. Three voices: mono for the system, sans for controls, serif for what you study. */
+  --s-font-mono: "Martian Mono Variable", ui-monospace, "SFMono-Regular", "Menlo", monospace;
+  --s-font-ui: "Onest Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --s-font-read: "Literata Variable", "Iowan Old Style", "Georgia", serif;
+
+  --s-text-2xs: 0.6875rem;
+  --s-text-xs: 0.75rem;
+  --s-text-sm: 0.8125rem;
+  --s-text-md: 0.9375rem;
+  --s-text-lg: 1.0625rem;
+  --s-text-xl: 1.25rem;
+  --s-text-2xl: 1.5rem;
+  --s-text-3xl: 2rem;
+  --s-text-4xl: 2.75rem;
+  --s-text-5xl: 4rem;
+  --s-read-size: 1.125rem;
+  --s-read-measure: 68ch;
+
+  /* Space on a 4px pitch. */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.25rem;
+  --s-6: 1.5rem;
+  --s-8: 2rem;
+  --s-10: 2.5rem;
+  --s-12: 3rem;
+  --s-16: 4rem;
+  --s-20: 5rem;
+  --s-24: 6rem;
+
+  /* Corners stay tight. Parts are cut, not moulded. */
+  --s-radius-xs: 2px;
+  --s-radius-sm: 4px;
+  --s-radius-md: 6px;
+  --s-radius-lg: 10px;
+
+  /* Control heights. */
+  --s-control-sm: 1.75rem;
+  --s-control-md: 2.25rem;
+  --s-control-lg: 2.75rem;
+
+  /* Motion is short and mechanical. */
+  --s-dur-1: 120ms;
+  --s-dur-2: 200ms;
+  --s-dur-3: 320ms;
+  --s-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --s-ease-in: cubic-bezier(0.5, 0, 0.9, 0.4);
+
+  --s-z-nav: 20;
+  --s-z-overlay: 40;
+  --s-z-toast: 50;
+
+  --s-rail: 15rem;
+  --s-rail-collapsed: 3.75rem;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root,
+  [data-theme] {
+    --s-dur-1: 0ms;
+    --s-dur-2: 0ms;
+    --s-dur-3: 0ms;
+  }
+}
