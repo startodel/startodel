@@ -2,7 +2,7 @@ import { topicActivity } from "./activity.ts";
 import { and, count, desc, eq, lte, sql } from "drizzle-orm";
 import type { MasteryLevel } from "@startodel/core";
 import type { Transaction } from "./owned.ts";
-import type { Database } from "./index.ts";
+import type { Connection } from "./index.ts";
 import {
   tracks,
   trackTopics,
@@ -14,7 +14,7 @@ import {
   reviewItems,
 } from "./schema.ts";
 
-export function progressForUser(db: Database, userId: string) {
+export function progressForUser(db: Connection, userId: string) {
   async function dashboard(tx: Transaction) {
     const perTrack = await tx
       .select({

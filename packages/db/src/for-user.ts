@@ -1,25 +1,18 @@
+import { forkTrack } from "./fork.ts";
+import { trackWrites } from "./track-writes.ts";
 import { practiceForUser } from "./practice.ts";
 import { progressForUser } from "./progress.ts";
 import { grillsForUser } from "./grills.ts";
 import { lessonsForUser } from "./lessons.ts";
 import { masteryForUser } from "./mastery.ts";
-import { ProfileQuestionnaire, TrackSources } from "@startodel/core";
+import { ProfileQuestionnaire } from "@startodel/core";
 import { catalogForUser } from "./catalog.ts";
 import { tokensForUser } from "./mcp-tokens.ts";
 import { and, eq } from "drizzle-orm";
-import type { Database } from "./index.ts";
+import type { Connection } from "./index.ts";
 import { grillSessions, profiles, tracks } from "./schema.ts";
 
-type TrackInput = { title: string; description?: string | null; sources?: TrackSources };
-function trackFields(input: string | Partial<TrackInput>) {
-  if (typeof input === "string") return { title: input };
-  return {
-    title: input.title,
-    description: input.description,
-    sources: input.sources === undefined ? undefined : TrackSources.parse(input.sources),
-  };
-}
-export function forUser(db: Database, userId: string) {
+export function forUser(db: Connection, userId: string) {
   const ownProfile = eq(profiles.userId, userId);
   const ownTracks = eq(tracks.userId, userId);
   const ownTrack = (id: string) => and(ownTracks, eq(tracks.id, id));
@@ -28,7 +21,9 @@ export function forUser(db: Database, userId: string) {
   const lessons = lessonsForUser(db, userId);
   const mastery = masteryForUser(db, userId);
   return {
+    forkTrack: (login: string, slug: string) => forkTrack(db, userId, login, slug),
     ...catalog,
+    ...trackWrites(db, userId),
     async getTopicDetails(id: string) {
       const topic = await catalog.getTopic(id);
       if (!topic) return undefined;
@@ -70,26 +65,6 @@ export function forUser(db: Database, userId: string) {
     },
     async getTrack(id: string) {
       const [track] = await db.select().from(tracks).where(ownTrack(id));
-      return track;
-    },
-    async createTrack(input: string | TrackInput) {
-      const [track] = await db
-        .insert(tracks)
-        .values({
-          ...trackFields(input),
-          userId,
-          title: typeof input === "string" ? input : input.title,
-        })
-        .returning();
-      if (!track) throw new Error("Track creation did not return a Track");
-      return track;
-    },
-    async updateTrack(id: string, input: string | Partial<TrackInput>) {
-      const [track] = await db
-        .update(tracks)
-        .set({ ...trackFields(input), updatedAt: new Date() })
-        .where(ownTrack(id))
-        .returning();
       return track;
     },
     deleteTrack(id: string) {

@@ -1,6 +1,6 @@
 import { type Block, AnswerSource, lessonMastery, LessonBlocks } from "@startodel/core";
 import { and, desc, eq, max, sql } from "drizzle-orm";
-import type { Database } from "./index.ts";
+import type { Connection } from "./index.ts";
 import { ownedId, referencedRow, type Transaction } from "./owned.ts";
 import { lessons, lessonProgress, quizAttempts, topicMastery, topics } from "./schema.ts";
 
@@ -128,7 +128,7 @@ export async function recordQuizAttempt(
   };
 }
 
-export function lessonsForUser(db: Database, userId: string) {
+export function lessonsForUser(db: Connection, userId: string) {
   return {
     async createLesson(input: LessonInput & { topicId: string }) {
       const { title, position, topicId } = input;

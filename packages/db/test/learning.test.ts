@@ -1,5 +1,5 @@
 import { randomInt, randomUUID } from "node:crypto";
-import type { LessonBlocks, ProfileQuestionnaire } from "@startodel/core";
+import { LEGAL_TERMS_VERSION, type LessonBlocks, type ProfileQuestionnaire } from "@startodel/core";
 import { inArray } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
 import { createDatabase, forUser, signInWithGitHub } from "@startodel/db";
@@ -35,6 +35,50 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     } finally {
       await db.$client.end();
     }
+  });
+
+  test("Terms Acceptance belongs to the Owner and is required for each new terms version", async () => {
+    const track = await alice.createTrack("Visibility");
+    expect(await bob.setTrackVisibility(track.id, true, true)).toBeUndefined();
+    await expect(alice.setTrackVisibility(track.id, true)).rejects.toThrow("Publishing rules");
+    expect(await alice.setTrackVisibility(track.id, true, true)).toMatchObject({ public: true });
+    expect(await alice.termsAcceptance()).toEqual({
+      version: LEGAL_TERMS_VERSION,
+      at: expect.any(Date),
+    });
+    await db.$client.query("update users set accepted_terms_version='older' where id=$1", [
+      owners[0],
+    ]);
+    expect(await alice.setTrackVisibility(track.id, false)).toMatchObject({ public: false });
+    await expect(alice.setTrackVisibility(track.id, true)).rejects.toThrow("Publishing rules");
+    expect(await alice.getTrack(track.id)).toMatchObject({ public: false });
+    expect(await alice.setTrackVisibility(track.id, true, true)).toMatchObject({ public: true });
+    expect(await alice.termsAcceptance()).toMatchObject({ version: LEGAL_TERMS_VERSION });
+    expect(await bob.termsAcceptance()).toEqual({ version: null, at: null });
+  });
+
+  test("concurrent Forks preserve an existing empty Topic and copy its Lessons only once", async () => {
+    const login = randomUUID();
+    await db.$client.query("update users set login=$1 where id=$2", [login, owners[0]]);
+    const track = await alice.createTrack("Runtime");
+    const topic = await alice.upsertTopic({ slug: "runtime", title: "Source topic" });
+    await alice.attachTopicToTrack(track.id, topic.id, 3);
+    await alice.createLesson({ topicId: topic.id, title: "Study", position: 7 });
+    await alice.setTrackVisibility(track.id, true, true);
+    const existing = await bob.upsertTopic({ slug: "runtime", title: "My topic" });
+    const forks = await Promise.all([
+      bob.forkTrack(login, track.slug),
+      bob.forkTrack(login, track.slug),
+    ]);
+    expect(new Set(forks.map((fork) => fork?.slug))).toEqual(new Set(["runtime", "runtime-2"]));
+    expect(await bob.getTopicBySlug("runtime")).toEqual(existing);
+    expect(await bob.listLessonsForTopic(existing.id)).toMatchObject([
+      { title: "Study", position: 7 },
+    ]);
+    for (const fork of forks)
+      expect((await bob.getTrackGraph(fork!.id))?.topics).toMatchObject([
+        { id: existing.id, position: 3 },
+      ]);
   });
 
   test("Topic Slugs deduplicate for one Owner and resolve independently for another", async () => {

@@ -1,7 +1,7 @@
 import { createHash, randomInt } from "node:crypto";
 import { practiceVerdict, type MasteryLevel } from "@startodel/core";
 import { and, eq, lte, sql } from "drizzle-orm";
-import type { Database } from "./index.ts";
+import type { Connection } from "./index.ts";
 import { ownedId, type Transaction } from "./owned.ts";
 import { raiseMastery, recordQuizAttempt } from "./lessons.ts";
 import { recordReview } from "./mastery.ts";
@@ -42,7 +42,7 @@ async function practiceContent(tx: Transaction, userId: string, topicId: string,
   return { title: item.title, revision, quizzes };
 }
 
-export function practiceForUser(db: Database, userId: string) {
+export function practiceForUser(db: Connection, userId: string) {
   return {
     async listReviews(now = new Date()) {
       const rows = await db

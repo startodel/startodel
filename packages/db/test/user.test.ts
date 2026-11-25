@@ -60,6 +60,10 @@ test.skipIf(!url)("forUser scopes every Profile and Track operation to its Owner
     expect(await bob.updateProfile(["B goals"])).toMatchObject({ userId: b.id });
     expect(await alice.getProfile()).toMatchObject({ userId: a.id, goals: ["A goals"] });
     const own = await alice.createTrack("A track");
+    expect(own).toMatchObject({ slug: "a-track", public: false });
+    const duplicate = await alice.createTrack("A track");
+    expect(duplicate.slug).toBe("a-track-2");
+    await alice.deleteTrack(duplicate.id);
     const foreign = await bob.createTrack("B track");
     expect(await alice.listTracks()).toEqual([own]);
     expect(await alice.getTrack(foreign.id)).toBeUndefined();
@@ -69,6 +73,7 @@ test.skipIf(!url)("forUser scopes every Profile and Track operation to its Owner
     expect(await alice.updateTrack(own.id, "new title")).toMatchObject({
       id: own.id,
       title: "new title",
+      slug: "a-track",
     });
     expect(await alice.deleteTrack(own.id)).toMatchObject({ id: own.id });
     expect(await alice.listTracks()).toEqual([]);

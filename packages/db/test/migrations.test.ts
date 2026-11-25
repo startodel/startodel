@@ -90,6 +90,19 @@ test.skipIf(!url)(
           track: { ...before.track, description: null, sources: {} },
         },
       ]);
+      await client.query(`insert into tracks(user_id,title,created_at) select id, title, '2100-01-01'::date + n from users
+        cross join (values (1,'Existing'),(2,'Existing 2'),(3,'中文')) t(n,title)`);
+      await apply("0003_public_tracks");
+      await apply("0004_publishing_terms");
+      const migrated = await client.query(
+        "select title,slug,public from tracks order by created_at",
+      );
+      expect(migrated.rows).toEqual([
+        { title: "Existing", slug: "existing", public: false },
+        { title: "Existing", slug: "existing-2", public: false },
+        { title: "Existing 2", slug: "existing-2-2", public: false },
+        { title: "中文", slug: "track", public: false },
+      ]);
     } finally {
       try {
         await client.query("rollback");

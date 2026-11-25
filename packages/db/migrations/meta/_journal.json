@@ -22,6 +22,20 @@
       "when": 1795614247915,
       "tag": "0002_learning_core",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795626303949,
+      "tag": "0003_public_tracks",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795626386681,
+      "tag": "0004_publishing_terms",
+      "breakpoints": true
     }
   ]
 }
