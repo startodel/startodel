@@ -2,6 +2,7 @@
 id: grill-session
 title: Continue a GrillSession
 order: 8
+skillDescription: Use when a learner wants to start or resume a grill session. Ask one question at a time, judge saved answers and give feedback.
 ---
 
 # Continue a GrillSession

@@ -2,6 +2,7 @@
 id: build-track-technology
 title: Build a Track around a technology
 order: 5
+skillDescription: Use when a learner wants a Track for a technology. Build its prerequisite graph and write Lessons for the selected Topics.
 ---
 
 # Build a Track around a technology

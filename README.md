@@ -42,6 +42,10 @@ flowchart TD
 
 The dashboard’s **Next up** card follows the same priorities as `get_guide`. Open **Grills** to answer one question at a time, read your agent’s feedback and find Lessons for Topics to reinforce. **Reviews** shows due Topics and the next seven days. Take a Practice Quiz when the Topic has a Quiz, or copy a prompt for your agent. **Progress** shows Mastery across your catalog, Track completion, Lessons read and recent Activity.
 
+## Agent skills
+
+Copy the five generated skill folders into your connected agent client’s skills directory. [Installation instructions](packages/skills/README.md#install)
+
 ## Stack
 
 The pnpm workspace contains the Nuxt 4 web app, the framework-free domain types in `@startodel/core`, and the Drizzle ORM schema, migrations, and client factory in `@startodel/db`. Authentication uses nuxt-auth-utils with GitHub OAuth. The MCP server uses `@modelcontextprotocol/sdk` over Streamable HTTP. Vite+ provides linting, formatting, and tests. The production image is Docker, deployed with Dokploy.
@@ -61,10 +65,7 @@ Work is grouped by [milestones](https://github.com/startodel/startodel/milestone
 - [x] MCP tools for the learning core and the agent guide ([#7](https://github.com/startodel/startodel/pull/7))
 - [x] Onboarding, dashboard, Track Graph, and Lesson pages ([#15](https://github.com/startodel/startodel/issues/15))
 - [x] Grill, progress, and reviews in the UI ([#16](https://github.com/startodel/startodel/issues/16))
-
-### Next
-
-- [ ] Agent skills in `packages/skills`, generated from `docs/agent-guide` ([#17](https://github.com/startodel/startodel/issues/17))
+- [x] Agent skills generated from `docs/agent-guide` ([#17](https://github.com/startodel/startodel/issues/17))
 
 Later: [import topic graphs from roadmap.sh](https://github.com/startodel/startodel/issues/18), a [stream overlay page](https://github.com/startodel/startodel/issues/19) for the current plan, and a [server-side model as a paid option](https://github.com/startodel/startodel/issues/20).
 
