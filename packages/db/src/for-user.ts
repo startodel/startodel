@@ -29,6 +29,7 @@ export function forUser(db: Database, userId: string) {
     },
     async createTrack(title: string) {
       const [track] = await db.insert(tracks).values({ userId, title }).returning();
+      if (!track) throw new Error("Track creation did not return a Track");
       return track;
     },
     async updateTrack(id: string, title: string) {

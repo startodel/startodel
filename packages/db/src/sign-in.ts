@@ -1,9 +1,16 @@
 import type { Database } from "./index.ts";
 import { profiles, users } from "./schema.ts";
 
-type GitHubIdentity = Pick<typeof users.$inferSelect, "githubId" | "login" | "name" | "avatarUrl">;
+export type GitHubIdentity = Pick<
+  typeof users.$inferSelect,
+  "githubId" | "login" | "name" | "avatarUrl"
+>;
 
-export function signInWithGitHub(db: Database, { githubId, ...display }: GitHubIdentity) {
+export function signInWithGitHub(
+  db: Database,
+  { githubId, login, name, avatarUrl }: GitHubIdentity,
+) {
+  const display = { login, name, avatarUrl };
   return db.transaction(async (tx) => {
     const [user] = await tx
       .insert(users)
@@ -15,6 +22,7 @@ export function signInWithGitHub(db: Database, { githubId, ...display }: GitHubI
         name: users.name,
         avatarUrl: users.avatarUrl,
       });
+    if (!user) throw new Error("GitHub sign-in did not return a User");
     await tx
       .insert(profiles)
       .values({ userId: user.id })

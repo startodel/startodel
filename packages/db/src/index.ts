@@ -9,5 +9,5 @@ export function createDatabase(url: string) {
 }
 
 export type Database = ReturnType<typeof createDatabase>;
-export { signInWithGitHub } from "./sign-in.ts";
+export { signInWithGitHub, type GitHubIdentity } from "./sign-in.ts";
 export { forUser } from "./for-user.ts";
