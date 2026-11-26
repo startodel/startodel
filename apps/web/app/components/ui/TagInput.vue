@@ -31,6 +31,7 @@ function onKey(event: KeyboardEvent) {
     :placeholder="placeholder ?? $t('onboarding.custom')"
     :invalid="invalid"
     @keydown="onKey"
+    @blur="add"
   >
     <template #trailing>
       <UiButton size="sm" variant="ghost" :disabled="!draft.trim()" @click="add">{{

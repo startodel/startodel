@@ -141,7 +141,8 @@
     "last": "Last activity",
     "history": "Recent activity",
     "emptyHistory": "No learning activity yet.",
-    "share": "{percent}% of Topics"
+    "share": "{percent}% of Topics",
+    "recentVerdicts": "Verdicts in recent activity"
   },
   "track": {
     "topics": "Topics",
@@ -235,7 +236,8 @@
     "boxSummary": "Box {box}: {topics}, reviewed every {days} days",
     "days": "{n} d",
     "week": "Reviews in the next seven days",
-    "dueOn": "{day}: {count} due"
+    "dueOn": "{day}: {count} due",
+    "scheduledBoxes": "Review Boxes · due and upcoming"
   },
   "agent": {
     "connect": "Connect your agent",
@@ -249,7 +251,10 @@
     "copy": "Copy prompt",
     "manual": "Select and copy the prompt above.",
     "prompt": "Prompt for your agent",
-    "paste": "Paste it into your agent"
+    "paste": "Paste it into your agent",
+    "json": "JSON configuration",
+    "waiting": "Waiting for the first call from your agent",
+    "connected": "Agent connected"
   },
   "onboarding": {
     "title": "Onboarding",
@@ -267,7 +272,12 @@
     "interviews": "Prepare for interviews",
     "job": "Get better at my current job",
     "technology": "Learn a new technology",
-    "internals": "Understand internals"
+    "internals": "Understand internals",
+    "stackStep": "Stack",
+    "goalsStep": "Goals",
+    "gradeStep": "Grade",
+    "back": "Back",
+    "forward": "Continue"
   },
   "grill": {
     "finished": "Finished",

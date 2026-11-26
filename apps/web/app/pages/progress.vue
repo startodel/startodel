@@ -1,18 +1,12 @@
 <script setup lang="ts">
+definePageMeta({ layout: "app" });
 const { t, locale } = useI18n();
-const { masteryLabel, verdictLabel } = useLearningLabels();
+const { activityLabel, verdictLabel } = useLearningLabels();
 const displayDate = useDisplayDate();
 useHead({ title: t("nav.progress") });
 const { data, error, refresh } = await useFetch("/api/progress");
-const activities = computed(() => ({
-  "Lesson read": t("activity.lesson"),
-  "Quiz attempt": t("activity.quiz"),
-  "Grill answer": t("activity.answer"),
-  "Grill verdict": t("activity.verdict"),
-  "Review result": t("activity.review"),
-  Mastery: t("activity.mastery"),
-}));
 const sort = ref("title");
+const view = ref("topics");
 const topics = computed(() =>
   [...(data.value?.perTopic ?? [])].sort(
     (a, b) =>
@@ -20,139 +14,130 @@ const topics = computed(() =>
       a.title.localeCompare(b.title, locale.value),
   ),
 );
+const levels = computed(() => trackLevels(data.value?.perTopic ?? []));
+const tally = computed(() => {
+  const counts = { strong: 0, partial: 0, weak: 0 };
+  for (const { kind, detail } of data.value?.activity ?? []) {
+    if (
+      (kind === "Grill verdict" || kind === "Review result") &&
+      (detail === "strong" || detail === "partial" || detail === "weak")
+    )
+      counts[detail]++;
+  }
+  return counts;
+});
+const columns = computed(() => [
+  { key: "title", label: t("progress.topic") },
+  { key: "tracks", label: t("progress.tracks") },
+  { key: "level", label: t("progress.mastery") },
+  { key: "read", label: t("progress.read") },
+  { key: "last", label: t("progress.last") },
+]);
 </script>
 <template>
-  <main>
-    <h1>{{ $t("nav.progress") }}</h1>
-    <p v-if="error" role="alert">
-      {{ $t("progress.load") }} <button @click="refresh()">{{ $t("common.retry") }}</button>
-    </p>
-    <template v-if="data"
-      ><section class="panel">
-        <h2>{{ $t("progress.levels") }}</h2>
-        <dl class="levels">
-          <div v-for="(n, i) in data.masteryDistribution" :key="i">
-            <dt>{{ $n(i) }} · {{ masteryLabel(i) }}</dt>
-            <dd>{{ $n(n) }}</dd>
-          </div>
-        </dl>
-      </section>
-      <section class="panel">
-        <h2>{{ $t("progress.completion") }}</h2>
-        <p class="muted">{{ $t("progress.threshold") }}</p>
-        <p v-if="!data.perTrack.length">{{ $t("progress.noTracks") }}</p>
-        <div v-for="t in data.perTrack" :key="t.trackId">
-          <NuxtLinkLocale :to="'/tracks/' + t.trackId">{{ t.title }}</NuxtLinkLocale> ·
-          {{ $t("progress.ofTopics", { done: $n(t.completed), total: $n(t.total) })
-          }}<progress :aria-label="t.title" :max="t.total || 1" :value="t.completed" />
-        </div>
-      </section>
-      <section class="panel">
-        <h2>{{ $t("track.topics") }}</h2>
-        <p v-if="!topics.length">{{ $t("progress.noTopics") }}</p>
-        <template v-else
-          ><label
-            >{{ $t("progress.sort") }}
-            <select v-model="sort">
-              <option value="title">{{ $t("progress.title") }}</option>
-              <option value="mastery">{{ $t("progress.lowest") }}</option>
-            </select></label
-          >
-          <div class="scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>{{ $t("progress.topic") }}</th>
-                  <th>{{ $t("progress.tracks") }}</th>
-                  <th>{{ $t("progress.mastery") }}</th>
-                  <th>{{ $t("progress.read") }}</th>
-                  <th>{{ $t("progress.last") }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="t in topics" :key="t.id">
-                  <th scope="row">
-                    <NuxtLinkLocale :to="'/topics/' + t.id">{{ t.title }}</NuxtLinkLocale>
-                  </th>
-                  <td>{{ t.tracks.map((track) => track.title).join(", ") || "—" }}</td>
-                  <td>{{ $n(t.level) }} · {{ masteryLabel(t.level) }}</td>
-                  <td>{{ $n(t.read) }} / {{ $n(t.lessons) }}</td>
-                  <td>{{ t.lastActivity ? displayDate(t.lastActivity) : "—" }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div></template
+  <div class="s-stack" style="--s-gap: var(--s-8)">
+    <UiPageHeader :title="$t('nav.progress')" />
+    <UiNotice v-if="error" tone="danger" :title="$t('progress.load')"
+      ><template #actions
+        ><UiButton @click="refresh()">{{ $t("common.retry") }}</UiButton></template
+      ></UiNotice
+    >
+    <UiSkeletonList v-else-if="!data" variant="table" />
+    <div v-else class="s-split">
+      <div class="s-stack">
+        <section class="s-stack">
+          <UiSectionHeading :title="$t('progress.completion')" :count="data.perTrack.length" />
+          <p class="s-muted">{{ $t("progress.threshold") }}</p>
+          <UiEmptyState
+            v-if="!data.perTrack.length"
+            :title="$t('progress.noTracks')"
+            compact
+            icon="track"
+          />
+          <UiTrackStrip
+            v-for="track in data.perTrack"
+            :key="track.trackId"
+            :title="track.title"
+            :levels="levels.get(track.trackId) ?? []"
+            :to="'/tracks/' + track.trackId"
+          />
+        </section>
+        <UiTabs
+          v-model="view"
+          :label="$t('nav.progress')"
+          :tabs="[
+            { id: 'topics', label: $t('track.topics'), count: topics.length },
+            { id: 'activity', label: $t('progress.history'), count: data.activity.length },
+          ]"
         >
-      </section>
-      <section class="panel">
-        <h2>{{ $t("progress.history") }}</h2>
-        <p v-if="!data.activity.length">{{ $t("progress.emptyHistory") }}</p>
-        <ol class="feed">
-          <li v-for="a in data.activity" :key="a.kind + a.id">
-            <span
-              ><strong>{{ activities[a.kind] }}</strong> · {{ a.title }}
-              <span v-if="a.detail"
-                >·
-                {{
-                  ["Grill verdict", "Review result"].includes(a.kind)
+          <template #topics>
+            <UiEmptyState v-if="!topics.length" :title="$t('progress.noTopics')" compact />
+            <div v-else class="s-stack">
+              <UiField :label="$t('progress.sort')"
+                ><UiSelect
+                  v-model="sort"
+                  :options="[
+                    { value: 'title', label: $t('progress.title') },
+                    { value: 'mastery', label: $t('progress.lowest') },
+                  ]"
+              /></UiField>
+              <UiTable
+                :caption="$t('track.topics')"
+                :rows="topics"
+                :columns="columns"
+                :row-key="(row) => row.id"
+              >
+                <template #cell-title="{ row }"
+                  ><NuxtLinkLocale :to="'/topics/' + row.id">{{
+                    row.title
+                  }}</NuxtLinkLocale></template
+                >
+                <template #cell-tracks="{ row }">{{
+                  row.tracks.map((track) => track.title).join(", ") || "—"
+                }}</template>
+                <template #cell-level="{ row }"
+                  ><UiMastery :level="row.level" show="full"
+                /></template>
+                <template #cell-read="{ row }">{{ $n(row.read) }} / {{ $n(row.lessons) }}</template>
+                <template #cell-last="{ row }">{{
+                  row.lastActivity ? displayDate(row.lastActivity) : "—"
+                }}</template>
+              </UiTable>
+            </div>
+          </template>
+          <template #activity>
+            <UiEmptyState
+              v-if="!data.activity.length"
+              :title="$t('progress.emptyHistory')"
+              compact
+            />
+            <ol v-else>
+              <UiTimelineItem
+                v-for="a in data.activity"
+                :key="a.kind + a.id"
+                :kind="activityLabel(a.kind)"
+                :title="a.title"
+                :time="displayDate(a.at)"
+                :datetime="a.at"
+              >
+                <template v-if="a.detail">{{
+                  a.kind === "Grill verdict" || a.kind === "Review result"
                     ? verdictLabel(a.detail)
                     : a.detail
-                }}</span
-              ></span
-            ><time :datetime="a.at">{{ displayDate(a.at) }}</time>
-          </li>
-        </ol>
-      </section>
-    </template>
-  </main>
+                }}</template>
+              </UiTimelineItem>
+            </ol>
+          </template>
+        </UiTabs>
+      </div>
+      <aside class="s-stack">
+        <UiCard :tag="$t('progress.levels')"
+          ><UiMasteryHistogram :counts="data.masteryDistribution"
+        /></UiCard>
+        <UiCard :tag="$t('progress.recentVerdicts')"
+          ><UiVerdictTally v-bind="tally" :label="$t('progress.recentVerdicts')"
+        /></UiCard>
+      </aside>
+    </div>
+  </div>
 </template>
-<style scoped>
-.levels {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: 0.75rem;
-}
-.levels div {
-  padding: 0.75rem;
-  border-left: 3px solid var(--line);
-}
-dt,
-time {
-  font-size: 0.87rem;
-  color: var(--muted);
-}
-dd {
-  font:
-    2rem Georgia,
-    serif;
-  margin: 0;
-}
-.scroll {
-  overflow-x: auto;
-}
-table {
-  border-collapse: collapse;
-  width: 100%;
-  margin-top: 1rem;
-}
-th,
-td {
-  text-align: left;
-  padding: 0.65rem;
-  border-bottom: 1px solid var(--line);
-}
-.feed {
-  list-style: none;
-  padding: 0;
-}
-.feed li {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.5rem 0;
-  border-top: 1px solid var(--line);
-}
-time {
-  white-space: nowrap;
-}
-</style>
