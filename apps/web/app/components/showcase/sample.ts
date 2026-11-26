@@ -38,14 +38,13 @@ export interface SampleTopic extends BoardTopic {
 export const sampleTrack = {
   title: "Node.js runtime internals",
   goal: "Explain production latency problems from first principles",
-  sources: [
-    { label: "nodejs/node", href: "https://github.com/nodejs/node" },
-    {
-      label: "Node.js: the event loop",
-      href: "https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick",
-    },
-    { label: "V8 blog: Orinoco", href: "https://v8.dev/blog/trash-talk" },
-  ],
+  sources: {
+    repo: "https://github.com/nodejs/node",
+    docs: [
+      "https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick",
+      "https://v8.dev/blog/trash-talk",
+    ],
+  },
 };
 
 export const sampleTopics: SampleTopic[] = [
@@ -694,6 +693,7 @@ export const sampleTokens = [
 ];
 
 export const samplePublicTrack = {
+  sources: sampleTrack.sources,
   title: "Node.js runtime internals",
   slug: "node-runtime-internals",
   description:

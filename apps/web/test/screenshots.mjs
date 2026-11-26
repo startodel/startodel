@@ -221,11 +221,19 @@ try {
     .getByRole("status")
     .filter({ hasText: "Copied — paste it into your agent's chat" })
     .waitFor();
+  const docs = [
+    "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Event_loop",
+    "https://html.spec.whatwg.org/multipage/webappapis.html#event-loops",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Window/queueMicrotask",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame",
+    "https://www.w3.org/TR/longtasks-1/?view=spec#sec-intro",
+  ];
   const track = await owner.createTrack({
     title: "The browser event loop",
     description:
       "Trace how the browser schedules JavaScript, handles input and decides when to paint.",
-    sources: { docs: ["https://developer.mozilla.org/en-US/docs/Web/JavaScript/Event_loop"] },
+    sources: { docs: docs.slice(0, 5) },
   });
   const topics = await owner.upsertTopics([
     {
@@ -299,6 +307,52 @@ try {
   await shot("dashboard");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.locator("main").getByRole("link", { name: track.title }).click();
+  const sources = page.getByRole("region", { name: "Track Sources" });
+  await sources.waitFor();
+  assert.equal(await sources.getByRole("link").count(), 5);
+  assert.equal(await sources.getByRole("button").count(), 0);
+  const more = page.getByRole("button", { name: "Show more", exact: true });
+  assert.equal(await more.count(), 0);
+
+  // This pitch fits the desktop header and overflows three lines on a phone.
+  const pitch =
+    "Trace the browser event loop from a timer callback through the microtask queue to the next paint. Use the performance timeline to explain why a busy page misses a frame.";
+  await owner.updateTrack(track.id, { description: pitch, sources: { docs } });
+  await visit("/tracks/" + track.slug);
+  async function checkTrackDisclosures() {
+    await page.setViewportSize({ width: 390, height: 900 });
+    const description = page.getByText(pitch, { exact: true });
+    await more.waitFor();
+    const clipped = () => description.evaluate((el) => el.scrollHeight > el.clientHeight);
+    assert.ok(await clipped());
+    const collapsedHeight = await description.evaluate(
+      (el) => el.clientHeight / parseFloat(getComputedStyle(el).lineHeight),
+    );
+    assert.ok(Math.abs(collapsedHeight - 3) < 0.1);
+    await more.click();
+    assert.equal(await clipped(), false);
+    const less = page.getByRole("button", { name: "Show less", exact: true });
+    await less.click();
+    assert.ok(await clipped());
+    await more.click();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await less.waitFor({ state: "hidden" });
+    assert.equal(await more.count(), 0);
+
+    const links = sources.getByRole("link");
+    assert.equal(await links.count(), 5);
+    await sources.getByRole("button", { name: "Show all 6" }).click();
+    assert.equal(await links.count(), 6);
+    assert.equal(
+      await sources
+        .getByRole("link", { name: "w3.org/TR/longtasks-1", exact: true })
+        .getAttribute("href"),
+      docs[5],
+    );
+    await sources.getByRole("button", { name: "Show less" }).click();
+    assert.equal(await links.count(), 5);
+  }
+  await checkTrackDisclosures();
   const node = page
     .locator(".vue-flow__node")
     .filter({ hasText: "Tasks and timers" })
@@ -306,6 +360,10 @@ try {
   await node.click();
   await page.getByRole("link", { name: lesson.title }).waitFor();
   assert.equal(await page.locator(".s-canvas .vue-flow__edge .s-trace").count(), 4);
+  const card = page.locator(".s-topic");
+  assert.equal(await card.getByText("tasks", { exact: true }).count(), 0);
+  const meter = card.getByRole("img", { name: "Mastery 0 of 4, don't know" });
+  assert.equal((await meter.innerText()).trim().toLowerCase(), "don't know");
   await shot("track-graph");
   const lessonApi = "/api/lessons/" + lesson.id;
   let enriched = false;
@@ -456,7 +514,15 @@ try {
   assert.equal(await page.locator(".s-topbar__crumbs").innerText(), "Progress");
   await page.getByRole("combobox", { name: "Sort by" }).click();
   await page.getByRole("option", { name: "Mastery (lowest first)" }).click();
-  const levels = await page.locator("tbody .s-mastery__level").allTextContents();
+  const levels = await page.locator("tbody .s-mastery").evaluateAll((meters) =>
+    meters.map((meter) => {
+      const level = Number(meter.getAttribute("aria-label").match(/^Mastery ([0-4]) of 4,/)[1]);
+      const numeral = meter.querySelector(".s-mastery__level")?.textContent;
+      if (numeral !== (level ? String(level) : undefined))
+        throw new Error("Unexpected visible Mastery numeral at level " + level);
+      return level;
+    }),
+  );
   assert.equal(levels.length, topics.length);
   assert.deepEqual(
     levels.map(Number),
@@ -759,6 +825,9 @@ try {
     await page.getByRole("button", { name: "Previous page" }).click();
     assert.deepEqual(await targets(), first);
   }
+  await owner.setTrackVisibility(track.id, true, true);
+  await visit("/u/bob/" + track.slug);
+  await checkTrackDisclosures();
   assert.deepEqual(errors, []);
 } finally {
   await browser?.close();

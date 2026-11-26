@@ -55,9 +55,16 @@ const actions = [
     :crumbs="[{ label: 'Tracks', to: screenPath('dashboard') }, { label: sampleTrack.title }]"
   >
     <div class="s-stack" style="--s-gap: var(--s-6)">
-      <UiPageHeader kicker="Track" :title="sampleTrack.title" :description="sampleTrack.goal">
+      <UiPageHeader
+        clamp-description
+        kicker="Track"
+        :title="sampleTrack.title"
+        :description="sampleTrack.goal"
+      >
         <template #meta>
-          <UiBadge tone="copper" pad>{{ complete }} of {{ sampleTopics.length }} live</UiBadge>
+          <UiBadge tone="copper" pad>{{
+            $t("track.mastered", { done: $n(complete), total: $n(sampleTopics.length) })
+          }}</UiBadge>
           <UiBadge icon="lock">Private</UiBadge>
           <UiForkedFrom login="mkarpov" slug="node-internals" :to="screenPath('public-track')" />
         </template>
@@ -87,7 +94,6 @@ const actions = [
           <UiTopicCard
             :title="topic.title"
             :tag="topic.tag"
-            :slug="topic.slug"
             :level="topic.level"
             :state="states.get(topic.id)"
             :lessons="{ read: topic.read, total: topic.lessons }"

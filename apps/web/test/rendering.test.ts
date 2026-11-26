@@ -2,7 +2,7 @@ import { publicBlock } from "@startodel/core";
 import { expect, test } from "vite-plus/test";
 import { practiceQuizProps } from "../app/utils/practice-quiz";
 import { renderMarkdown } from "../app/utils/markdown";
-import { httpUrl, youtubeEmbed } from "../app/utils/links";
+import { httpUrl, trackSourceLink, youtubeEmbed } from "../app/utils/links";
 
 test("Lesson Markdown escapes HTML and admits only HTTP(S) links", () => {
   const html = renderMarkdown(
@@ -23,6 +23,17 @@ test("Lesson Markdown escapes HTML and admits only HTTP(S) links", () => {
   ])
     expect(httpUrl(url)).toBeUndefined();
 });
+test("Track Source labels show host and path while the link keeps its query and fragment", () => {
+  const href = "https://www.react.dev/blog/react-v19/?lang=en#changes";
+  expect(trackSourceLink(href)).toEqual({ label: "react.dev/blog/react-v19", href });
+  expect(trackSourceLink("http://docs.example:8080/")).toEqual({
+    label: "docs.example:8080",
+    href: "http://docs.example:8080/",
+  });
+  for (const invalid of ["not a URL", "/relative", "ftp://docs.example/file"])
+    expect(trackSourceLink(invalid)).toBeUndefined();
+});
+
 test("Video Blocks embed only exact YouTube video IDs on the privacy-enhanced host", () => {
   for (const url of [
     "https://youtu.be/8aGhZQkoFbQ",

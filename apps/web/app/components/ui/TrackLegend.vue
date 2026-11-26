@@ -2,6 +2,7 @@
 import { topicStates, type BoardEdge, type BoardTopic } from "./board";
 /** The readout under a board: how many Topics are live, ready and blocked, and what the marks mean. */
 const props = defineProps<{ topics: BoardTopic[]; edges: BoardEdge[]; keys?: boolean }>();
+const countArgs = useCountArgs();
 const count = computed(() => {
   const totals = { complete: 0, ready: 0, blocked: 0 };
   for (const state of topicStates(props.topics, props.edges).values()) totals[state]++;
@@ -11,10 +12,14 @@ const count = computed(() => {
 <template>
   <div class="s-legend">
     <p class="s-legend__readout">
-      <strong>{{ count.complete }}</strong> {{ $t("board.liveOf", { total: topics.length }) }}
-      <span aria-hidden="true">·</span> <strong>{{ count.ready }}</strong>
-      {{ $t("topicState.ready") }} <span aria-hidden="true">·</span>
-      <strong>{{ count.blocked }}</strong> {{ $t("topicState.blocked") }}
+      <span
+        ><strong>{{ $n(count.complete) }}</strong>
+        {{ $t("board.liveOf", { total: $n(topics.length) }) }}</span
+      >
+      <span aria-hidden="true">·</span>
+      <span>{{ $t("count.ready", countArgs(count.ready)) }}</span>
+      <span aria-hidden="true">·</span>
+      <span>{{ $t("count.blocked", countArgs(count.blocked)) }}</span>
     </p>
     <ul v-if="keys" class="s-legend__keys" :aria-label="$t('board.legend')">
       <li>
@@ -43,6 +48,11 @@ const count = computed(() => {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--s-ink-3);
+}
+.s-legend__readout {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--s-2);
 }
 .s-legend__readout strong {
   color: var(--s-ink);

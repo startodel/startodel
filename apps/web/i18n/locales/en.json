@@ -71,7 +71,10 @@
     "licence": "Open source under the MIT licence.",
     "linkUnavailable": "Link unavailable",
     "today": "Today",
-    "todayShort": "Today"
+    "todayShort": "Today",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "showAll": "Show all {n}"
   },
   "dashboard": {
     "load": "Could not load your Tracks.",
@@ -95,7 +98,9 @@
     "questions": "{n} question | {n} questions",
     "topics": "{n} Topic | {n} Topics",
     "blocks": "{n} Block | {n} Blocks",
-    "words": "{n} word | {n} words"
+    "words": "{n} word | {n} words",
+    "ready": "{n} ready",
+    "blocked": "{n} blocked"
   },
   "login": {
     "signIn": "Sign in with GitHub",
@@ -172,7 +177,8 @@
     "empty": "This Track has no Topics yet.",
     "order": "Topics in Track order",
     "details": "Topic details",
-    "select": "Select a Topic to see its Lessons and prerequisites."
+    "select": "Select a Topic to see its Lessons and prerequisites.",
+    "mastered": "Mastered: {done} of {total}"
   },
   "public": {
     "tracks": "Public Tracks",
