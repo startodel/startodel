@@ -45,10 +45,14 @@ defineProps<{ items: { label: string; to?: LinkTarget }[] }>();
   overflow: hidden;
 }
 .s-crumbs__sep {
+  flex: none;
   margin: 0 var(--s-2);
   color: var(--s-line-strong);
 }
 .s-crumbs__link {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--s-ink-3);
   transition: color var(--s-dur-1) var(--s-ease);

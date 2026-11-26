@@ -458,7 +458,31 @@ try {
     }
     assert.equal(await page.locator(".s-quiz input, .s-exercise__solution").count(), 0);
     await shot("pr11-public-lesson");
+    await page.setViewportSize({ width: 390, height: 900 });
+    await context.addCookies([{ name: "startodel-theme", value: "dark", url: origin }]);
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.reload();
+    await hydrated();
+    await page.evaluate(() => document.fonts.ready);
+    assert.equal(
+      await page.locator(".s-root").evaluate((el) => getComputedStyle(el).colorScheme),
+      "dark",
+    );
+    const crumbs = await page
+      .locator(".s-crumbs__item")
+      .evaluateAll((items) =>
+        items
+          .slice(0, -1)
+          .every(
+            (item, i) =>
+              item.querySelector("a").getBoundingClientRect().right <=
+              items[i + 1].getBoundingClientRect().left + 1,
+          ),
+      );
+    assert.ok(crumbs, "Breadcrumb links must fit inside their items on narrow screens");
+    await page.setViewportSize({ width: 1440, height: 900 });
     await signIn("forker");
+    const { user: reader } = await (await request.get(origin + "/api/me")).json();
     await visit("/en" + publicPath);
     await page.getByRole("button", { name: "Fork", exact: true }).click();
     await page.waitForURL("**/en/tracks/*");
@@ -470,6 +494,23 @@ try {
     await page.getByText("1 fork", { exact: true }).waitFor();
     await page.locator(".s-canvas .s-trace").first().waitFor();
     await shot("pr11-track-visibility");
+
+    const recipient = forUser(db, reader.id);
+    for (let i = 0; i < 5; i++) {
+      const copy = await recipient.forkTrack("bob", track.slug);
+      await recipient.setTrackVisibility(copy.id, true, true);
+    }
+    await visit("/en" + publicPath);
+    assert.equal(await page.getByRole("button", { name: "Fork", exact: true }).count(), 0);
+    const links = page.locator("#forks .s-trackcard__link");
+    const targets = () => links.evaluateAll((items) => items.map((el) => el.href));
+    const first = await targets();
+    assert.equal(first.length, 4);
+    await page.getByRole("button", { name: "Next page" }).click();
+    assert.equal(await links.count(), 1);
+    assert.ok(!first.includes((await targets())[0]));
+    await page.getByRole("button", { name: "Previous page" }).click();
+    assert.deepEqual(await targets(), first);
   }
   assert.deepEqual(errors, []);
 } finally {

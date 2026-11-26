@@ -7,7 +7,6 @@
  * whatever order the files load in.
  */
 .s-root {
-  color-scheme: light dark;
   background: var(--s-bg);
   color: var(--s-ink);
   font-family: var(--s-font-ui);
