@@ -7,11 +7,11 @@ Each folder under [skills](skills/) contains a generated `SKILL.md` with workflo
 ## Install
 
 1. Connect the client to your installation’s `/mcp` endpoint with Streamable HTTP and a Bearer credential from **Settings → MCP tokens**. [Connection instructions](../../README.md#connect-your-agent)
-2. From the root of a Startodel checkout, copy the **whole skill folders** to your client’s user or project skills directory. For a client that reads project skills from `.agents/skills/`, run:
+2. From the root of a Startodel checkout, copy the **whole skill folders** to your client’s user or project skills directory. For a client that reads user skills from `~/.agents/skills/`, run the following command.
 
    ```sh
-   mkdir -p .agents/skills
-   cp -R packages/skills/skills/startodel-* .agents/skills/
+   mkdir -p ~/.agents/skills
+   cp -R packages/skills/skills/startodel-* ~/.agents/skills/
    ```
 
 3. Check that each installed folder contains `SKILL.md` and that the browser tasks link inside each Track skill opens its local reference. Ask the connected agent to call `get_guide` for the Next Step.
