@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
+import ts from "typescript";
 import { expect, test } from "vite-plus/test";
 import { designShowcaseEnabled, isDesignShowcasePath } from "../app/utils/design-showcase";
 
@@ -194,9 +195,54 @@ test("every UI component is rendered by a showcase specimen", () => {
   expect([...components.values()].filter((file) => !visited.has(file))).toEqual([]);
 });
 
-const migratedPages = vueFiles("pages/").filter((file) =>
-  /\bdefinePageMeta\s*\(\s*\{[^}]*?\blayout\s*:\s*["'](?:app|site|focus)["']/.test(sourceOf(file)),
-);
+function usesDesignLayout(source: string) {
+  const script = [...source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+    .map(([, block]) => block)
+    .join("\n");
+  if (!script.includes("definePageMeta")) return false;
+  const { statements } = ts.createSourceFile(
+    "page.ts",
+    script,
+    ts.ScriptTarget.Latest,
+    false,
+    ts.ScriptKind.TS,
+  );
+  for (const statement of statements) {
+    if (!ts.isExpressionStatement(statement) || !ts.isCallExpression(statement.expression))
+      continue;
+    const {
+      expression,
+      arguments: [meta],
+    } = statement.expression;
+    if (
+      !ts.isIdentifier(expression) ||
+      expression.text !== "definePageMeta" ||
+      !meta ||
+      !ts.isObjectLiteralExpression(meta)
+    )
+      continue;
+    return meta.properties.some(
+      (prop) =>
+        ts.isPropertyAssignment(prop) &&
+        (ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)) &&
+        prop.name.text === "layout" &&
+        ts.isStringLiteral(prop.initializer) &&
+        ["app", "site", "focus"].includes(prop.initializer.text),
+    );
+  }
+  return false;
+}
+
+const migratedPages = vueFiles("pages/").filter((file) => usesDesignLayout(sourceOf(file)));
+
+test("only an explicit design layout opts a page into migration checks", () => {
+  const page = (meta: string) => `<script setup>definePageMeta(${meta})</script>`;
+  expect(usesDesignLayout("<template><input /></template>")).toBe(false);
+  expect(usesDesignLayout(page('{ layout: "default" }'))).toBe(false);
+  expect(usesDesignLayout(page('{ custom: { layout: "app" } }'))).toBe(false);
+  for (const layout of ["app", "site", "focus"])
+    expect(usesDesignLayout(page(`{ custom: {}, layout: "${layout}" }`))).toBe(true);
+});
 
 test("pages with a design layout use tokens and UI controls", () => {
   for (const file of migratedPages) {
