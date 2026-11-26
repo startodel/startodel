@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { QuizResult } from "../../ui/Quiz.vue";
 import { sampleBoxes, sampleReviews, sampleUpcoming, sampleWeek, screenPath } from "../sample";
+const formatInterval = useReviewInterval();
 const props = defineProps<{ state?: string }>();
 const week = sampleWeek.map((d) => ({
   label: d.day,
@@ -91,7 +92,7 @@ const result = computed<QuizResult | undefined>(() =>
       <UiPageHeader kicker="Practice Quiz · T05" title="Async functions under the hood">
         <template #meta>
           <UiBadge icon="quiz">{{ questions.length }} questions from 2 Lessons</UiBadge>
-          <UiBadge icon="box">Review Box 1</UiBadge>
+          <UiBadge icon="box">{{ $t("review.boxFull", { interval: formatInterval(1) }) }}</UiBadge>
           <UiMastery :level="2" show="full" />
         </template>
       </UiPageHeader>
@@ -101,13 +102,13 @@ const result = computed<QuizResult | undefined>(() =>
           <p class="s-label">Result</p>
           <h2 class="outcome__title"><UiVerdict verdict="partial" size="lg" /> 4 of 5 correct</h2>
           <p class="outcome__text">
-            At least half correct gives a partial Verdict. The Topic stays in its Review Box and
-            comes back sooner.
+            At least half correct gives a partial Verdict. The Topic keeps its current review
+            interval.
           </p>
         </div>
         <UiLeitnerRack :counts="sampleBoxes.map((b) => b.count)" :current="1" compact />
         <dl class="outcome__facts">
-          <UiStat label="Review Box" value="1" />
+          <UiStat :label="$t('review.boxLabel')" :value="formatInterval(1)" />
           <UiStat label="Next review" value="3" unit="days" />
           <UiStat label="Mastery" value="2" />
         </dl>
@@ -192,7 +193,7 @@ const result = computed<QuizResult | undefined>(() =>
               :columns="[
                 { key: 'tag', label: 'Ref', width: '4rem' },
                 { key: 'title', label: 'Topic' },
-                { key: 'box', label: 'Box', align: 'right' },
+                { key: 'box', label: $t('review.boxLabel'), align: 'right' },
                 { key: 'due', label: 'Due', align: 'right' },
               ]"
               :rows="sampleUpcoming"
@@ -200,6 +201,7 @@ const result = computed<QuizResult | undefined>(() =>
             >
               <template #cell-tag="{ row }"><span class="s-label">{{ row.tag }}</span></template>
               <template #cell-title="{ row }"><strong>{{ row.title }}</strong></template>
+              <template #cell-box="{ row }">{{ formatInterval(row.box) }}</template>
             </UiTable>
           </section>
         </div>
@@ -209,11 +211,11 @@ const result = computed<QuizResult | undefined>(() =>
             <UiWeekStrip :days="week" />
           </section>
           <section class="s-stack" style="--s-gap: var(--s-3)">
-            <UiSectionHeading title="Review Boxes" :level="3" />
-            <UiLeitnerRack :counts="sampleBoxes.map((b) => b.count)" />
+            <UiSectionHeading :title="$t('review.scheduledBoxes')" :level="3" />
             <p class="s-muted" style="font-size: var(--s-text-sm)">
-              A strong review moves a Topic one box to the right. A weak one sends it back to box 0.
+              {{ $t("review.intervalsHint") }}
             </p>
+            <UiLeitnerRack :counts="sampleBoxes.map((b) => b.count)" />
           </section>
         </aside>
       </div>

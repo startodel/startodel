@@ -2,6 +2,7 @@
 definePageMeta({ layout: "app" });
 const { t } = useI18n();
 const countArgs = useCountArgs();
+const formatInterval = useReviewInterval();
 const displayDate = useDisplayDate();
 const id = String(useRoute().params.topicId);
 const url = `/api/reviews/${id}/practice` as const;
@@ -80,7 +81,9 @@ const quiz = computed(() => practiceQuizProps(data.value?.questions ?? [], resul
     <UiPageHeader :title="data?.title ?? $t('review.practice')" :kicker="$t('review.practice')">
       <template v-if="data" #meta>
         <UiBadge icon="quiz">{{ $t("count.questions", countArgs(data.questions.length)) }}</UiBadge>
-        <UiBadge v-if="item" icon="box">{{ $t("review.boxFull", { box: $n(item.box) }) }}</UiBadge>
+        <UiBadge v-if="item" icon="box">{{
+          $t("review.boxFull", { interval: formatInterval(item.box) })
+        }}</UiBadge>
         <UiMastery v-if="item" :level="item.level" show="full" />
       </template>
     </UiPageHeader>
@@ -107,7 +110,7 @@ const quiz = computed(() => practiceQuizProps(data.value?.questions ?? [], resul
         </div>
         <UiLeitnerRack v-if="schedule" :counts="boxes" :current="result.box" compact />
         <dl class="outcome__facts">
-          <UiStat :label="$t('review.boxLabel')" :value="$n(result.box)" />
+          <UiStat :label="$t('review.boxLabel')" :value="formatInterval(result.box)" />
           <UiStat :label="$t('review.nextDate')" :value="displayDate(result.dueAt)" />
           <UiStat :label="$t('progress.mastery')" :value="$n(result.mastery)" />
         </dl>

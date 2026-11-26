@@ -17,7 +17,13 @@ const peak = computed(() => Math.max(1, ...props.days.map((d) => d.count)));
         <i v-for="n in Math.min(peak, 6)" :key="n" :class="{ 'is-on': n <= d.count }" />
       </span>
       <span class="s-week__count" aria-hidden="true">{{ d.count }}</span>
-      <span class="s-week__label" aria-hidden="true">{{ d.today ? $t("ui.today") : d.label }}</span>
+      <span class="s-week__label" aria-hidden="true">
+        <template v-if="d.today">
+          <span class="s-week__today">{{ $t("ui.today") }}</span>
+          <span class="s-week__today-short">{{ $t("ui.todayShort") }}</span>
+        </template>
+        <template v-else>{{ d.label }}</template>
+      </span>
       <span class="s-week__date" aria-hidden="true">{{ d.date }}</span>
       <span class="s-sr">{{
         $t("review.dueOn", {
@@ -30,6 +36,7 @@ const peak = computed(() => Math.max(1, ...props.days.map((d) => d.count)));
 </template>
 <style scoped>
 .s-week {
+  container: s-week / inline-size;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   list-style: none;
@@ -39,6 +46,7 @@ const peak = computed(() => Math.max(1, ...props.days.map((d) => d.count)));
 }
 .s-week__day {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   gap: 0.25rem;
   padding: var(--s-3) var(--s-1);
@@ -86,5 +94,17 @@ const peak = computed(() => Math.max(1, ...props.days.map((d) => d.count)));
 }
 .s-week__date {
   text-transform: none;
+}
+.s-week__today-short {
+  display: none;
+}
+@container s-week (max-width: 30rem) {
+  .s-week__today {
+    display: none;
+  }
+  .s-week__today-short {
+    display: inline;
+    letter-spacing: normal;
+  }
 }
 </style>

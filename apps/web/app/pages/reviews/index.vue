@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: "app" });
 const { t } = useI18n();
+const formatInterval = useReviewInterval();
 const displayDate = useDisplayDate();
 useHead({ title: t("nav.reviews") });
 const { data, error, refresh } = await useFetch("/api/reviews");
@@ -26,7 +27,12 @@ const { boxes, week, today } = useReviewSchedule(() => data.value);
             :title="item.title"
             :level="item.level"
             :box="item.box"
-            :due="$t('review.schedule', { date: displayDate(item.dueAt), box: $n(item.box) })"
+            :due="
+              $t('review.schedule', {
+                date: displayDate(item.dueAt),
+                interval: formatInterval(item.box),
+              })
+            "
             :overdue="item.dueAt.slice(0, 10) < today"
             :last-result="item.lastResult"
           >
@@ -95,7 +101,7 @@ const { boxes, week, today } = useReviewSchedule(() => data.value);
               </p>
               <p v-else-if="row.reason">{{ row.reason }}</p>
             </template>
-            <template #cell-box="{ row }">{{ $n(row.box) }}</template
+            <template #cell-box="{ row }">{{ formatInterval(row.box) }}</template
             ><template #cell-dueAt="{ row }">{{ displayDate(row.dueAt) }}</template>
             <template #cell-practice="{ row }"
               ><UiButton
@@ -122,6 +128,9 @@ const { boxes, week, today } = useReviewSchedule(() => data.value);
         </section>
         <section class="s-stack" style="--s-gap: var(--s-3)">
           <UiSectionHeading :title="$t('review.scheduledBoxes')" :level="3" />
+          <p class="s-muted" style="font-size: var(--s-text-sm)">
+            {{ $t("review.intervalsHint") }}
+          </p>
           <UiLeitnerRack :counts="boxes" />
         </section>
       </aside>

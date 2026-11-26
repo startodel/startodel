@@ -117,7 +117,7 @@ export const screens: ScreenInfo[] = [
     title: "Reviews",
     group: "Learning",
     route: "/reviews",
-    note: "Due ReviewItems, the Review Boxes and a Practice Quiz.",
+    note: "Due ReviewItems, review intervals and a Practice Quiz.",
     states: [
       { id: "due", label: "Due" },
       { id: "practice", label: "Practice Quiz" },

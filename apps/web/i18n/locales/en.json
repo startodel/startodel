@@ -69,7 +69,8 @@
     "updated": "Updated {date}",
     "licence": "Open source under the MIT licence.",
     "linkUnavailable": "Link unavailable",
-    "today": "Today"
+    "today": "Today",
+    "todayShort": "Today"
   },
   "dashboard": {
     "load": "Could not load your Tracks.",
@@ -233,7 +234,7 @@
     "upcoming": "Upcoming · next 7 days",
     "done": "You’re up to date.",
     "none": "No reviews scheduled for the next seven days.",
-    "schedule": "Due {date} · Box {box}",
+    "schedule": "Due {date} · interval {interval}",
     "last": "Last result: {result}",
     "practice": "Practice quiz",
     "ask": "Ask your agent to review this topic",
@@ -245,16 +246,16 @@
     "saveError": "Could not save this Practice Quiz. Try again.",
     "score": "Practice Quiz: {correct} of {total} correct",
     "invalid": "Choose one of the available answers for each question.",
-    "boxes": "Review Boxes",
-    "box": "Box {box}",
-    "boxFull": "Review Box {box}",
-    "boxSummary": "Box {box}: {topics}, reviewed every {days} days",
+    "boxes": "Review intervals",
+    "boxFull": "Review interval · {interval}",
+    "boxSummary": "Interval in days: {days}. {topics}.",
     "days": "{n} d",
     "week": "Reviews in the next seven days",
     "dueOn": "{day}: {count} due",
-    "scheduledBoxes": "Review Boxes · due and upcoming",
-    "boxLabel": "Review Box",
-    "nextDate": "Next review"
+    "scheduledBoxes": "Review intervals",
+    "boxLabel": "Interval",
+    "nextDate": "Next review",
+    "intervalsHint": "A correct answer moves the Topic to a longer interval. A miss returns it to the start."
   },
   "agent": {
     "connect": "Connect your agent",

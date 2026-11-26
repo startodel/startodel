@@ -375,12 +375,45 @@ try {
       await visit(path);
       await checkCascade(page, path);
     }
+    const previousViewport = page.viewportSize();
+    await page.setViewportSize({ width: 390, height: 900 });
+    for (const prefix of ["", "/en"]) {
+      await audit(prefix + "/progress");
+      const names = page.locator(".s-histogram__name");
+      assert.equal(await names.count(), 5);
+      const splitWords = await names.evaluateAll((names) =>
+        names.flatMap((name) => {
+          const split = [];
+          for (const word of name.textContent.matchAll(/\S+/g)) {
+            const range = document.createRange();
+            range.setStart(name.firstChild, word.index);
+            range.setEnd(name.firstChild, word.index + word[0].length);
+            if (range.getClientRects().length > 1) split.push(word[0]);
+          }
+          return split;
+        }),
+      );
+      assert.deepEqual(splitWords, []);
+      await audit(prefix + "/reviews");
+      const todayFits = await page.locator(".s-week__day.is-today").evaluate((cell) => {
+        const range = document.createRange();
+        range.selectNodeContents(cell.querySelector(".s-week__label"));
+        const label = range.getBoundingClientRect();
+        const bounds = cell.getBoundingClientRect();
+        return label.width > 0 && label.left >= bounds.left && label.right <= bounds.right;
+      });
+      assert.ok(todayFits, "today label must fit inside its day");
+      assert.deepEqual(
+        await page.locator(".s-rack__interval").allInnerTexts(),
+        [1, 3, 7, 16, 35].map((days) => days + (prefix ? " d" : " дн.")),
+      );
+      assert.doesNotMatch(await page.locator(".s-rack").innerText(), /\bbox\b|коробк/iu);
+    }
+    await page.setViewportSize(previousViewport);
     for (const path of [
       "/dashboard",
       "/en/dashboard",
       "/settings",
-      "/progress",
-      "/reviews",
       "/tracks/" + track.id,
       "/topics/" + by.tasks.id,
       "/lessons/" + lesson.id,

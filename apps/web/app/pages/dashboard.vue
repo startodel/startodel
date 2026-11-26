@@ -2,6 +2,7 @@
 definePageMeta({ layout: "app" });
 const { t, n } = useI18n();
 const countArgs = useCountArgs();
+const formatInterval = useReviewInterval();
 const displayDate = useDisplayDate();
 const { activityLabel } = useLearningLabels();
 const me = useMe();
@@ -173,7 +174,7 @@ const prompt = computed(() => {
             <ul v-if="reviews.due.length" class="due">
               <li v-for="item in reviews.due.slice(0, 4)" :key="item.topicId">
                 <NuxtLinkLocale to="/reviews" class="due__row">
-                  <span class="s-label">{{ $t("review.box", { box: $n(item.box) }) }}</span>
+                  <span class="s-label">{{ formatInterval(item.box) }}</span>
                   <span class="due__title">{{ item.title }}</span>
                   <span class="due__when" :class="{ 'is-late': item.dueAt.slice(0, 10) < today }">{{
                     displayDate(item.dueAt)
@@ -190,6 +191,9 @@ const prompt = computed(() => {
           </section>
           <section class="s-stack" style="--s-gap: var(--s-3)">
             <UiSectionHeading :title="$t('review.scheduledBoxes')" :level="3" />
+            <p class="s-muted" style="font-size: var(--s-text-sm)">
+              {{ $t("review.intervalsHint") }}
+            </p>
             <UiLeitnerRack :counts="boxes" compact />
           </section>
         </template>

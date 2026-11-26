@@ -3,7 +3,8 @@
  * A ReviewItem: a Topic that is due or coming due. It shows the Review Box, the Mastery and
  * the latest result. Put the actions in the actions slot.
  */
-defineProps<{
+const formatInterval = useReviewInterval();
+const props = defineProps<{
   title: string;
   tag?: string;
   /** The Track the Topic belongs to, when the list spans several. */
@@ -18,14 +19,16 @@ defineProps<{
   /** Why the Topic is scheduled, when the agent gave a reason. */
   reason?: string | null;
 }>();
+const interval = computed(() => formatInterval(props.box));
 </script>
 <template>
   <article class="s-review" :class="{ 'is-overdue': overdue }">
-    <div class="s-review__box" :aria-label="$t('review.boxFull', { box })">
+    <div class="s-review__box">
       <span class="s-review__pips" aria-hidden="true"
         ><i v-for="n in 5" :key="n" :class="{ 'is-on': n - 1 <= box }"
       /></span>
-      <span class="s-review__box-name" aria-hidden="true">{{ $t("review.box", { box }) }}</span>
+      <span class="s-review__box-name" aria-hidden="true">{{ interval }}</span>
+      <span class="s-sr">{{ $t("review.boxFull", { interval }) }}</span>
     </div>
     <div class="s-review__main">
       <p class="s-review__meta">
@@ -95,6 +98,10 @@ defineProps<{
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--s-ink-3);
+}
+.s-review__box-name {
+  text-transform: none;
+  white-space: nowrap;
 }
 .s-review__main {
   display: grid;

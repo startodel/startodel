@@ -1,3 +1,10 @@
+import { REVIEW_INTERVAL_DAYS } from "@startodel/core";
+
+export function useReviewInterval() {
+  const { t, n } = useI18n();
+  return (box: number) => t("review.days", { n: n(REVIEW_INTERVAL_DAYS[box]!) });
+}
+
 type Scheduled = { dueAt: string; box: number };
 
 export function useReviewSchedule(
@@ -13,7 +20,7 @@ export function useReviewSchedule(
     return reviews ? [...reviews.due, ...reviews.upcoming] : [];
   });
   const boxes = computed(() => {
-    const counts = [0, 0, 0, 0, 0];
+    const counts = REVIEW_INTERVAL_DAYS.map(() => 0);
     for (const { box } of items.value) counts[box] = counts[box]! + 1;
     return counts;
   });
