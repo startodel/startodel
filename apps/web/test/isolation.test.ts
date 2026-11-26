@@ -112,8 +112,15 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
 
   test("the landing page requires sign-in and logout expires the sealed Session", async () => {
     expect((await request("/")).headers.get("location")).toBe("/login");
-    expect(await (await request("/login")).text()).toContain("Войти через GitHub");
-    expect(await (await request("/en/login")).text()).toContain("Sign in with GitHub");
+    for (const [path, label] of [
+      ["/login", "Войти через GitHub"],
+      ["/en/login", "Sign in with GitHub"],
+    ] as const) {
+      const html = await (await request(path)).text();
+      expect(html).toContain(label);
+      expect(html).toMatch(/<a\b[^>]*href="\/auth\/github"[^>]*>[\s\S]*?<\/a>/);
+      expect(html.match(/id="s-layer"/g)).toHaveLength(1);
+    }
     expect((await request("/", "startodel_language=en")).headers.get("location")).toBe("/en/login");
     for (const prefix of ["", "/en"]) {
       for (const path of [
@@ -365,6 +372,18 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       lastUsedAt: null,
       revokedAt: null,
     });
+    await request("/api/profile/questionnaire", a, "PUT", {
+      stack: ["TypeScript"],
+      goals: ["testing"],
+      experience: "senior",
+    });
+    const settings = await request("/en/settings", a);
+    expect(settings.status).toBe(200);
+    const html = await settings.text();
+    expect(html.match(/id="s-layer"/g)).toHaveLength(1);
+    expect(html).toContain(prefix + "…");
+    expect(html).toContain(publicOrigin + "/mcp");
+    expect(html.includes(token)).toBe(false);
   });
 
   function rpc(method: string, params: unknown, headers: Record<string, string> = {}) {

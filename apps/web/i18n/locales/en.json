@@ -450,5 +450,18 @@
     "legend": "Legend",
     "signal": "signal",
     "noSignal": "no signal"
+  },
+  "settings": {
+    "tokenAccess": "Each token gives an agent access to your learning data. Create a separate token for each agent so you can revoke access individually.",
+    "token": "MCP Token",
+    "prefix": "Prefix",
+    "created": "Created",
+    "lastUsed": "Last used",
+    "never": "Never",
+    "edit": "Edit questionnaire",
+    "appearance": "Interface",
+    "session": "Session",
+    "confirm": "Revoke this token?",
+    "revokeEffect": "The token “{name}” will stop working immediately. Its agent will need a new token."
   }
 }
