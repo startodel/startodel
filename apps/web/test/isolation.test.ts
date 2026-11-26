@@ -96,7 +96,9 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
   test("health is public while Profile, Tracks and new API routes require a Session", async () => {
     expect(await (await fetch(origin + "/api/health")).json()).toEqual({ ok: true, db: "up" });
     for (const path of ["/api/profile", "/api/tracks", "/api/new-route", "/api/health/private"]) {
-      expect((await fetch(origin + path)).status, path).toBe(401);
+      const response = await fetch(origin + path);
+      expect(response.status, path).toBe(401);
+      expect(response.headers.get("cache-control"), path).toBe("private, no-store");
     }
   });
 
@@ -133,7 +135,10 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       ]) {
         const response = await request(prefix + path);
         expect(response.headers.get("location"), prefix + path).toBe(prefix + "/login");
-        expect(response.headers.get("cache-control")).toContain("no-store");
+        expect(response.headers.get("cache-control")).toBe("private, no-store");
+      }
+      for (const path of [prefix || "/", prefix + "/mcp", prefix + "/api/profile"]) {
+        expect((await request(path)).headers.get("cache-control"), path).toBe("private, no-store");
       }
       expect((await request(prefix + "/api/profile")).status).toBe(401);
     }
@@ -146,7 +151,9 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       "/lessons/" + crypto.randomUUID(),
       "/login",
     ]) {
-      expect((await request(path, cookie)).headers.get("location"), path).toBe("/onboarding");
+      const response = await request(path, cookie);
+      expect(response.headers.get("location"), path).toBe("/onboarding");
+      expect(response.headers.get("cache-control"), path).toBe("private, no-store");
     }
     expect((await request("/onboarding", cookie)).status).toBe(200);
     const html = await (await request("/onboarding", cookie)).text();

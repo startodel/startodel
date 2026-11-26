@@ -19,7 +19,6 @@ export default defineNitroErrorHandler(async (error, event) => {
       status: 404,
       headers: {
         "content-type": api ? "application/json" : "text/html; charset=utf-8",
-        "cache-control": "no-store",
       },
     }),
   );

@@ -3,6 +3,16 @@ import { LEGAL_TERMS_VERSION } from "@startodel/core";
 import { forUser, type Database } from "@startodel/db";
 import { expect, onTestFinished, test } from "vite-plus/test";
 
+const publicHtmlCache = "public, max-age=60, s-maxage=300, stale-while-revalidate=600";
+const publicAssetCache = "public, max-age=300, stale-while-revalidate=3600";
+
+function expectPublicHtml(response: Response) {
+  expect(response.headers.get("cache-control")).toBe(publicHtmlCache);
+  const vary = response.headers.get("vary")?.toLowerCase().split(/,\s*/);
+  expect(vary).toEqual(expect.arrayContaining(["cookie", "accept-encoding"]));
+  expect(response.headers.getSetCookie()).toEqual([]);
+}
+
 export function publicHttpTests(
   env: () => { db: Database; origin: string },
   request: (path: string, cookie?: string, method?: string, body?: unknown) => Promise<Response>,
@@ -98,6 +108,29 @@ export function publicHttpTests(
       fork,
     };
   }
+  test("public HTML varies on Session cookie presence and public files are shared", async () => {
+    const session = await signIn("alice");
+    for (const prefix of ["", "/en"]) {
+      for (const path of ["/login", "/terms", "/rules", "/u/alice"]) {
+        for (const cookie of ["", "startodel_language=en"]) {
+          const res = await request(prefix + path, cookie);
+          expect(res.status).toBe(200);
+          expectPublicHtml(res);
+        }
+        for (const cookie of [session, "nuxt-auth-session=invalid", "nuxt-auth-session="]) {
+          const res = await request(prefix + path, cookie);
+          expect(res.headers.get("cache-control")).toBe("private, no-store");
+        }
+      }
+    }
+    for (const path of ["/robots.txt", "/sitemap.xml"]) {
+      for (const cookie of ["", session]) {
+        const res = await request(path, cookie);
+        expect(res.headers.get("cache-control")).toBe(publicAssetCache);
+        expect((res.headers.get("vary") ?? "").toLowerCase()).not.toContain("cookie");
+      }
+    }
+  });
   test("publishing checks Session ownership and records current Terms Acceptance", async () => {
     const { a, b, owner, api, visibility, fork } = await curriculum();
     expect((await fork("")).status).toBe(401);
@@ -187,7 +220,8 @@ export function publicHttpTests(
         for (const cookie of ["", a, b]) {
           const response = await fetch(origin + prefix + "/u" + suffix, { headers: { cookie } });
           expect(response.status).toBe(200);
-          expect(response.headers.get("cache-control")).toContain("no-store");
+          if (cookie) expect(response.headers.get("cache-control")).toBe("private, no-store");
+          else expectPublicHtml(response);
           const html = await response.text();
           for (const value of [
             "Hidden-",

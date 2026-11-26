@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isPublicPage } from "./utils/public-pages";
+import { isPublicPage } from "../shared/public-pages";
 const { fetch: fetchSession } = useUserSession();
 const { locale } = useI18n();
 const route = useRoute();

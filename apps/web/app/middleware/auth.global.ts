@@ -1,5 +1,5 @@
 import type { Track } from "@startodel/core";
-import { isPublicPage } from "../utils/public-pages";
+import { isPublicPage } from "../../shared/public-pages";
 import { basePath, localizedPath, pageLocale, languageCookie } from "../../shared/locale";
 export default defineNuxtRouteMiddleware(async (to) => {
   const path = basePath(to.path);
