@@ -1,5 +1,5 @@
 import { defineHandler, useRuntimeConfig } from "nuxt/server";
-import { localizedPath } from "../../shared/locale";
+import { alternateUrls } from "../../shared/locale";
 import { publicData } from "../lib/public-reader";
 
 import { escapeXml } from "../lib/xml";
@@ -26,15 +26,17 @@ export default defineHandler(async (event) => {
       );
   }
   const urls = Array.from(paths, ([path, lastmod]) => {
-    const ru = escapeXml(origin + path);
-    const en = escapeXml(origin + localizedPath(path, "en"));
-    const links = Object.entries({ ru, en, "x-default": ru })
-      .map(([lang, url]) => `<xhtml:link rel="alternate" hreflang="${lang}" href="${url}"/>`)
+    const alternates = alternateUrls(origin, path);
+    const links = Object.entries(alternates)
+      .map(
+        ([lang, url]) =>
+          `<xhtml:link rel="alternate" hreflang="${lang}" href="${escapeXml(url)}"/>`,
+      )
       .join("");
-    return [ru, en]
+    return [alternates.en, alternates.ru]
       .map(
         (loc) =>
-          `<url><loc>${loc}</loc>${lastmod ? "<lastmod>" + lastmod + "</lastmod>" : ""}${links}</url>`,
+          `<url><loc>${escapeXml(loc)}</loc>${lastmod ? "<lastmod>" + lastmod + "</lastmod>" : ""}${links}</url>`,
       )
       .join("");
   });

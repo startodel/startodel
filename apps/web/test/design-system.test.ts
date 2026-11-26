@@ -115,12 +115,12 @@ test("the design showcase is served only in development or behind its flag", () 
 
 test("only showcase paths skip the Session check", () => {
   expect(
-    ["/design", "/design/", "/design/components", "/Design/screens/lesson", "/en/design"].map(
+    ["/design", "/design/", "/design/components", "/Design/screens/lesson", "/ru/design"].map(
       isDesignShowcasePath,
     ),
   ).toEqual([true, true, true, true, true]);
   expect(
-    ["/", "/designs", "/settings/design", "/api/design", "/designer", "/en/designs", "/en"].map(
+    ["/", "/designs", "/settings/design", "/api/design", "/designer", "/ru/designs", "/ru"].map(
       isDesignShowcasePath,
     ),
   ).toEqual([false, false, false, false, false, false, false]);

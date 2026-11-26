@@ -21,7 +21,7 @@ export default defineHandler((event) => {
         : "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
     );
   } else if (
-    pathname.startsWith("/en/") ||
+    path !== pathname ||
     /^\/(dashboard|settings|onboarding|tracks|lessons|topics|grills|reviews|progress|mcp|api)(\/|$)/i.test(
       path,
     )

@@ -3,5 +3,5 @@ import { basePath } from "../../shared/locale";
 export function designShowcaseEnabled(dev: boolean, flag: unknown) {
   return dev || flag === true || flag === "true";
 }
-/** True for the showcase in either locale: /design and /en/design. */
+/** True for the showcase in either locale: /design and /ru/design. */
 export const isDesignShowcasePath = (path: string) => /^\/design(?:\/|$)/i.test(basePath(path));

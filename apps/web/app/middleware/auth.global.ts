@@ -3,13 +3,14 @@ import { isPublicPage } from "../../shared/public-pages";
 import { basePath, localizedPath, pageLocale, languageCookie } from "../../shared/locale";
 export default defineNuxtRouteMiddleware(async (to) => {
   const path = basePath(to.path);
-  const target = (value: string) => localizedPath(value, pageLocale(to.path));
+  const locale =
+    to.path === "/" && useCookie(languageCookie).value === "ru" ? "ru" : pageLocale(to.path);
+  const target = (value: string) => localizedPath(value, locale);
   const { session, loggedIn } = useUserSession();
   const redirectEntry = (value: string) =>
     navigateTo({ path: target(value), query: to.query, hash: to.hash });
   if (path === "/" && loggedIn.value) return redirectEntry("/dashboard");
-  if (to.path === "/" && useCookie(languageCookie).value === "en")
-    return navigateTo({ path: "/en", query: to.query, hash: to.hash });
+  if (to.path === "/" && locale === "ru") return redirectEntry("/");
   if (/^\/api(?:\/|$)/i.test(path)) return;
   if (isPublicPage(to.path)) {
     // Keep the sealed Session's contents out of public hydration payloads.

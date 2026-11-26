@@ -19,7 +19,7 @@ export default defineNuxtConfig({
   modules: ["nuxt-auth-utils", "@nuxtjs/i18n"],
   i18n: {
     strategy: "prefix_except_default",
-    defaultLocale: "ru",
+    defaultLocale: "en",
     detectBrowserLanguage: false,
     locales: [
       { code: "ru", language: "ru", file: "ru.json" },

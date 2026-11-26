@@ -9,7 +9,7 @@ export default defineHandler(async (event) => {
   if (event.req.method !== "GET" && event.req.method !== "HEAD")
     return new Response(null, { status: 405, headers: { allow: "GET, HEAD" } });
   const { pathname, searchParams } = getRequestURL(event);
-  const copy = searchParams.get("lang") === "en" ? en : ru;
+  const copy = searchParams.get("lang") === "ru" ? ru : en;
   if (pathname === "/og/site.png") return ogImage(copy.login.heading, copy.login.audience);
 
   const match = /^\/og\/u\/([^/]+?)(?:\/([^/]+?)(?:\/lessons\/([^/]+))?)?\.png$/.exec(pathname);

@@ -6,13 +6,13 @@ Accepted
 
 ## Context
 
-Russian is the primary product language. Learners need English from the first release and must be able to share a particular language version of a Public Track or legal document.
+Startodel originally served Russian at the root. With startodel.com as the public host, first-time visitors should see English. Learners need shareable links to either language version of a Public Track or legal document.
 
 ## Decision
 
-Use the Nuxt i18n module with lazy Russian and English message catalogs. Russian pages use unprefixed paths. English pages use the same paths under `/en`. Both the header and footer switch to the corresponding page. An explicit selection sets the first-party `startodel_language` cookie for one year. The root respects that preference. Other page URLs determine the language directly. Browser language headers have no effect. Legacy legal links with a supported `lang` query redirect permanently to the matching locale.
+Use the Nuxt i18n module with lazy Russian and English message catalogs. English pages use unprefixed paths. Russian pages use the same paths under `/ru`. Legacy `/en` and `/en/…` URLs redirect permanently to their unprefixed equivalents, retaining the query string and browser fragment. Both the header and footer switch to the corresponding page. An explicit selection sets the first-party `startodel_language` cookie for one year. At the root, a Russian preference selects the Russian Landing or the signed-in learner’s Russian dashboard. Other page URLs determine the language directly. Browser language headers have no effect. Legacy legal links with a supported `lang` query redirect permanently to the matching locale.
 
-Public SSR sets the HTML language and emits current-locale canonical and Open Graph metadata, with Russian, English and Russian-default alternate links on the configured public origin. The sitemap advertises both versions of published content, including Lessons. Both route trees use the same Session checks, public projections and cache policy. API and MCP endpoint paths stay stable.
+Public SSR sets the HTML language and emits current-locale canonical and Open Graph metadata, with English and Russian alternate links on the configured public origin. The `x-default` alternate points to the unprefixed English URL in both the page head and the sitemap. The sitemap advertises both versions of published content, including Lessons. Both route trees use the same Session checks, public projections and cache policy. API and MCP endpoint paths stay stable.
 
 Translate UI chrome, including prompts supplied by the app, with the terminology in the [glossary](../CONTEXT.md#russian-ui-terms). Show authored content in its original language. Agents use the learner’s conversation or onboarding notes to choose the language of learning content and ask once if it is unclear. Code, identifiers and established technical terms stay in English.
 

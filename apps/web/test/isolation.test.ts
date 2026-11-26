@@ -36,17 +36,20 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
   publicHttpTests(() => ({ db, origin }), request, signIn);
   practiceHttpTests(() => ({ db, origin }), request, signIn);
 
-  async function signIn(login: string, english = false) {
+  async function signIn(login: string, language?: string) {
     const start = await request("/auth/github");
     expect(start.status).toBe(302);
     const state = new URL(start.headers.get("location")!).searchParams.get("state");
     expect(state).toBeTruthy();
     const callback = await request(
       `/auth/github?code=${login}&state=${state}`,
-      start.headers.getSetCookie()[0].split(";")[0] + (english ? "; startodel_language=en" : ""),
+      start.headers.getSetCookie()[0].split(";")[0] +
+        (language ? "; startodel_language=" + language : ""),
     );
     expect(callback.status).toBe(302);
-    expect(callback.headers.get("location")).toBe(english ? "/en/dashboard" : "/dashboard");
+    expect(callback.headers.get("location")).toBe(
+      language === "ru" ? "/ru/dashboard" : "/dashboard",
+    );
     const cookie = callback.headers
       .getSetCookie()
       .find((value) => value.startsWith("nuxt-auth-session="))!;
@@ -105,29 +108,50 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
   });
 
   test("the design showcase is not served unless its flag is set", async () => {
-    for (const path of ["/design", "/design/components", "/design/og", "/en/design"]) {
+    for (const path of ["/design", "/design/components", "/design/og", "/ru/design"]) {
       const response = await request(path);
-      expect(response.headers.get("location"), path).toBe(path.startsWith("/en") ? "/en" : "/");
+      expect(response.headers.get("location"), path).toBe(path.startsWith("/ru") ? "/ru" : "/");
       expect(await response.text(), path).not.toContain("s-root");
     }
+  });
+
+  test.each([
+    ["/en", "/"],
+    ["/en/dashboard", "/dashboard"],
+    ["/en/login?error=oauth&from=a%20b", "/login?error=oauth&from=a%20b"],
+    ["/en/api/profile", "/api/profile"],
+  ])("legacy English URL %s permanently redirects before routing", async (from, to) => {
+    const response = await request(from);
+    expect(response.status).toBe(301);
+    expect(response.headers.get("location")).toBe(to);
+  });
+
+  test("legacy English redirects preserve the method for a POST", async () => {
+    const response = await request("/en/dashboard", "", "POST");
+    expect(response.status).toBe(308);
+    expect(response.headers.get("location")).toBe("/dashboard");
   });
 
   test("guests see the Landing and logout expires the sealed Session", async () => {
     expect((await request("/")).status).toBe(200);
     for (const [path, label] of [
-      ["/", "Войти через GitHub"],
-      ["/en", "Sign in with GitHub"],
+      ["/ru", "Войти через GitHub"],
+      ["/", "Sign in with GitHub"],
     ] as const) {
       const html = await (await request(path)).text();
       expect(html).toContain(label);
       expect(html).toMatch(/<a\b[^>]*href="\/auth\/github"[^>]*>[\s\S]*?<\/a>/);
       expect(html.match(/id="s-layer"/g)).toHaveLength(1);
     }
-    expect((await request("/", "startodel_language=en")).headers.get("location")).toBe("/en");
-    for (const prefix of ["", "/en"]) {
+    expect((await request("/?from=link", "startodel_language=ru")).headers.get("location")).toBe(
+      "/ru?from=link",
+    );
+    const unknown = await request("/auth/github?error=access_denied", "startodel_language=unknown");
+    expect(unknown.headers.get("location")).toBe("/?error=oauth");
+    for (const prefix of ["", "/ru"]) {
       const failed = await request(
         "/auth/github?error=access_denied",
-        prefix ? "startodel_language=en" : "",
+        prefix ? "startodel_language=ru" : "",
       );
       expect(failed.headers.get("location")).toBe((prefix || "/") + "?error=oauth");
       const legacy = await request(prefix + "/login?error=oauth");
@@ -135,7 +159,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       expect(legacy.headers.get("location")).toBe((prefix || "/") + "?error=oauth");
       const landing = await (await request((prefix || "/") + "?error=oauth")).text();
       expect(landing).toContain(
-        prefix ? "Please try signing in again" : "Попробуйте войти ещё раз",
+        prefix ? "Попробуйте войти ещё раз" : "Please try signing in again",
       );
       for (const path of [
         "/dashboard",
@@ -170,7 +194,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       expect(response.headers.get("cache-control"), path).toBe("private, no-store");
     }
     expect((await request("/onboarding", cookie)).status).toBe(200);
-    const html = await (await request("/onboarding", cookie)).text();
+    const html = await (await request("/ru/onboarding", cookie)).text();
     expect(html).toContain("Alice");
     expect(html).toContain("С какими технологиями вы работаете?");
     const { user } = await (await request("/api/_auth/session", cookie)).json();
@@ -241,7 +265,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
 
   test("learning pages and writes bind each Session to its own Profile, Track, Topic and Lesson", async () => {
     const a = await signIn("alice");
-    const b = await signIn("bob", true);
+    const b = await signIn("bob", "ru");
     const me = await (await request("/api/me", b)).json();
     expect(me).toMatchObject({
       user: { login: "bob" },
@@ -316,7 +340,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       onboarded: true,
       profile: { ...questionnaire, onboardedAt: expect.any(String) },
     });
-    for (const prefix of ["", "/en"]) {
+    for (const prefix of ["", "/ru"]) {
       for (const entry of [prefix || "/", prefix + "/login"]) {
         const response = await request(entry + "?from=link", a);
         expect(response.status).toBe(302);
@@ -324,10 +348,22 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
         expect(response.headers.get("cache-control")).toBe("private, no-store");
         expect(await response.text()).not.toContain("Alice");
       }
+      const missing = await fetch(origin + prefix + "/topics/" + crypto.randomUUID(), {
+        headers: { cookie: a, accept: "text/html" },
+      });
+      expect(missing.status).toBe(404);
+      const html = await missing.text();
+      const messages = prefix ? ru : en;
+      expect(html).toMatch(new RegExp('<html[^>]* lang="' + (prefix ? "ru" : "en") + '"'));
+      expect(html).toContain(`<title>${messages.common.notFound} · ${messages.brand}</title>`);
+      expect(html).toContain(`<h1>${messages.common.notFound}</h1>`);
+      expect(html).toContain('<a href="' + (prefix || "/") + '">');
       const dashboard = await request(prefix + "/dashboard", a);
       expect(dashboard.status).toBe(200);
       expect(dashboard.headers.get("cache-control")).toBe("private, no-store");
     }
+    const russianRoot = await request("/?from=link", a + "; startodel_language=ru");
+    expect(russianRoot.headers.get("location")).toBe("/ru/dashboard?from=link");
     expect((await request("/onboarding/connect", a)).status).toBe(200);
     expect((await (await request("/api/dashboard", a)).json()).tracks).not.toContainEqual(
       expect.objectContaining({ trackId: track.id }),
@@ -410,7 +446,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       goals: ["testing"],
       experience: "senior",
     });
-    const settings = await request("/en/settings", a);
+    const settings = await request("/settings", a);
     expect(settings.status).toBe(200);
     const html = await settings.text();
     expect(html.match(/id="s-layer"/g)).toHaveLength(1);
@@ -457,13 +493,13 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
     expect(await connected()).toBe(false);
 
     const locales = [
-      ["", ru],
-      ["/en", en],
+      ["/ru", ru],
+      ["", en],
     ] as const;
     for (const [prefix, messages] of locales) {
       const html = await page(prefix);
       expect(html).toContain(`href="${prefix}/onboarding/connect"`);
-      expect(html).toContain(prefix ? "Connect agent" : "Подключить агента");
+      expect(html).toContain(prefix ? "Подключить агента" : "Connect agent");
       expect(html).toContain(messages.dashboard.start);
       expect(html).not.toMatch(/class="s-prompt"|class="s-empty|is-collapsed|s-rail--collapsed/);
     }
@@ -480,7 +516,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       expect(html).toContain(messages.dashboard.sendPrompt);
       expect(html).toContain(messages.next.buildPrompt.replace("{goals}", "queues"));
       expect(html).toContain(messages.agent.copy);
-      expect(html).not.toMatch(/class="s-empty|href="(?:\/en)?\/onboarding\/connect"/);
+      expect(html).not.toMatch(/class="s-empty|href="(?:\/ru)?\/onboarding\/connect"/);
     }
     await owner.mcpTokens.revoke(token.id);
     expect(await connected()).toBe(false);

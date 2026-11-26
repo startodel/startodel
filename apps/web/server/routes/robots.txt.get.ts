@@ -1,4 +1,6 @@
 import { defineHandler, useRuntimeConfig } from "nuxt/server";
+import { localizedPath } from "../../shared/locale";
+
 export default defineHandler((event) => {
   const origin = new URL(useRuntimeConfig().oauth.github.redirectURL || event.req.url).origin;
   const privatePaths = [
@@ -16,9 +18,9 @@ export default defineHandler((event) => {
   return new Response(
     [
       "User-agent: *",
-      ...["", "/en"].flatMap((prefix) => [
-        ...["/u/", "/terms", "/rules"].map((path) => "Allow: " + prefix + path),
-        ...privatePaths.map((path) => "Disallow: " + prefix + path),
+      ...(["en", "ru"] as const).flatMap((locale) => [
+        ...["/u/", "/terms", "/rules"].map((path) => "Allow: " + localizedPath(path, locale)),
+        ...privatePaths.map((path) => "Disallow: " + localizedPath(path, locale)),
       ]),
       "Sitemap: " + origin + "/sitemap.xml",
       "",

@@ -125,10 +125,10 @@ try {
     console.log(name);
   };
   if (cascade) {
-    await visit("/en/onboarding");
-    await checkCascade(page, "/en/onboarding");
+    await visit("/onboarding");
+    await checkCascade(page, "/onboarding");
   }
-  await visit("/en/dashboard");
+  await visit("/dashboard");
   await page.getByText("TypeScript", { exact: true }).click();
   await page.getByLabel("Other technologies").fill("SQL,");
   await page.getByLabel("Other technologies").press("Enter");
@@ -140,7 +140,7 @@ try {
   await page.getByLabel("Years of experience").fill("8");
   await shot("onboarding");
   await page.getByRole("button", { name: "Continue to connect your agent" }).click();
-  await page.waitForURL(origin + "/en/onboarding/connect");
+  await page.waitForURL(origin + "/onboarding/connect");
   const profile = await owner.getProfile();
   assert.deepEqual(profile.stack, ["TypeScript", "SQL"]);
   assert.deepEqual(profile.goals, ["Understand internals"]);
@@ -148,7 +148,7 @@ try {
   assert.equal(profile.yearsOfExperience, 8);
   assert.equal(profile.notes, "Browser internals");
   await page.getByRole("heading", { name: "First prompt", exact: true }).waitFor();
-  if (cascade) await checkCascade(page, "/en/onboarding/connect");
+  if (cascade) await checkCascade(page, "/onboarding/connect");
   assert((await page.locator("main").innerText()).includes(origin + "/mcp"));
   await shot("connect");
   await page.getByLabel("Token name").fill("Local demo");
@@ -187,7 +187,7 @@ try {
       name: "TimeoutError",
     });
   if (cascade) {
-    await checkCascade(page, "/en/dashboard");
+    await checkCascade(page, "/dashboard");
     await page.evaluate(() => {
       Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
       document.dispatchEvent(new Event("visibilitychange"));
@@ -214,7 +214,7 @@ try {
   });
   assert.ok(ping.ok());
   await page.getByText("Agent connected · waiting for first track").waitFor();
-  if (cascade) await checkCascade(page, "/en/dashboard");
+  if (cascade) await checkCascade(page, "/dashboard");
   await context.grantPermissions(["clipboard-write"], { origin });
   await page.getByRole("button", { name: "Copy prompt" }).click();
   await page
@@ -287,8 +287,8 @@ try {
       await page.setViewportSize({ width, height: 900 });
       for (const theme of ["light", "dark"]) {
         await context.addCookies([{ name: "startodel-theme", value: theme, url: origin }]);
-        const reference = await heroStyles("/en/design/screens/dashboard?chrome=0");
-        assert.deepEqual(await heroStyles("/en/dashboard"), reference);
+        const reference = await heroStyles("/design/screens/dashboard?chrome=0");
+        assert.deepEqual(await heroStyles("/dashboard"), reference);
       }
     }
     await Promise.all([
@@ -368,7 +368,7 @@ try {
     "https://www.youtube-nocookie.com/embed/8aGhZQkoFbQ?autoplay=1",
   );
   await page.setViewportSize({ width: 375, height: 812 });
-  await visit("/en/tracks/" + track.id);
+  await visit("/tracks/" + track.id);
   await page.locator(".s-tracklist__row").filter({ hasText: "Tasks and timers" }).click();
   await page.getByRole("link", { name: lesson.title }).waitFor();
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
@@ -411,7 +411,7 @@ try {
     "weak",
     "An expired timer queues a task. The current task must finish before the callback can run.",
   );
-  await visit("/en/grills/" + grill.id);
+  await visit("/grills/" + grill.id);
   await page
     .getByLabel("Your answer")
     .fill("After the current task returns and before the next task starts.");
@@ -424,10 +424,10 @@ try {
   await page.getByRole("button", { name: "Previous" }).click();
   await page.locator(".s-judgment__verdict").getByText("weak", { exact: true }).waitFor();
   await shot("pr9-grill-open");
-  await visit("/en/dashboard");
+  await visit("/dashboard");
   await page.getByRole("link", { name: "Continue grill session" }).waitFor();
   await shot("pr9-dashboard-next-up");
-  await visit("/en/grills");
+  await visit("/grills");
   await page.getByRole("link", { name: finished.title }).waitFor();
   await shot("pr9-grills");
   await page.getByRole("link", { name: finished.title }).click();
@@ -437,7 +437,7 @@ try {
     "update review_items set due_at=now()-interval '1 day' where user_id=$1 and topic_id=$2",
     [me.user.id, by.tasks.id],
   );
-  await visit("/en/reviews");
+  await visit("/reviews");
   await page.getByRole("link", { name: "Practice quiz" }).waitFor();
   await shot("pr9-reviews");
   await page.getByRole("link", { name: "Practice quiz" }).click();
@@ -446,13 +446,13 @@ try {
     .getByRole("radio", { name: /\bsync$/ })
     .check();
   await shot("pr9-review-practice");
-  if (cascade) await checkCascade(page, "/en/reviews/" + by.tasks.id + "/practice");
+  if (cascade) await checkCascade(page, "/reviews/" + by.tasks.id + "/practice");
   await page.getByRole("button", { name: "Submit Practice Quiz" }).click();
   await page.locator(".outcome__title").filter({ hasText: "1 of 1 correct" }).waitFor();
-  if (cascade) await checkCascade(page, "/en/reviews/" + by.tasks.id + "/practice");
-  await page.locator('.s-rail a[href="/en/progress"]').click();
+  if (cascade) await checkCascade(page, "/reviews/" + by.tasks.id + "/practice");
+  await page.locator('.s-rail a[href="/progress"]').click();
   await page.getByRole("heading", { name: "Progress", exact: true }).waitFor();
-  assert.equal(await page.locator(".s-rail .is-current").getAttribute("href"), "/en/progress");
+  assert.equal(await page.locator(".s-rail .is-current").getAttribute("href"), "/progress");
   assert.equal(await page.locator(".s-topbar__crumbs").innerText(), "Progress");
   await page.getByRole("combobox", { name: "Sort by" }).click();
   await page.getByRole("option", { name: "Mastery (lowest first)" }).click();
@@ -471,7 +471,7 @@ try {
       await checkCascade(page, path);
     }
     const previousViewport = page.viewportSize();
-    await visit("/en/design/components");
+    await visit("/design/components");
     const shellWithActions = page
       .locator(".s-topbar")
       .filter({ has: page.locator(".s-topbar__actions button") })
@@ -479,7 +479,7 @@ try {
     await page.setViewportSize({ width: 1440, height: 900 });
     assert.ok(await shellWithActions.isVisible(), "desktop top bar keeps its actions");
     await page.setViewportSize({ width: 390, height: 900 });
-    for (const prefix of ["", "/en"]) {
+    for (const prefix of ["", "/ru"]) {
       await audit(prefix + "/progress");
       const names = page.locator(".s-histogram__name");
       assert.equal(await names.count(), 5);
@@ -507,14 +507,14 @@ try {
       assert.ok(todayFits, "today label must fit inside its day");
       assert.deepEqual(
         await page.locator(".s-rack__interval").allInnerTexts(),
-        [1, 3, 7, 16, 35].map((days) => days + (prefix ? " d" : " дн.")),
+        [1, 3, 7, 16, 35].map((days) => days + (prefix ? " дн." : " d")),
       );
       assert.doesNotMatch(await page.locator(".s-rack").innerText(), /\bbox\b|коробк/iu);
     }
     await page.setViewportSize(previousViewport);
     for (const path of [
+      "/ru/dashboard",
       "/dashboard",
-      "/en/dashboard",
       "/settings",
       "/tracks/" + track.id,
       "/topics/" + by.tasks.id,
@@ -525,16 +525,16 @@ try {
     ])
       await audit(path);
     await owner.setTrackVisibility(track.id, true, true);
-    await visit("/en/u/bob/" + track.slug);
+    await visit("/u/bob/" + track.slug);
     await page.getByRole("button", { name: "Change visibility" }).click();
     await page.getByRole("dialog", { name: "Make this Track private?" }).waitFor();
-    await checkCascade(page, "/en/tracks/" + track.id);
+    await checkCascade(page, "/tracks/" + track.id);
     await context.clearCookies();
     const profile = "/u/bob";
     const publicTrack = profile + "/" + track.slug;
     for (const path of [
+      "/ru",
       "/",
-      "/en",
       "/terms",
       "/rules",
       profile,
@@ -567,8 +567,8 @@ try {
             };
           });
         }
-        const reference = await composition("/en/design/screens/landing?chrome=0");
-        const product = await composition("/en");
+        const reference = await composition("/design/screens/landing?chrome=0");
+        const product = await composition("/");
         assert.deepEqual(product, reference);
         assert.equal(product.columns.split(" ").length, width === 390 ? 1 : 4);
         assert.equal(product.rule, "2px");
@@ -582,12 +582,12 @@ try {
       }
     }
     await visit("/en/login?error=oauth#how");
-    await page.waitForURL(origin + "/en?error=oauth#how");
+    await page.waitForURL(origin + "/?error=oauth#how");
     assert.ok(await page.locator(".hero .s-notice").isVisible());
   }
   if (pr12) {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await visit("/dashboard");
+    await visit("/ru/dashboard");
     await page.getByRole("heading", { name: "С возвращением, Bob", exact: true }).waitFor();
     await page.locator("main").getByRole("link", { name: track.title }).waitFor();
     await shot("pr12-ru-dashboard");
@@ -595,7 +595,7 @@ try {
     await page.locator(".s-canvas .s-trace").first().waitFor();
     await page.getByRole("button", { name: "Открыть доступ" }).waitFor();
     await shot("pr12-ru-track");
-    await visit("/reviews");
+    await visit("/ru/reviews");
     await page.getByRole("link", { name: by.tasks.title, exact: true }).waitFor();
     await page.getByText("Тренировочный тест: 1 из 1 верно", { exact: true }).waitFor();
     await shot("pr12-ru-grill-or-reviews");
@@ -624,29 +624,29 @@ try {
     await owner.setTrackVisibility(track.id, true, true);
     await context.clearCookies();
     const publicPath = "/u/bob/" + track.slug;
-    await visit(publicPath);
+    await visit("/ru" + publicPath);
     await page.locator(".s-map .s-trace").first().waitFor();
     await shot("pr12-ru-public-track");
     await page.getByRole("banner").getByRole("button", { name: /Язык/ }).click();
     await page.getByRole("menuitem", { name: /English/ }).click();
-    await page.waitForURL(origin + "/en" + publicPath);
+    await page.waitForURL(origin + publicPath);
     await page.getByRole("group", { name: "Track Graph" }).waitFor();
     await page.locator(".s-map .s-trace").first().waitFor();
     await shot("pr12-en-public-track");
     await visit("/");
-    await page.waitForURL(origin + "/en");
+    await page.waitForURL(origin + "/");
     await page
       .locator("footer")
       .getByRole("button", { name: /language/i })
       .click();
     await page.getByRole("menuitem", { name: /Русский/ }).click();
-    await page.waitForURL(origin + "/");
+    await page.waitForURL(origin + "/ru");
     await visit("/");
-    await page.waitForURL(origin + "/");
+    await page.waitForURL(origin + "/ru");
   }
   if (process.argv.includes("--pr11")) {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await visit("/en/tracks/" + track.id);
+    await visit("/tracks/" + track.id);
     await page.getByRole("button", { name: "Make public" }).click();
     await page.getByRole("dialog").waitFor();
     await shot("pr11-publish-dialog");
@@ -661,7 +661,7 @@ try {
     await page.getByRole("heading", { name: "Terms of Use", exact: true }).waitFor();
     await shot("pr11-terms");
     await context.clearCookies();
-    await visit("/en/u/bob");
+    await visit("/u/bob");
     await page.getByRole("link", { name: track.title }).waitFor();
     await shot("pr11-public-profile");
     await page.getByRole("link", { name: track.title }).click();
@@ -728,14 +728,14 @@ try {
     await page.setViewportSize({ width: 1440, height: 900 });
     await signIn("forker");
     const { user: reader } = await (await request.get(origin + "/api/me")).json();
-    await visit("/en" + publicPath);
+    await visit(publicPath);
     await page.getByRole("button", { name: "Fork", exact: true }).click();
-    await page.waitForURL("**/en/tracks/*");
+    await page.waitForURL("**/tracks/*");
     await page.getByText("Forked from", { exact: false }).waitFor();
     await page.locator(".s-canvas .s-trace").first().waitFor();
     await shot("pr11-fork-result");
     await signIn("bob");
-    await visit("/en/tracks/" + track.id);
+    await visit("/tracks/" + track.id);
     await page.getByText("1 fork", { exact: true }).waitFor();
     await page.locator(".s-canvas .s-trace").first().waitFor();
     await shot("pr11-track-visibility");
@@ -745,7 +745,7 @@ try {
       const copy = await recipient.forkTrack("bob", track.slug);
       await recipient.setTrackVisibility(copy.id, true, true);
     }
-    await visit("/en" + publicPath);
+    await visit(publicPath);
     assert.equal(await page.getByRole("button", { name: "Fork", exact: true }).count(), 0);
     const links = page.locator("#forks .s-trackcard__link");
     const targets = () => links.evaluateAll((items) => items.map((el) => el.href));

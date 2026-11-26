@@ -40,7 +40,7 @@ Pages adopted the system in stages so each route could retain its data and navig
 
 **Links follow the locale.** A component that navigates takes a `LinkTarget` and renders it with `NuxtLinkLocale`, as [ADR 0016](0016-internationalisation.md) requires. `UiLanguageSwitcher` switches between the routes of the current page.
 
-**Component text comes from the message catalogs.** A label that a component supplies itself, such as “Copy” or a Mastery name, is a message under `ui.*` or an existing key, in Russian and English, as [ADR 0016](0016-internationalisation.md) requires. Text that a page passes in is the page’s to translate. The showcase follows the same locale routing: `/design` renders this text in Russian and `/en/design` in English. The showcase’s own copy is sample content in English, so `pnpm i18n:check` skips `pages/design/` and `components/showcase/` and still checks every `Ui` component.
+**Component text comes from the message catalogs.** A label that a component supplies itself, such as “Copy” or a Mastery name, is a message under `ui.*` or an existing key, in Russian and English, as [ADR 0016](0016-internationalisation.md) requires. Text that a page passes in is the page’s to translate. The showcase follows the same locale routing: `/design` renders this text in English and `/ru/design` in Russian. The showcase’s own copy is sample content in English, so `pnpm i18n:check` skips `pages/design/` and `components/showcase/` and still checks every `Ui` component.
 
 **Browser baseline.** The system relies on `light-dark()`, container queries, `:has()` and `:where()`. All have shipped in current Chrome, Firefox and Safari since mid-2024.
 

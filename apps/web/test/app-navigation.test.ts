@@ -11,8 +11,8 @@ const items = [
 const tracks = [{ id: "queues", title: "Message queues" }];
 
 describe.each([
-  ["ru", ""],
-  ["en", "/en"],
+  ["en", ""],
+  ["ru", "/ru"],
 ])("%s app navigation", (_locale, prefix) => {
   test.each([
     ["/dashboard", "dashboard", "Dashboard"],
@@ -48,4 +48,12 @@ describe.each([
       });
     },
   );
+});
+
+test("a legacy English dashboard URL still selects the dashboard", () => {
+  expect(appNavigation("/en/dashboard", items, tracks)).toEqual({
+    current: "dashboard",
+    currentTrack: undefined,
+    crumbs: [{ label: "Dashboard" }],
+  });
 });
