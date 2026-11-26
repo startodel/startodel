@@ -114,6 +114,16 @@ export function practiceHttpTests(
         },
       ],
     });
+    await data.updateProfile({ onboardedAt: new Date() });
+    const html = (await (await request("/en/reviews", cookie)).text()).split(
+      '<script type="application/json"',
+    )[0]!;
+    const groups = html.split('class="s-section__title"');
+    expect(groups[1]).toContain("oldest");
+    expect(groups[1]).toContain("later");
+    expect(groups[1]).not.toContain(">soon<");
+    expect(groups[2]).toContain(">soon<");
+    expect(html).not.toContain(">outside<");
   });
   test("every practice route requires a Session and isolates GrillSessions, answers, ReviewItems, practice, solutions and Activity", async () => {
     const a = await owner("reader"),
@@ -320,6 +330,18 @@ export function practiceHttpTests(
       upcoming: [],
     });
     await b.data.updateProfile({ onboardedAt: new Date() });
+    const practice = await request("/en/reviews/" + topic.id + "/practice", b.cookie);
+    const quizForm = (await practice.text()).split('class="s-quiz"')[1]?.split("</form>")[0];
+    expect(quizForm).toContain("Which is a duplicate?");
+    expect(quizForm).not.toMatch(/private key|correctIndex|explanation|is-judged/);
+    const dashboard = await (await request("/en", b.cookie)).text();
+    expect(dashboard).toContain('class="s-trackstrip__cells"');
+    expect(dashboard).toContain('class="s-timeline-item__title"');
+    expect(dashboard).toContain('class="s-week"');
+    expect(dashboard).toContain('class="s-rack');
+    const overview = await (await request("/en/progress", b.cookie)).text();
+    expect(overview).toContain('class="s-histogram"');
+    expect(overview).toContain('href="/en/topics/' + topic.id + '"');
     for (const [prefix, score] of [
       ["", "Тренировочный тест: 2 из 2 верно"],
       ["/en", "Practice Quiz: 2 of 2 correct"],

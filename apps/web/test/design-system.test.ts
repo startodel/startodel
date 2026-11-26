@@ -255,3 +255,24 @@ test("pages with a design layout use tokens and UI controls", () => {
     expect(template, file).not.toMatch(/<(?:input|select|textarea|button)(?=[\s/>])/i);
   }
 });
+
+test.each([
+  ["onboarding/index", "focus"],
+  ["onboarding/connect", "focus"],
+  ["index", "app"],
+  ["progress", "app"],
+  ["reviews/index", "app"],
+  ["reviews/[topicId]/practice", "app"],
+])("%s selects the %s layout and participates in the migration checks", (page, layout) => {
+  const file = "pages/" + page + ".vue";
+  expect(migratedPages).toContain(file);
+  expect(sourceOf(file)).toContain('layout: "' + layout + '"');
+});
+
+test("the practice page binds the projected questions and submission result to UiQuiz", () => {
+  const page = sourceOf("pages/reviews/[topicId]/practice.vue");
+  const quiz = page.match(/<UiQuiz\b[^>]+>/)?.[0];
+  expect(quiz).toContain('v-bind="quiz"');
+  expect(quiz).not.toMatch(/:(?:questions|result)=/);
+  expect(page).toContain("practiceQuizProps(data.value?.questions ?? [], result.value?.results)");
+});
