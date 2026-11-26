@@ -82,6 +82,13 @@ jobs:
           curl -fsS http://127.0.0.1:3000/api/health | jq -e '.ok == true and .db == "up"'
           applied=$(docker exec "${{ job.services.postgres.id }}" psql -U startodel -d startodel_test -Atc 'select count(*) from drizzle.__drizzle_migrations')
           test "$applied" = "$(jq '.entries | length' packages/db/migrations/meta/_journal.json)"
+      - name: Render both site cards from the production image
+        run: |
+          for lang in ru en; do
+            curl -fsS "http://127.0.0.1:3000/og/site.png?lang=$lang" -o "$RUNNER_TEMP/site-$lang.png"
+            test "$(od -An -N8 -tx1 "$RUNNER_TEMP/site-$lang.png" | tr -d ' ')" = 89504e470d0a1a0a
+          done
+          ! cmp -s "$RUNNER_TEMP/site-ru.png" "$RUNNER_TEMP/site-en.png"
       - name: Show application logs on failure
         if: failure()
         run: docker logs startodel

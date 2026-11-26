@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 
-const privatePage = { headers: { "cache-control": "private, no-store" } };
+import { ogAssets } from "./build-og-assets.mjs";
 
 export default defineNuxtConfig({
   compatibilityDate: "2026-11-25",
@@ -33,31 +33,10 @@ export default defineNuxtConfig({
     },
   },
   nitro: {
+    rollupConfig: { plugins: [ogAssets] },
     externals: {
+      external: ["@resvg/resvg-js"],
       traceInclude: [fileURLToPath(new URL("../../packages/db/migrate.mjs", import.meta.url))],
     },
-  },
-  routeRules: {
-    "/en": privatePage,
-    "/en/**": privatePage,
-    "/u/**": privatePage,
-    "/sitemap.xml": privatePage,
-    "/terms": privatePage,
-    "/rules": privatePage,
-    "/": privatePage,
-    "/settings": privatePage,
-    "/login": privatePage,
-    "/onboarding": privatePage,
-    "/onboarding/**": privatePage,
-    "/tracks/**": privatePage,
-    "/lessons/**": privatePage,
-    "/topics/**": privatePage,
-    "/grills": privatePage,
-    "/grills/**": privatePage,
-    "/reviews": privatePage,
-    "/reviews/**": privatePage,
-    "/progress": privatePage,
-    "/mcp": privatePage,
-    "/api/**": privatePage,
   },
 });

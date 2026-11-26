@@ -2,14 +2,8 @@ import { defineHandler, useRuntimeConfig } from "nuxt/server";
 import { localizedPath } from "../../shared/locale";
 import { publicData } from "../lib/public-reader";
 
-function escapeXml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-}
+import { escapeXml } from "../lib/xml";
+
 export default defineHandler(async (event) => {
   const origin = new URL(useRuntimeConfig().oauth.github.redirectURL || event.req.url).origin;
   const paths = new Map<string, string | undefined>([
@@ -48,6 +42,6 @@ export default defineHandler(async (event) => {
     '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">' +
       urls.join("") +
       "</urlset>",
-    { headers: { "content-type": "application/xml; charset=utf-8", "cache-control": "no-store" } },
+    { headers: { "content-type": "application/xml; charset=utf-8" } },
   );
 });

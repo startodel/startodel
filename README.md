@@ -42,7 +42,7 @@ flowchart TD
 
 ## Public tracks
 
-Tracks start private. Open a Track to accept the current [Publishing rules](docs/legal/rules.en.md) and [Terms of Use](docs/legal/terms.en.md), publish it and copy its public URL. Your Public Profile at `/u/<login>` lists your Public Tracks. Anyone can read their graph and Lessons. Signed-in learners can fork a Track into their private catalog with working practice. Progress and questionnaire answers stay private. Unpublishing closes the public page immediately. Existing Forks remain available to their owners.
+Tracks start private. Open a Track to accept the current [Publishing rules](docs/legal/rules.en.md) and [Terms of Use](docs/legal/terms.en.md), publish it and copy its public URL. Your Public Profile at `/u/<login>` lists your Public Tracks. Anyone can read their graph and Lessons. Signed-in learners can fork a Track into their private catalog with working practice. Progress and questionnaire answers stay private. Unpublishing closes public reads at the origin immediately. Cached pages and link previews can remain visible until their cache windows expire. Existing Forks remain available to their owners.
 
 ## Practice in the web app
 

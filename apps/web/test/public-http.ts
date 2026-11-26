@@ -3,6 +3,47 @@ import { LEGAL_TERMS_VERSION } from "@startodel/core";
 import { forUser, type Database } from "@startodel/db";
 import { expect, onTestFinished, test } from "vite-plus/test";
 
+const publicHtmlCache = "public, max-age=60, s-maxage=300, stale-while-revalidate=600";
+const publicAssetCache = "public, max-age=300, stale-while-revalidate=3600";
+
+function expectPublicHtml(response: Response) {
+  expect(response.headers.get("cache-control")).toBe(publicHtmlCache);
+  const vary = response.headers.get("vary")?.toLowerCase().split(/,\s*/);
+  expect(vary).toEqual(expect.arrayContaining(["cookie", "accept-encoding"]));
+  expect(response.headers.getSetCookie()).toEqual([]);
+}
+
+function expectSocialHead(html: string, path: string, lang: string, type = "website") {
+  const origin = "https://startodel.example";
+  const localized = (prefix: string) => origin + prefix + path;
+  const image = origin + "/og" + (path.startsWith("/u/") ? path : "/site") + ".png?lang=" + lang;
+  const tags = html.match(/<meta\b(?:[^">]|"[^"]*")*>/g) ?? [];
+  const meta = (attr: "name" | "property", key: string) =>
+    tags.find((tag) => tag.includes(attr + '="' + key + '"'))?.match(/ content="([^"]*)"/)?.[1];
+  const title = meta("property", "og:title");
+  const description = meta("name", "description");
+  expect(title).toBeTruthy();
+  expect(description).toBeTruthy();
+  expect(meta("property", "og:type")).toBe(type);
+  expect(meta("property", "og:locale")).toBe(lang === "en" ? "en_US" : "ru_RU");
+  expect(meta("property", "og:description")).toBe(description);
+  expect(meta("property", "og:site_name")).toBe("Startodel");
+  expect(meta("property", "og:image")).toBe(image);
+  expect(meta("property", "og:image:width")).toBe("1200");
+  expect(meta("property", "og:image:height")).toBe("630");
+  expect(meta("name", "twitter:card")).toBe("summary_large_image");
+  expect(meta("name", "twitter:title")).toBe(title);
+  expect(meta("name", "twitter:description")).toBe(description);
+  expect(meta("name", "twitter:image")).toBe(image);
+  const canonical = localized(lang === "en" ? "/en" : "");
+  expect(meta("property", "og:url")).toBe(canonical);
+  expect(html.match(/<link[^>]*rel="canonical"[^>]*>/)?.[0]).toContain('href="' + canonical + '"');
+  for (const alternate of ["ru", "en", "x-default"]) {
+    const tag = html.match(new RegExp('<link[^>]*hreflang="' + alternate + '"[^>]*>'))?.[0];
+    expect(tag).toContain('href="' + localized(alternate === "en" ? "/en" : "") + '"');
+  }
+}
+
 export function publicHttpTests(
   env: () => { db: Database; origin: string },
   request: (path: string, cookie?: string, method?: string, body?: unknown) => Promise<Response>,
@@ -42,7 +83,7 @@ export function publicHttpTests(
     ]);
     const lesson = (await owner.createLesson({
       topicId: topic.id,
-      title: "Published lesson",
+      title: "Урок по PostgreSQL & XML </script>",
       blocks: [
         {
           type: "quiz",
@@ -98,6 +139,73 @@ export function publicHttpTests(
       fork,
     };
   }
+  test("Open Graph images render only reachable public content", async () => {
+    const { owner, track, lesson, hidden, privateLesson, page, b } = await curriculum();
+    await owner.setTrackVisibility(track.id, true, true);
+    for (const path of [
+      "site",
+      "u/publisher",
+      page.slice(1),
+      page.slice(1) + "/lessons/" + lesson.id,
+    ]) {
+      const url = "/og/" + path + ".png";
+      for (const cookie of ["", b]) {
+        const res = await request(url, cookie);
+        expect(res.status, url).toBe(200);
+        expect(res.headers.get("content-type")).toBe("image/png");
+        expect(res.headers.get("cache-control")).toBe(publicAssetCache);
+        expect((res.headers.get("vary") ?? "").toLowerCase()).not.toContain("cookie");
+        const png = Buffer.from(await res.arrayBuffer());
+        expect(png.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+        expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
+      }
+    }
+    const siteImage = async (lang: string) =>
+      Buffer.from(await (await request("/og/site.png?lang=" + lang)).arrayBuffer());
+    expect((await siteImage("ru")).equals(await siteImage("en"))).toBe(false);
+    for (const path of [
+      "u/missing",
+      "u/publisher/missing",
+      "u/publisher/" + hidden.slug,
+      page.slice(1) + "/lessons/" + privateLesson.id,
+      page.slice(1) + "/lessons/" + crypto.randomUUID(),
+      page.slice(1) + "/lessons/invalid",
+    ]) {
+      const res = await request("/og/" + path + ".png", b);
+      expect(res.status, path).toBe(404);
+      expect(res.headers.get("cache-control")).toBe(publicAssetCache);
+      expect(await res.json()).toEqual({ message: "Not found" });
+    }
+  });
+  test("login advertises its localized site card", async () => {
+    for (const lang of ["ru", "en"]) {
+      const res = await request(lang === "en" ? "/en/login" : "/login");
+      expectSocialHead(await res.text(), "/login", lang);
+    }
+  });
+  test("public HTML varies on Session cookie presence and public files are shared", async () => {
+    const session = await signIn("alice");
+    for (const prefix of ["", "/en"]) {
+      for (const path of ["/login", "/terms", "/rules", "/u/alice"]) {
+        for (const cookie of ["", "startodel_language=en"]) {
+          const res = await request(prefix + path, cookie);
+          expect(res.status).toBe(200);
+          expectPublicHtml(res);
+        }
+        for (const cookie of [session, "nuxt-auth-session=invalid", "nuxt-auth-session="]) {
+          const res = await request(prefix + path, cookie);
+          expect(res.headers.get("cache-control")).toBe("private, no-store");
+        }
+      }
+    }
+    for (const path of ["/robots.txt", "/sitemap.xml"]) {
+      for (const cookie of ["", session]) {
+        const res = await request(path, cookie);
+        expect(res.headers.get("cache-control")).toBe(publicAssetCache);
+        expect((res.headers.get("vary") ?? "").toLowerCase()).not.toContain("cookie");
+      }
+    }
+  });
   test("publishing checks Session ownership and records current Terms Acceptance", async () => {
     const { a, b, owner, api, visibility, fork } = await curriculum();
     expect((await fork("")).status).toBe(401);
@@ -176,9 +284,11 @@ export function publicHttpTests(
     ]) {
       const apiResponse = await request("/api/public" + suffix);
       expect(apiResponse.status).toBe(200);
-      expect(apiResponse.headers.get("cache-control")).toContain("no-store");
+      expect(apiResponse.headers.get("cache-control")).toBe("private, no-store");
       const data = await apiResponse.json();
-      expect(await (await request("/api/public" + suffix, b)).json()).toEqual(data);
+      const signedInApi = await request("/api/public" + suffix, b);
+      expect(signedInApi.headers.get("cache-control")).toBe("private, no-store");
+      expect(await signedInApi.json()).toEqual(data);
       const json = JSON.stringify(data);
       expect(json).not.toMatch(
         /"(?:userId|githubId|mastery|level|evidence|readAt|answers|verdict|feedback|dueAt|reason|experience|stack|goals|onboardedAt|correctIndex|explanation|solution|acceptedTermsVersion)"\s*:/,
@@ -187,7 +297,8 @@ export function publicHttpTests(
         for (const cookie of ["", a, b]) {
           const response = await fetch(origin + prefix + "/u" + suffix, { headers: { cookie } });
           expect(response.status).toBe(200);
-          expect(response.headers.get("cache-control")).toContain("no-store");
+          if (cookie) expect(response.headers.get("cache-control")).toBe("private, no-store");
+          else expectPublicHtml(response);
           const html = await response.text();
           for (const value of [
             "Hidden-",
@@ -220,25 +331,43 @@ export function publicHttpTests(
           ]) {
             expect((html + json).includes(value), "private value in " + suffix).toBe(false);
           }
+          const type =
+            suffix === "/publisher" ? "profile" : suffix === path ? "website" : "article";
+          expectSocialHead(html, "/u" + suffix, prefix ? "en" : "ru", type);
+          const schemaText = html.match(
+            /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/,
+          )?.[1];
+          expect(schemaText).toBeTruthy();
+          expect(schemaText).not.toContain("<");
+          const schema = JSON.parse(schemaText!);
+          const url = "https://startodel.example" + prefix + "/u" + suffix;
+          expect(schema).toMatchObject({ "@context": "https://schema.org", url });
+          if (suffix === "/publisher") {
+            expect(schema).toMatchObject({
+              "@type": "ProfilePage",
+              mainEntity: { "@type": "Person", name: "publisher" },
+            });
+          } else if (suffix === path) {
+            expect(schema).toMatchObject({
+              "@type": "Course",
+              name: track.title,
+              author: { "@type": "Person", name: "publisher" },
+            });
+          } else {
+            expect(schema).toMatchObject({
+              "@type": "LearningResource",
+              name: lesson.title,
+              isPartOf: {
+                "@type": "Course",
+                url: "https://startodel.example" + prefix + "/u" + path,
+              },
+            });
+          }
           const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? "";
           expect(html.match(/id="s-layer"/g)).toHaveLength(1);
           expect(html).toContain('class="s-site"');
           if (suffix === "/publisher") expect(main).toContain('class="s-trackcard"');
-          const ru = "https://startodel.example/u" + suffix;
-          const en = "https://startodel.example/en/u" + suffix;
           expect(html).toMatch(new RegExp('<html[^>]* lang="' + (prefix ? "en" : "ru") + '"'));
-          for (const [lang, href] of [
-            ["ru", ru],
-            ["en", en],
-            ["x-default", ru],
-          ]) {
-            const tag = html.match(new RegExp('<link[^>]*hreflang="' + lang + '"[^>]*>'))?.[0];
-            expect(tag).toContain('href="' + href + '"');
-          }
-          expect(html.match(/<link[^>]*rel="canonical"[^>]*>/)?.[0]).toContain(
-            'href="' + (prefix ? en : ru) + '"',
-          );
-          expect(html).toContain(prefix ? 'content="en_US"' : 'content="ru_RU"');
           if (suffix === path) {
             expect(main).toMatch(/<h1\b[^>]*>Public curriculum<\/h1>/);
             expect(main).toContain("s-part is-outline");
@@ -251,10 +380,6 @@ export function publicHttpTests(
             );
             expect(html).toContain(prefix ? "Track Graph" : "Граф тем");
           }
-          expect(html).toContain("https://startodel.example/u" + suffix);
-          expect(html).toContain('name="description"');
-          for (const key of ["title", "description", "url", "type"])
-            expect(html).toContain('property="og:' + key + '"');
           if (suffix.includes("/lessons/")) {
             expect(main).toContain('class="s-block"');
             expect(main).toContain("Pick one");
@@ -470,6 +595,7 @@ export function publicHttpTests(
         });
         expect(res.status).toBe(200);
         const html = await res.text();
+        expectSocialHead(html, "/" + name, lang);
         const { title, version, body } = legal[name][lang];
         expect(html.match(/id="s-layer"/g)).toHaveLength(1);
         expect(html).toContain(version);

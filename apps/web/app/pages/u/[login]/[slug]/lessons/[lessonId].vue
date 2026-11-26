@@ -10,16 +10,22 @@ const path = "/u/" + login + "/" + slug;
 const { data, error } = await useFetch(`/api/public/${login}/${slug}/lessons/${id}`, {
   transform: (lesson) => ({ ...lesson, blocks: lesson.blocks.map(publicBlock) }),
 });
-if (!data.value)
+const lesson = data.value;
+if (!lesson)
   throw createError({
     statusCode: error.value?.statusCode ?? 404,
     message: t("common.error"),
   });
 usePublicHead(
-  t("public.lessonTitle", { title: data.value.title }),
-  data.value.summary || t("public.lesson", { title: data.value.trackTitle }),
+  t("public.lessonTitle", { title: lesson.title }),
+  lesson.summary || t("public.lesson", { title: lesson.trackTitle }),
   path + "/lessons/" + id,
   "article",
+  (pageUrl) => ({
+    "@type": "LearningResource",
+    name: lesson.title,
+    isPartOf: { "@type": "Course", name: lesson.trackTitle, url: pageUrl(path) },
+  }),
 );
 const index = computed(
   () =>
