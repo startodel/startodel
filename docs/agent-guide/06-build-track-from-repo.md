@@ -2,13 +2,13 @@
 id: build-track-from-repo
 title: Build a Track from a repository
 order: 6
-skillDescription: Use when a learner wants a Track based on a repository. Ground Lessons on internals and version-specific features in the source, tests and documentation.
+skillDescription: Build a Track from a repository when the learning goal depends on a specific revision.
 ---
 
 # Build a Track from a repository
 
-Ask for the repository, the target revision or release and a task the learner wants to perform. Read the README, dependency manifest, relevant source entry points, tests and documentation for that revision. Follow one real call from public API to implementation.
+Use `get_profile` to establish the learner’s goal and `list_topics` to find relevant prior work. Ground the Track in a real repository revision before applying the Track design workflow.
 
-Use `create_track` with an ordinary Track title, a description naming the revision, and Track Sources such as `{"repo":"https://github.com/vuejs/core","docs":["https://vuejs.org/guide/introduction.html"]}`. Read it back with `get_track`. Distinguish public behavior from internals in the Lessons. Tie version-specific features to a tag, release note or source permalink. Ask for access or a public reference when evidence is missing.
-
-Find reusable Topics by slug with `list_topics`, then use `upsert_topics` for the Topics the task requires. Add prerequisite-to-dependent edges with `add_edges`, attach the selected slugs in teaching order with `attach_topics_to_track` and verify the result with `get_track_graph`. Keep repository-specific internals under a stable slug and point each Lesson at the code and tests supporting it.
+1. **Pin the task.** Pair the learner’s project and experience with a change, diagnosis or design choice they want to make. Resolve the target release or branch to a commit. Continue when you can name the task and link to the revision.
+2. **Trace one real call.** Use your own repository and web tools to check the release history and official docs against that revision. Follow a public entry point through its implementation to a test that exercises the behavior. Keep a permalink to each and distinguish the public guarantee from the implementation detail. If access is missing, get the source or a verifiable public revision before continuing.
+3. **Choose the route.** Use comparison mode for a choice between approaches and deep-dive mode for a working change. For a comparison, trace the same operation on both sides. For a deep dive, locate the setup and a failure the learner can reproduce. Take those findings into the Track design workflow. The outline is ready to build when it names the mode, the pinned revision for the Track description and the permalinks for Track Sources.

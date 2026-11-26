@@ -2,13 +2,15 @@ import { appendFile, cp, mkdtemp, readFile, readdir, rm, writeFile } from "node:
 import { join } from "node:path";
 import { afterEach, expect, test } from "vite-plus/test";
 import { buildSkills, checkSkills } from "./skills.mjs";
+import guide from "../apps/web/server/mcp/guide.generated.json";
 
 const source = "docs/agent-guide";
 const workflows = {
   "startodel-onboarding": ["Complete the Onboarding Questionnaire"],
-  "startodel-build-track": ["Build a Track around a technology", "Write a Lesson with Blocks"],
+  "startodel-build-track": ["Design and verify a Track", "Write a Lesson with Blocks"],
   "startodel-build-track-from-repo": [
     "Build a Track from a repository",
+    "Design and verify a Track",
     "Write a Lesson with Blocks",
   ],
   "startodel-grill": ["Continue a GrillSession"],
@@ -24,7 +26,8 @@ afterEach(async () => {
   for (const dir of temporary.splice(0)) await rm(dir, { recursive: true, force: true });
 });
 
-test("build maps each workflow to ordered guide sections and shared rules", async () => {
+test("installed skills stay current and teach the same workflows and shared rules as MCP", async () => {
+  await checkSkills(source, "packages/skills/skills");
   const output = await outputDirectory();
   await buildSkills(source, output);
   expect((await readdir(output)).sort()).toEqual(Object.keys(workflows).sort());
@@ -36,6 +39,14 @@ test("build maps each workflow to ordered guide sections and shared rules", asyn
     ]);
     expect(skill).toContain("`get_guide`");
     expect(skill).toContain("Never pass User or Owner IDs");
+    for (const title of [...sections, "Rules for external agents"]) {
+      const resource = guide.find((entry) => entry.title === title)!;
+      const localBody = resource.body.replaceAll(
+        /startodel:\/\/guide\/(references\/[\w-]+)/g,
+        "$1.md",
+      );
+      expect(skill).toContain(localBody.trimEnd());
+    }
   }
 });
 

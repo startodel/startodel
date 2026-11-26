@@ -16,13 +16,13 @@ export async function guide(data: UserData) {
   const current = section(id);
   const related: Record<string, string[]> = {
     "first-steps": ["platform"],
-    "build-track-technology": ["build-track-from-repo"],
+    "build-track-technology": ["build-track-from-repo", "lessons-and-blocks"],
     "agent-workflow": ["lessons-and-blocks"],
   };
   const tools = [...introduction(current.body).matchAll(/`([a-z]+_[a-z_]+)`/g)].map((m) => m[1]);
   return {
     state,
     nextSteps: [{ id, title: current.title, why, tools }],
-    guideSections: [current, ...(related[id] ?? []).map(section)],
+    guideSections: [current, ...(related[id] ?? []).map(section), section("rules")],
   };
 }

@@ -6,7 +6,11 @@ import { readGuide, renderLinks } from "./guide.mjs";
 const workflows = {
   "startodel-onboarding": ["first-steps"],
   "startodel-build-track": ["build-track-technology", "lessons-and-blocks"],
-  "startodel-build-track-from-repo": ["build-track-from-repo", "lessons-and-blocks"],
+  "startodel-build-track-from-repo": [
+    "build-track-from-repo",
+    "build-track-technology",
+    "lessons-and-blocks",
+  ],
   "startodel-grill": ["grill-session"],
   "startodel-review-loop": ["review-loop"],
 };

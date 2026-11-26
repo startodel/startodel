@@ -87,8 +87,8 @@ export function learningMcpTests(environment: () => { origin: string; db: Databa
           return content.text;
         }),
       );
-      for (const tool of (await client.listTools()).tools)
-        expect(documents.join("\n")).toContain("`" + tool.name + "`");
+      const toolNames = (await client.listTools()).tools.map((tool) => tool.name);
+      for (const name of toolNames) expect(documents.join("\n")).toContain("`" + name + "`");
       const lessonGuide =
         documents[resources.findIndex((r) => r.uri === "startodel://guide/lessons-and-blocks")];
       const exampleUri = /\]\((startodel:\/\/guide\/references\/[^)]+)\)/.exec(lessonGuide)?.[1];
@@ -112,9 +112,12 @@ export function learningMcpTests(environment: () => { origin: string; db: Databa
           why: expect.any(String),
           tools: expect.arrayContaining([expect.any(String)]),
         });
-        expect(guide.guideSections[0].body).toBe(
-          documents[resources.findIndex((r) => r.uri === "startodel://guide/" + id)],
-        );
+        for (const name of guide.nextSteps[0].tools) expect(toolNames).toContain(name);
+        expect(guide.guideSections[0].id).toBe(id);
+        expect(guide.guideSections.at(-1).id).toBe("rules");
+        for (const section of guide.guideSections) {
+          expect(section.body).toBe(documents[resources.findIndex((r) => r.uri === section.uri)]);
+        }
         return guide;
       }
       await step("first-steps");

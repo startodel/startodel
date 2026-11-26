@@ -25,3 +25,11 @@ The runtime serves the same guidance from a production image or a checkout. It n
 Generate the installable workflows in `packages/skills/skills/` from the same Markdown as the MCP resources. Each entry in `scripts/skills.mjs` selects a primary section and any supporting sections. The primary section supplies the skill description through its `skillDescription` field. Every workflow ends with the shared rules.
 
 Commit the output of `pnpm guide:build && pnpm skills:build` with the source. CI runs `skills:check` through `pnpm check` and reports edited, missing and extra files.
+
+## Amendment — teaching workflows and disclosed references
+
+Use the Onboarding Questionnaire and the agent’s prior knowledge of the learner to choose the starting Topic, depth, examples and language. Before designing a Track or writing a Lesson, the agent verifies current primary sources with its own web and repository tools. The Track records citations in Track Sources. Each Lesson cites its sources in Link or Video Blocks. Both identify the version or date used.
+
+The learner’s goal determines comparison mode or deep-dive mode. A repository Track also identifies a revision and traces real code and tests. Lesson completion requires an original mechanism explanation, a runnable or traceable example, a substantive Callout Block, a primary citation, and a Quiz or Exercise that tests transfer. GrillSessions and Reviews use the learner’s answer as evidence for the Verdict and any Mastery assessment.
+
+Keep workflow sections at the top level. Put standalone worked examples in `docs/agent-guide/references/` with an H1 and link to them from the relevant section. The guide build publishes them as separate Markdown resources under `startodel://guide/references/<name>`. The skills build copies linked examples into each consuming skill at the same relative path. The existing freshness checks cover both representations.

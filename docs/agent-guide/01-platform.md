@@ -6,8 +6,8 @@ order: 1
 
 # How Startodel works
 
-Startodel is a personal developer learning platform. Call `get_guide` first. Use the learner’s goals to build a Track, teach a Lesson, ask for practice, assess the answer and revisit due Topics. The MCP Token selects the Owner on every request. Omit User and Owner IDs from all Tool arguments. The external agent judges free-text Exercises and Grill Questions from actual answers and records the evidence. Startodel scores multiple-choice Quizzes and schedules reviews.
+Call `get_guide` first. Use the learner’s Profile and goal to choose a Topic, teach its mechanism, then ask the learner to use it. Record their answer and evidence through the Tools. The MCP Token selects the Owner.
 
-The Profile holds the Onboarding Questionnaire. Each Topic lives once in the Owner’s Topic Catalog. Its stable Topic Slug identifies it across Tracks. A TopicEdge points from prerequisite to dependent. A Track orders memberships and can carry Track Sources. Its Lessons, Mastery and ReviewItems follow their Topics wherever those Topics appear.
-
-A Lesson contains ordered Blocks. A Quiz Attempt stores the choices and score at submission. Lesson Progress records reading. Mastery records demonstrated depth. A GrillSession holds ordered questions, answers, their Answer Source and the agent’s Verdicts. Use `get_progress` for an overview before planning another round.
+1. **Orient.** Read the Next Step and its reason. Use `get_progress` when choosing between studying, a GrillSession and due ReviewItems. Leave the learner with one activity they can start now.
+2. **Locate the work.** A Topic lives once in the Owner’s Topic Catalog. Tracks order Topics, and TopicEdges connect prerequisites to dependents. Before teaching, identify the Topic whose Lessons and Mastery will carry across its Tracks.
+3. **Close the loop.** Startodel scores Quizzes and schedules Reviews. You assess free-text Exercises and Grill Questions. Finish with the learner’s recorded result and the next action from `get_guide`.
