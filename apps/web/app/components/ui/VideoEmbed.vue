@@ -33,7 +33,10 @@ const playing = ref(false);
         <span class="s-video__source">{{ $t("lesson.videoOff") }}</span>
       </p>
     </div>
-    <figcaption v-if="note" class="s-video__note">{{ note }}</figcaption>
+    <figcaption v-if="playing || !embed || note" class="s-video__note">
+      <strong v-if="playing || !embed">{{ title }}</strong>
+      <p v-if="note">{{ note }}</p>
+    </figcaption>
   </figure>
 </template>
 <style scoped>

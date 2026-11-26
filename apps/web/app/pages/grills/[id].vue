@@ -14,7 +14,14 @@ const questions = computed(() => data.value?.questions ?? []);
 const firstUnanswered = computed(() => questions.value.findIndex((q) => !q.answeredAt));
 const answered = computed(() => questions.value.filter((q) => q.answeredAt).length);
 const judged = computed(() => questions.value.filter((q) => q.judgedAt).length);
-const index = ref(Math.max(firstUnanswered.value, 0));
+const index = ref(0);
+watch(
+  questions,
+  (rows, previous) => {
+    if (rows.length && !previous?.length) index.value = Math.max(firstUnanswered.value, 0);
+  },
+  { immediate: true },
+);
 const current = computed(() => questions.value[index.value]);
 const drafts = reactive<Record<string, string>>({});
 const failedQuestion = ref<string>();
