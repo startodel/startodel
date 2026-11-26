@@ -42,8 +42,8 @@ test("installed skills stay current and teach the same workflows and shared rule
     for (const title of [...sections, "Rules for external agents"]) {
       const resource = guide.find((entry) => entry.title === title)!;
       const localBody = resource.body.replaceAll(
-        /startodel:\/\/guide\/(references\/[\w-]+)/g,
-        "$1.md",
+        /\]\(startodel:\/\/guide\/(references\/[\w-]+)\)/g,
+        "]($1.md)",
       );
       expect(skill).toContain(localBody.trimEnd());
     }

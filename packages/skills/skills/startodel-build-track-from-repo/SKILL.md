@@ -22,7 +22,7 @@ Start with `get_profile` and `list_topics` to personalize the plan and find reus
 3. **Choose a mode from the goal.** Agree on an outline that ends in an observable decision or working result.
    - **Comparison mode** for “How do X and Y differ?” Build a mental model of each, including its core problem and architecture. Apply both to the same case. Derive tradeoffs and decision criteria, then vary a constraint. End with a scenario-based Quiz asking which fits the new case, followed by “Why?” in chat.
    - **Deep-dive mode** for “Teach me X.” Connect a mental model to the learner’s concrete goal. Start with a working setup or configuration, trace the internals that explain its behavior, then diagnose a production failure. End with an Exercise where the learner changes the setup and verifies the result independently.
-4. **Build and read back.** Reuse matching Topic Slugs. Create the private Track with verified citations in Track Sources and identify their versions or dates in the description. Save the missing Topics, connect prerequisites to dependents and attach members in teaching order. Check `get_track` for the citations and `get_track_graph` for the agreed first Topic and path to the outcome. The Track is ready when both match the plan.
+4. **Build and read back.** Reuse matching Topic Slugs. Create the private Track with verified citations in Track Sources and identify their versions or dates in the description. Save the missing Topics, connect prerequisites to dependents and attach members in teaching order. Check `get_track` with either the UUID `id` or the `slug` for the citations and `get_track_graph` for the agreed first Topic and path to the outcome. The Track is ready when both match the plan.
 5. **Revise an existing Track.** For a changed source or goal use `update_track`. For an incorrect prerequisite use `remove_edge`. For a Topic that no longer belongs use `detach_topic_from_track`, which preserves its Lessons. Verify the affected sources, edges or memberships on readback.
 
 # Write a Lesson with Blocks
@@ -35,7 +35,21 @@ Use `get_profile` to calibrate the Lesson. Inspect `list_lessons` and `get_lesso
 4. **Test understanding.** Use a Quiz to apply the idea or diagnose a failure, or a transfer Exercise that changes a constraint and asks for a prediction, fix or trace. The learner should face a fresh case, with feedback that explains the decisive condition.
 5. **Check the saved Lesson.** When replacing Blocks, retain the content and stable IDs the learner still needs. Read the Lesson back. It is ready only when the mechanism, example, substantive Callout, dated or versioned primary citation, and Quiz or Exercise are all present.
 
-For a worked example of how all seven Blocks fit together, open the [browser tasks Lesson](references/browser-tasks.md).
+For the complete [browser tasks Lesson](references/browser-tasks.md), call `resources/read` with URI `startodel://guide/references/browser-tasks`.
+
+## Block checklist
+
+Give each Block a `type` and a unique, stable `id` of 1–64 letters, digits, underscores or hyphens. Supply up to 200 ordered Blocks per Lesson.
+
+| Type       | Required content                                                                                                                                               |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `theory`   | `markdown`                                                                                                                                                     |
+| `code`     | `language` and `code`, optionally `explanation`                                                                                                                |
+| `callout`  | `markdown` and `variant` (`gotcha`, `production` or `tip`)                                                                                                     |
+| `link`     | `title` and HTTP(S) `url`, optionally `note`                                                                                                                   |
+| `video`    | `title` and a YouTube video `url`, optionally `note`                                                                                                           |
+| `quiz`     | 1–10 `questions`, each with a `prompt`, 2–6 nonempty `options` and a zero-based `correctIndex` into those options. Each question may include an `explanation`. |
+| `exercise` | `prompt` and `solution`, optionally a list of `hints`                                                                                                          |
 
 # Rules for external agents
 

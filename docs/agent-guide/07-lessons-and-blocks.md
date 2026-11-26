@@ -14,4 +14,18 @@ Use `get_profile` to calibrate the Lesson. Inspect `list_lessons` and `get_lesso
 4. **Test understanding.** Use a Quiz to apply the idea or diagnose a failure, or a transfer Exercise that changes a constraint and asks for a prediction, fix or trace. The learner should face a fresh case, with feedback that explains the decisive condition.
 5. **Check the saved Lesson.** When replacing Blocks, retain the content and stable IDs the learner still needs. Read the Lesson back. It is ready only when the mechanism, example, substantive Callout, dated or versioned primary citation, and Quiz or Exercise are all present.
 
-For a worked example of how all seven Blocks fit together, open the [browser tasks Lesson](references/browser-tasks.md).
+For the complete [browser tasks Lesson](references/browser-tasks.md), call `resources/read` with URI `startodel://guide/references/browser-tasks`.
+
+## Block checklist
+
+Give each Block a `type` and a unique, stable `id` of 1–64 letters, digits, underscores or hyphens. Supply up to 200 ordered Blocks per Lesson.
+
+| Type       | Required content                                                                                                                                               |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `theory`   | `markdown`                                                                                                                                                     |
+| `code`     | `language` and `code`, optionally `explanation`                                                                                                                |
+| `callout`  | `markdown` and `variant` (`gotcha`, `production` or `tip`)                                                                                                     |
+| `link`     | `title` and HTTP(S) `url`, optionally `note`                                                                                                                   |
+| `video`    | `title` and a YouTube video `url`, optionally `note`                                                                                                           |
+| `quiz`     | 1–10 `questions`, each with a `prompt`, 2–6 nonempty `options` and a zero-based `correctIndex` into those options. Each question may include an `explanation`. |
+| `exercise` | `prompt` and `solution`, optionally a list of `hints`                                                                                                          |
