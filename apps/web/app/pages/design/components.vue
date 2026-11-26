@@ -577,7 +577,7 @@ const prompt =
         <UiPageHeader
           title="Reviews"
           kicker="4 due today"
-          description="Topics come back on a schedule. Each pass moves a Topic one Review Box up."
+          description="Topics come back on a schedule. A correct answer moves a Topic to a longer interval."
         >
           <template #actions
             ><UiButton variant="primary" icon="play">Start practice</UiButton></template
@@ -629,7 +629,7 @@ const prompt =
           >Mastery 2 reached. Two Topics are now ready.</UiNotice
         >
         <UiNotice tone="warning" title="3 reviews are overdue">
-          Review them today to keep their Review Box.
+          Review these Topics today.
           <template #actions><UiButton size="sm">Review now</UiButton></template>
         </UiNotice>
         <UiNotice tone="danger" title="The answer was not saved"
@@ -879,13 +879,13 @@ const prompt =
           </UiTimelineItem>
           <UiTimelineItem
             kind="Review"
-            title="Structural typing moved to Review Box 4"
+            title="Structural typing moved to a 35-day review interval"
             time="Yesterday"
             icon="review"
           />
           <UiTimelineItem
             kind="Review"
-            title="Variance returned to Review Box 0"
+            title="Variance returned to a 1-day review interval"
             time="22 Nov"
             icon="review"
             tone="oxide"
@@ -1265,7 +1265,7 @@ const prompt =
           </template>
         </UiReviewCard>
       </ShowcaseSpecimen>
-      <ShowcaseSpecimen label="Review Boxes and the week" layout="grid">
+      <ShowcaseSpecimen label="Review intervals and the week" layout="grid">
         <UiLeitnerRack :counts="boxCounts" :current="1" />
         <UiLeitnerRack :counts="boxCounts" compact />
         <UiWeekStrip :days="week" />

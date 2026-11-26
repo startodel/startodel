@@ -135,7 +135,10 @@ const week = sampleWeek.map((d) => ({
               <UiWeekStrip :days="week" />
             </section>
             <section class="s-stack" style="--s-gap: var(--s-3)">
-              <UiSectionHeading title="Review Boxes" :level="3" />
+              <UiSectionHeading :title="$t('review.scheduledBoxes')" :level="3" />
+              <p class="s-muted" style="font-size: var(--s-text-sm)">
+                {{ $t("review.intervalsHint") }}
+              </p>
               <UiLeitnerRack :counts="sampleBoxes.map((b) => b.count)" compact />
             </section>
           </aside>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { REVIEW_INTERVAL_DAYS } from "@startodel/core";
 /**
  * The five Review Boxes as a rack. A Topic moves one box to the right after a strong review
  * and back to box 0 after a weak one. Each box waits longer before the next review.
@@ -8,12 +9,12 @@ const props = withDefaults(
     /** The number of Topics in each Review Box, from box 0 to box 4. */
     counts: number[];
     /** Days until the next review, per box. */
-    intervals?: number[];
+    intervals?: readonly number[];
     /** Highlights one box, for example the box of the Topic in view. */
     current?: number;
     compact?: boolean;
   }>(),
-  { intervals: () => [1, 3, 7, 16, 35] },
+  { intervals: () => REVIEW_INTERVAL_DAYS },
 );
 const peak = computed(() => Math.max(1, ...props.counts));
 const countArgs = useCountArgs();
@@ -31,15 +32,13 @@ const countArgs = useCountArgs();
         <i :style="{ height: Math.max((count / peak) * 100, count ? 8 : 0) + '%' }" />
       </span>
       <span class="s-rack__count" aria-hidden="true">{{ count }}</span>
-      <span class="s-rack__name" aria-hidden="true">{{ $t("review.box", { box }) }}</span>
       <span class="s-rack__interval" aria-hidden="true">{{
-        $t("review.days", { n: intervals[box] })
+        $t("review.days", { n: $n(intervals[box]!) })
       }}</span>
       <span class="s-sr">{{
         $t("review.boxSummary", {
-          box,
           topics: $t("count.topics", countArgs(count)),
-          days: intervals[box],
+          days: $n(intervals[box]!),
         })
       }}</span>
     </li>
@@ -91,16 +90,11 @@ const countArgs = useCountArgs();
 .s-rack__box.is-empty .s-rack__count {
   color: var(--s-ink-3);
 }
-.s-rack__name,
 .s-rack__interval {
   font: 500 var(--s-text-2xs) / 1.2 var(--s-font-mono);
   font-stretch: 75%;
   letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--s-ink-3);
-}
-.s-rack__interval {
-  text-transform: none;
+  white-space: nowrap;
   color: var(--s-ink-2);
 }
 </style>

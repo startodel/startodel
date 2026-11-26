@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** How many Topics sit at each Mastery level, 0 to 4. Each column is drawn in its level's colour. */
+/** How many Topics sit at each Mastery level, 0 to 4. Each bar is drawn in its level's colour. */
 const props = defineProps<{ counts: number[]; label?: string }>();
 const peak = computed(() => Math.max(1, ...props.counts));
 const total = computed(() => props.counts.reduce((sum, n) => sum + n, 0));
@@ -10,7 +10,7 @@ const { masteryLabel } = useLearningLabels();
     <li v-for="(count, level) in counts.slice(0, 5)" :key="level" class="s-histogram__col">
       <span class="s-histogram__count">{{ count }}</span>
       <span class="s-histogram__well" aria-hidden="true">
-        <i :class="'is-l' + level" :style="{ height: (count / peak) * 100 + '%' }" />
+        <i :class="'is-l' + level" :style="{ '--_share': (count / peak) * 100 + '%' }" />
       </span>
       <span class="s-histogram__level"><UiMastery :level="level" size="sm" /></span>
       <span class="s-histogram__name">{{ masteryLabel(level) }}</span>
@@ -22,6 +22,7 @@ const { masteryLabel } = useLearningLabels();
 </template>
 <style scoped>
 .s-histogram {
+  container: s-histogram / inline-size;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--s-3);
@@ -53,6 +54,7 @@ const { masteryLabel } = useLearningLabels();
 }
 .s-histogram__well i {
   width: 100%;
+  height: var(--_share);
   min-height: 2px;
   border-radius: 1px 1px 0 0;
 }
@@ -75,6 +77,44 @@ const { masteryLabel } = useLearningLabels();
   font-size: var(--s-text-xs);
   color: var(--s-ink-3);
   text-align: center;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  hyphens: none;
+}
+@container s-histogram (max-width: 28rem) {
+  .s-histogram__col {
+    grid-column: 1 / -1;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "level name count"
+      "bar bar bar";
+    align-items: baseline;
+    gap: var(--s-1) var(--s-2);
+  }
+  .s-histogram__level {
+    grid-area: level;
+  }
+  .s-histogram__name {
+    grid-area: name;
+    justify-self: start;
+    text-align: start;
+  }
+  .s-histogram__count {
+    grid-area: count;
+    font-size: var(--s-text-md);
+  }
+  .s-histogram__well {
+    grid-area: bar;
+    height: var(--s-2);
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(25% - 1px),
+      var(--s-line) calc(25% - 1px) 25%
+    );
+  }
+  .s-histogram__well i {
+    width: var(--_share);
+    height: 100%;
+    border-radius: 0;
+  }
 }
 </style>

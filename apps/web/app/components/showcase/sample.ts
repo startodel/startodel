@@ -584,14 +584,14 @@ export const sampleActivity = [
   },
   {
     kind: "Review",
-    title: "Event loop phases moved to Review Box 3",
+    title: "Event loop phases moved to a 16-day review interval",
     time: "Yesterday",
     icon: "review",
     tone: "neutral",
   },
   {
     kind: "Review",
-    title: "MVCC and snapshots returned to Review Box 0",
+    title: "MVCC and snapshots returned to a 1-day review interval",
     time: "22 Nov",
     icon: "review",
     tone: "oxide",
