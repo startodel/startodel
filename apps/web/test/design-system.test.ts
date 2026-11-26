@@ -261,7 +261,7 @@ test.each([
   ["reviews/index", "app"],
   ["reviews/[topicId]/practice", "app"],
   ["lessons/[id]", "app"],
-  ["tracks/[id]", "app"],
+  ["tracks/[slug]", "app"],
   ["topics/[id]", "app"],
   ["grills/index", "app"],
   ["grills/[id]", "app"],

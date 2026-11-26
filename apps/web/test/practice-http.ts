@@ -37,12 +37,54 @@ export function practiceHttpTests(
     const { user } = await (await request("/api/me", cookie)).json();
     return { cookie, data: forUser(env().db, user.id), id: user.id as string };
   }
+  test("private Track bookmarks resolve within the Session Owner in both locales", async () => {
+    const own = await owner("slug-owner");
+    const other = await owner("slug-reader");
+    await own.data.updateProfile({ onboardedAt: new Date() });
+    await other.data.updateProfile({ onboardedAt: new Date() });
+    const id = crypto.randomUUID();
+    // Rows created before slug routing may have both v4 IDs and UUID-shaped slugs.
+    const legacySlug = crypto.randomUUID();
+    await env().db.$client.query(
+      "insert into tracks (user_id, id, title, slug) values ($1,$2,'Legacy Track','legacy-track'), ($1,$3,'UUID slug',$2::uuid::text), ($1,$4,'Another legacy Track',$5)",
+      [own.id, id, crypto.randomUUID(), crypto.randomUUID(), legacySlug],
+    );
+    const query = "?topic=one&filter=a%20b&filter=two";
+    for (const prefix of ["", "/ru"]) {
+      const base = prefix + "/tracks/";
+      const bookmark = base + id + query;
+      const redirect = await request(bookmark, own.cookie);
+      expect(redirect.status).toBe(301);
+      expect(redirect.headers.get("location")).toBe(base + "legacy-track" + query);
+      expect(redirect.headers.get("cache-control")).toBe("private, no-store");
+      for (const [slug, title] of [
+        ["legacy-track", "Legacy Track"],
+        [legacySlug, "Another legacy Track"],
+      ]) {
+        const page = await request(base + slug, own.cookie);
+        expect(page.status).toBe(200);
+        expect(await page.text()).toContain(title);
+      }
+      for (const ref of [id, "legacy-track", crypto.randomUUID()]) {
+        const foreign = await request(base + ref, other.cookie);
+        expect(foreign.status).toBe(404);
+        expect(foreign.headers.get("location")).toBeNull();
+      }
+      const anonymous = await request(bookmark);
+      expect(anonymous.status).toBe(302);
+      expect(anonymous.headers.get("location")).toBe(prefix || "/");
+    }
+  });
+
   test("private learning pages link Track, Topic and Lesson and reflect read and Grill transitions", async () => {
     const { cookie, data } = await owner("learning-pages");
     await data.updateProfile({ onboardedAt: new Date() });
     const track = await data.createTrack("Delivery");
     const topic = await data.upsertTopic({ slug: "delivery", title: "Delivery modes" });
     await data.attachTopicToTrack(track.id, topic.id, 0);
+    const prerequisite = await data.upsertTopic({ slug: "queues", title: "Queues" });
+    await data.attachTopicToTrack(track.id, prerequisite.id, 1);
+    await data.addEdge(prerequisite.id, topic.id);
     const lesson = (await data.createLesson({
       topicId: topic.id,
       title: "Redelivery",
@@ -74,15 +116,26 @@ export function practiceHttpTests(
     }
     expectShellNavigation(await page("/progress", "/ru"), "/ru/progress", "Прогресс");
     expectShellNavigation(await page("/progress"), "/progress", "Progress");
-    const lessonPath = "/lessons/" + lesson.id + "?track=" + track.id;
-    const trackPath = "/tracks/" + track.id + "?topic=" + topic.id;
+    const lessonPath = "/lessons/" + lesson.id + "?track=" + track.slug;
+    const trackPath = "/tracks/" + track.slug + "?topic=" + topic.id;
     const board = await page(trackPath);
-    expectShellNavigation(board, "/tracks/" + track.id, track.title);
+    expectShellNavigation(board, "/tracks/" + track.slug, track.title);
     expect(board).toContain('href="' + lessonPath + '"');
+    expect(board).toContain('href="/tracks/' + track.slug + "?topic=" + prerequisite.id + '"');
     expect(board).toContain('class="s-board');
+    for (const prefix of ["", "/ru"]) {
+      for (const path of ["/dashboard", "/progress"]) {
+        const html = await page(path, prefix);
+        const strip = html.match(/<a\b[^>]*\bs-trackstrip--link\b[^>]*>/)?.[0];
+        expect(strip).toContain('href="' + prefix + "/tracks/" + track.slug + '"');
+      }
+    }
     expect(await page("/topics/" + topic.id)).toContain('href="/lessons/' + lesson.id + '"');
     const lessonPage = await page(lessonPath);
     expect(lessonPage).toContain('href="' + trackPath + '"');
+    expect(await page("/lessons/" + lesson.id + "?track=" + track.id, "/ru")).toContain(
+      'href="/ru' + trackPath + '"',
+    );
     expect(lessonPage).toContain("Mark as read");
     expect(lessonPage).not.toMatch(/Private explanation|Private solution|class="s-quiz__feedback"/);
     expect((await request("/api/lessons/" + lesson.id + "/read", cookie, "POST")).status).toBe(200);
@@ -93,6 +146,7 @@ export function practiceHttpTests(
     expect(await page("/grills")).toContain('href="' + grillPath + '"');
     const grillPage = await page(grillPath);
     expectShellNavigation(grillPage, "/grills", "Grills");
+    expect(grillPage).toContain('href="/tracks/' + track.slug + '"');
     expect(grillPage).toContain("What repeats?");
     expect(
       (
@@ -171,7 +225,7 @@ export function practiceHttpTests(
         prefix,
         messages.next.study,
         topic.title,
-        "/tracks/" + track.id,
+        "/tracks/" + track.slug,
       );
       expect(card).toContain(messages.next.noLessons);
       expect(card).toContain(messages.next.openTrack);
@@ -281,7 +335,7 @@ export function practiceHttpTests(
       "",
       en.next.study,
       ready.title,
-      "/tracks/" + track.id,
+      "/tracks/" + track.slug,
     );
     expect(mixed).toContain('href="/reviews"');
     expect(mixed).toContain("Review 1 Topic first");

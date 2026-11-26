@@ -85,7 +85,7 @@ export const screens: ScreenInfo[] = [
     id: "track",
     title: "Track",
     group: "Learning",
-    route: "/tracks/:id",
+    route: "/tracks/:slug",
     note: "The Track board as the hero, with the selected Topic beside it.",
   },
   {

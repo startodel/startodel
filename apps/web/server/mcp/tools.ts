@@ -1,7 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProfilePatch, TrackSlug, TrackSources } from "@startodel/core";
 import { z } from "zod";
-import { empty, entityUrl, id, registerTools, summary, title, type UserData } from "./register";
+import { privateTrackPath } from "../../shared/locale";
+import { empty, id, registerTools, summary, title, type UserData } from "./register";
 import { registerCatalog } from "./catalog";
 import { registerPractice } from "./practice";
 import { guide, instructions, sections } from "./guide";
@@ -26,7 +27,7 @@ export function createToolServer(data: UserData, origin: string) {
   function trackLinks(track: Track, login?: string) {
     return {
       ...track,
-      url: entityUrl(origin, "tracks", track.id),
+      url: new URL(privateTrackPath(track.slug), origin).href,
       ...(track.public &&
         login && {
           publicUrl: new URL(`/u/${encodeURIComponent(login)}/${track.slug}`, origin).href,
@@ -73,7 +74,10 @@ export function createToolServer(data: UserData, origin: string) {
     "update_track",
     "Revise a Track by ID. Supplied sources replace previous sources. Returns the updated Track.",
     track.partial().extend({ id }),
-    ({ id, ...patch }) => data.updateTrack(id, patch),
+    async ({ id, ...patch }) => {
+      const track = await data.updateTrack(id, patch);
+      if (track) return trackLinks(track, track.public ? await data.getPublicLogin() : undefined);
+    },
   );
   register(
     "set_track_visibility",
@@ -83,15 +87,13 @@ export function createToolServer(data: UserData, origin: string) {
       try {
         return await data.setTrackVisibility(trackId, visible);
       } catch (error) {
-        if (error instanceof RangeError)
+        if (error instanceof RangeError) {
+          const track = await data.getTrack(trackId);
+          if (!track) return;
           throw new RangeError(
-            error.message +
-              " Ask them to open " +
-              origin +
-              "/tracks/" +
-              trackId +
-              " and publish there once.",
+            `${error.message} Ask them to open ${trackLinks(track).url} and publish there once.`,
           );
+        }
         throw error;
       }
     },

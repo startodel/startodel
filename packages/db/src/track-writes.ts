@@ -2,6 +2,7 @@ import { LEGAL_TERMS_VERSION, TrackSlug, TrackSources } from "@startodel/core";
 import { and, eq } from "drizzle-orm";
 import type { Connection } from "./index.ts";
 import { tracks, users } from "./schema.ts";
+import { reservedTrackSlug, trackSlugFromTitle } from "./track-slug.ts";
 
 type TrackInput = {
   title: string;
@@ -26,16 +27,8 @@ export function trackWrites(db: Connection, userId: string) {
     async createTrack(input: string | TrackInput, source?: ForkSource) {
       const values = typeof input === "string" ? { title: input } : input;
       const parsed = fields(values);
-      const base =
-        parsed.slug ??
-        (values.title
-          .replace(/[^a-zA-Z0-9]+/g, "-")
-          .toLowerCase()
-          .replace(/^-/, "")
-          .slice(0, 120)
-          .replace(/-$/, "") ||
-          "track");
-      for (let n = 1; ; n++) {
+      const base = parsed.slug ?? trackSlugFromTitle(values.title);
+      for (let n = reservedTrackSlug(base) ? 2 : 1; ; n++) {
         const suffix = n === 1 ? "" : "-" + n;
         const slug = base.slice(0, 120 - suffix.length).replace(/-$/, "") + suffix;
         const [track] = await db
@@ -55,10 +48,12 @@ export function trackWrites(db: Connection, userId: string) {
       }
     },
     async updateTrack(id: string, input: string | Partial<TrackInput>) {
+      const patch = fields(typeof input === "string" ? { title: input } : input);
+      if (patch.slug && reservedTrackSlug(patch.slug)) throw new RangeError("Reserved Track Slug");
       const [track] = await db
         .update(tracks)
         .set({
-          ...fields(typeof input === "string" ? { title: input } : input),
+          ...patch,
           updatedAt: new Date(),
         })
         .where(ownTrack(id))

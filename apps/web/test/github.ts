@@ -18,6 +18,8 @@ export async function localGitHub() {
       "publisher",
       "forker",
       "learning-pages",
+      "slug-owner",
+      "slug-reader",
       "dashboard",
       "hero",
       "hero-schedule",

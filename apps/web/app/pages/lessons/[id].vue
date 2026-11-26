@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { privateTrackPath } from "../../../shared/locale";
 import { publicBlock } from "@startodel/core";
 import type { QuizResult } from "../../components/ui/Quiz.vue";
 
@@ -16,11 +17,15 @@ const { data, error, refresh } = await useFetch(url, {
 if (error.value?.statusCode === 404)
   throw createError({ statusCode: 404, message: t("common.error") });
 useHead({ title: () => data.value?.lesson.title });
-const track = computed(() =>
-  typeof route.query.track === "string" && /^[a-f0-9-]{36}$/i.test(route.query.track)
-    ? route.query.track
-    : undefined,
-);
+const { data: catalog } = await useFetch("/api/tracks", { key: "rail-tracks" });
+const track = computed(() => {
+  const ref = route.query.track;
+  if (typeof ref !== "string") return;
+  return (
+    catalog.value?.find((t) => t.id === ref.toLowerCase()) ??
+    catalog.value?.find((t) => t.slug === ref)
+  )?.slug;
+});
 const { data: topicDetails } = await useTopicDetails(computed(() => data.value?.topic.id));
 const neighbors = computed(() => {
   const lessons = topicDetails.value?.lessons ?? [];
@@ -106,7 +111,9 @@ const index = computed(
           { label: $t('nav.dashboard'), to: '/dashboard' },
           {
             label: data.topic.title,
-            to: track ? { path: '/tracks/' + track, query: { topic: data.topic.id } } : undefined,
+            to: track
+              ? { path: privateTrackPath(track), query: { topic: data.topic.id } }
+              : undefined,
           },
           { label: data.lesson.title },
         ]"

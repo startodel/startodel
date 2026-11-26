@@ -27,7 +27,9 @@ import {
 
 function rowColumns() {
   return {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: uuid("id")
+      .default(sql`uuidv7()`)
+      .primaryKey(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   };
@@ -278,7 +280,9 @@ export const grillQuestions = pgTable(
   ],
 );
 export const mcpTokens = pgTable("mcp_tokens", {
-  id: uuid("id").defaultRandom().primaryKey(),
+  id: uuid("id")
+    .default(sql`uuidv7()`)
+    .primaryKey(),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),

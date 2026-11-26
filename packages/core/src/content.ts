@@ -105,6 +105,10 @@ export const LessonBlocks = z
   );
 export type LessonBlocks = z.infer<typeof LessonBlocks>;
 
+export function isUuid(value: string) {
+  return /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value);
+}
+
 export const TrackSlug = z
   .string()
   .max(120)

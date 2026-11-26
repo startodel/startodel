@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { privateTrackPath } from "../../../../../shared/locale";
 definePageMeta({ layout: "site" });
 const countArgs = useCountArgs();
 const localePath = useLocalePath();
@@ -35,25 +36,6 @@ usePublicHead(
 const { user } = useUserSession();
 const { state: copyState, copy } = useCopy();
 const publicUrl = usePublicOrigin().value + localePath(path);
-const workspaceError = ref(false);
-async function openWorkspace(visibility = false) {
-  workspaceError.value = false;
-  try {
-    // Resolve the private ID through the Session only when the Owner opens the workspace.
-    const tracks = await $fetch("/api/tracks");
-    const owned = tracks.find((track) => track.slug === slug);
-    if (!owned) {
-      workspaceError.value = true;
-      return;
-    }
-    await navigateTo({
-      path: localePath("/tracks/" + owned.id),
-      query: visibility ? { visibility: "edit" } : {},
-    });
-  } catch {
-    workspaceError.value = true;
-  }
-}
 const busy = ref(false);
 const forkFailed = ref(false);
 async function fork() {
@@ -62,7 +44,7 @@ async function fork() {
   forkFailed.value = false;
   try {
     const track = await $fetch("/api/tracks/fork", { method: "POST", body: { login, slug } });
-    await navigateTo(localePath("/tracks/" + track.id));
+    await navigateTo(localePath(privateTrackPath(track.slug)));
   } catch {
     forkFailed.value = true;
   } finally {
@@ -146,15 +128,18 @@ const forks = computed(() =>
       <div v-else class="s-cluster public__actions">
         <UiBadge tone="verdigris" icon="globe">{{ $t("visibility.public") }}</UiBadge>
         <UiButton icon="link" @click="copy(publicUrl)">{{ $t("visibility.copy") }}</UiButton>
-        <UiButton icon="lock" @click="openWorkspace(true)">{{ $t("public.visibility") }}</UiButton>
-        <UiButton variant="ghost" icon-right="arrow-right" @click="openWorkspace()">{{
+        <UiButton
+          icon="lock"
+          :to="{ path: privateTrackPath(slug), query: { visibility: 'edit' } }"
+          >{{ $t("public.visibility") }}</UiButton
+        >
+        <UiButton variant="ghost" icon-right="arrow-right" :to="privateTrackPath(slug)">{{
           $t("public.workspace")
         }}</UiButton>
         <span role="status">{{
           copyState === "copied" ? $t("common.copied") : copyState === "failed" ? publicUrl : ""
         }}</span>
       </div>
-      <UiNotice v-if="workspaceError" tone="danger" :title="$t('common.error')" />
       <UiNotice v-if="forkFailed" tone="danger" :title="$t('public.forkError')" />
     </header>
     <figure v-if="topics.length" class="public__board">

@@ -7,7 +7,7 @@ const { t } = useI18n();
 const countArgs = useCountArgs();
 const displayDate = useDisplayDate();
 const route = useRoute();
-const url = `/api/tracks/${String(route.params.id)}` as const;
+const url = `/api/tracks/${encodeURIComponent(String(route.params.slug))}` as const;
 const { data, error, refresh } = await useFetch(`${url}/graph`);
 if (error.value?.statusCode === 404)
   throw createError({ statusCode: 404, message: t("common.error") });
@@ -68,7 +68,7 @@ async function save() {
   saving.value = true;
   saveError.value = false;
   try {
-    await $fetch(`${url}/visibility`, {
+    await $fetch(`/api/tracks/${data.value.track.id}/visibility`, {
       method: "PATCH",
       body: {
         public: !data.value.track.public,
@@ -211,7 +211,7 @@ async function save() {
         <UiTopicDetails
           v-else-if="details && details.topic.id === selected"
           :details="details"
-          :track="data.track.id"
+          :track="data.track.slug"
           :board="topics"
           :selected="topics.find((t) => t.id === selected)"
           :state="states.get(selected)"

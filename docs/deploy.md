@@ -1,6 +1,6 @@
 # Deploy Startodel
 
-Build the image from the repository root and give it a separate PostgreSQL database. The same image runs the web app, the MCP endpoint, and the migration command. Supply credentials at runtime.
+Build the image from the repository root and give it a separate PostgreSQL 18 or newer database. The startup migration uses the built-in `uuidv7()` function. The same image runs the web app, the MCP endpoint, and the migration command. Supply credentials at runtime.
 
 ## Runtime environment
 

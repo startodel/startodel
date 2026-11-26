@@ -94,7 +94,7 @@ The public [Startodel Roadmap](https://github.com/orgs/startodel/projects/1/view
 
 ## Quick start
 
-From the repository root, install the pinned Node.js and pnpm versions, then start the local PostgreSQL database and Nuxt.
+From the repository root, install the pinned Node.js and pnpm versions, then start the local PostgreSQL database (version 18 or newer) and Nuxt.
 
 ```sh
 nvm install

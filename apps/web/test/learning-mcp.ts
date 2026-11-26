@@ -230,7 +230,7 @@ export function learningMcpTests(
       });
       const trackId = track.id;
       const { publicOrigin } = environment();
-      expect(track.url).toBe(publicOrigin + "/tracks/" + trackId);
+      expect(track.url).toBe(publicOrigin + "/tracks/runtime");
       expect(track).not.toHaveProperty("publicUrl");
       expect(await call("get_track", { slug: track.slug })).toEqual(track);
       expect(await call("update_track", { id: trackId, description: "Trace tasks" })).toMatchObject(

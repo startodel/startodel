@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { privateTrackPath } from "../../shared/locale";
 import { appNavigation, type NavItem } from "../components/ui/nav";
 
 const { t } = useI18n();
@@ -35,10 +36,10 @@ const items = computed<NavItem[]>(() => [
 ]);
 const tracks = computed(() => {
   const progress = new Map(dashboard.value?.tracks.map((track) => [track.trackId, track.percent]));
-  return catalog.value?.map(({ id, title }) => ({
-    id,
+  return catalog.value?.map(({ id, slug, title }) => ({
+    id: slug,
     title,
-    to: "/tracks/" + id,
+    to: privateTrackPath(slug),
     percent: progress.get(id) ?? 0,
   }));
 });

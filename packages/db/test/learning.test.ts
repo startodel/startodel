@@ -37,6 +37,27 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     }
   });
 
+  test("Track Slugs transliterate titles and allocate collision suffixes within each Owner", async () => {
+    for (const [title, slug] of [
+      ["Основы сетей", "osnovy-setey"],
+      ["Основы сетей", "osnovy-setey-2"],
+      ["Osnovy SETEY", "osnovy-setey-3"],
+      ["а".repeat(121), "a".repeat(120)],
+      ["а".repeat(121), "a".repeat(118) + "-2"],
+    ] as const) {
+      expect((await alice.createTrack(title)).slug).toBe(slug);
+    }
+    expect((await bob.createTrack("Основы сетей")).slug).toBe("osnovy-setey");
+  });
+
+  test("new Track Slugs avoid UUIDs and reserved route segments", async () => {
+    const track = await alice.createTrack("Custom slug");
+    for (const reserved of ["new", "edit", "fork", randomUUID()]) {
+      expect((await alice.createTrack(reserved)).slug).toBe(reserved + "-2");
+      await expect(alice.updateTrack(track.id, { slug: reserved })).rejects.toThrow();
+    }
+  });
+
   test("Terms Acceptance belongs to the Owner and is required for each new terms version", async () => {
     const track = await alice.createTrack("Visibility");
     expect(await bob.setTrackVisibility(track.id, true, true)).toBeUndefined();

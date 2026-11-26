@@ -50,6 +50,13 @@
       "when": 1795711744565,
       "tag": "0006_profile_preferred_language",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795717389355,
+      "tag": "0007_uuidv7_defaults",
+      "breakpoints": true
     }
   ]
 }
