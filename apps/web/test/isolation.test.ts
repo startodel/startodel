@@ -68,7 +68,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
           apiURL: github.origin,
         }),
         NUXT_OAUTH_GITHUB_REDIRECT_URL: publicOrigin + "/auth/github",
-        NUXT_SESSION_PASSWORD: "test-only-session-password-at-least-32-characters",
+        NUXT_APP_SECRET: "test-only-session-password-at-least-32-characters",
       },
     });
     const [{ port }] = await Promise.race([

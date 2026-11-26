@@ -380,12 +380,13 @@ try {
     await context.clearCookies();
     const publicPath = "/u/bob/" + track.slug;
     await visit(publicPath);
-    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await page.locator(".s-map .s-trace").first().waitFor();
     await shot("pr12-ru-public-track");
-    await page.locator("header").getByRole("link", { name: "EN", exact: true }).click();
+    await page.getByRole("banner").getByRole("button", { name: /Язык/ }).click();
+    await page.getByRole("menuitem", { name: /English/ }).click();
     await page.waitForURL(origin + "/en" + publicPath);
     await page.getByRole("heading", { name: "Track Graph" }).waitFor();
-    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await page.locator(".s-map .s-trace").first().waitFor();
     await shot("pr12-en-public-track");
     await visit("/");
     await page.waitForURL(origin + "/en/login");
@@ -419,13 +420,69 @@ try {
     await page.getByRole("link", { name: track.title }).waitFor();
     await shot("pr11-public-profile");
     await page.getByRole("link", { name: track.title }).click();
-    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await page.locator(".s-map .s-trace").first().waitFor();
+    await page.getByRole("link", { name: "Sign in to fork" }).waitFor();
     await shot("pr11-public-track");
+    await page
+      .locator(".s-map")
+      .getByRole("button", { name: /Tasks and timers/ })
+      .click();
+    let enrichedPreview = false;
+    await page.route("**/api/public/bob/*/lessons/*", async (route) => {
+      const response = await route.fetch();
+      const json = await response.json();
+      for (const block of json.blocks) {
+        if (block.type === "quiz") {
+          for (const q of block.questions)
+            Object.assign(q, { correctIndex: 1, explanation: "Hidden explanation" });
+        }
+        if (block.type === "exercise") block.solution = "Hidden solution";
+      }
+      enrichedPreview = true;
+      await route.fulfill({ response, json });
+    });
     await page.getByRole("link", { name: lesson.title }).click();
     await page.getByText("Fork this track to practice").waitFor();
     assert.equal(await page.getByText("Show solution", { exact: true }).count(), 0);
+    const preview = await page.evaluate(() =>
+      Object.values(window.useNuxtApp().payload.data).find((entry) => entry?.blocks),
+    );
+    assert.ok(enrichedPreview);
+    assert.ok(preview.blocks.some((block) => block.type === "quiz"));
+    for (const block of preview.blocks) {
+      if (block.type === "quiz") {
+        for (const q of block.questions)
+          assert.deepEqual(Object.keys(q).sort(), ["options", "prompt"]);
+      }
+      if (block.type === "exercise") assert.ok(!("solution" in block));
+    }
+    assert.equal(await page.locator(".s-quiz input, .s-exercise__solution").count(), 0);
     await shot("pr11-public-lesson");
+    await page.setViewportSize({ width: 390, height: 900 });
+    await context.addCookies([{ name: "startodel-theme", value: "dark", url: origin }]);
+    await page.emulateMedia({ colorScheme: "light" });
+    await page.reload();
+    await hydrated();
+    await page.evaluate(() => document.fonts.ready);
+    assert.equal(
+      await page.locator(".s-root").evaluate((el) => getComputedStyle(el).colorScheme),
+      "dark",
+    );
+    const crumbs = await page
+      .locator(".s-crumbs__item")
+      .evaluateAll((items) =>
+        items
+          .slice(0, -1)
+          .every(
+            (item, i) =>
+              item.querySelector("a").getBoundingClientRect().right <=
+              items[i + 1].getBoundingClientRect().left + 1,
+          ),
+      );
+    assert.ok(crumbs, "Breadcrumb links must fit inside their items on narrow screens");
+    await page.setViewportSize({ width: 1440, height: 900 });
     await signIn("forker");
+    const { user: reader } = await (await request.get(origin + "/api/me")).json();
     await visit("/en" + publicPath);
     await page.getByRole("button", { name: "Fork", exact: true }).click();
     await page.waitForURL("**/en/tracks/*");
@@ -437,6 +494,23 @@ try {
     await page.getByText("1 fork", { exact: true }).waitFor();
     await page.locator(".s-canvas .s-trace").first().waitFor();
     await shot("pr11-track-visibility");
+
+    const recipient = forUser(db, reader.id);
+    for (let i = 0; i < 5; i++) {
+      const copy = await recipient.forkTrack("bob", track.slug);
+      await recipient.setTrackVisibility(copy.id, true, true);
+    }
+    await visit("/en" + publicPath);
+    assert.equal(await page.getByRole("button", { name: "Fork", exact: true }).count(), 0);
+    const links = page.locator("#forks .s-trackcard__link");
+    const targets = () => links.evaluateAll((items) => items.map((el) => el.href));
+    const first = await targets();
+    assert.equal(first.length, 4);
+    await page.getByRole("button", { name: "Next page" }).click();
+    assert.equal(await links.count(), 1);
+    assert.ok(!first.includes((await targets())[0]));
+    await page.getByRole("button", { name: "Previous page" }).click();
+    assert.deepEqual(await targets(), first);
   }
   assert.deepEqual(errors, []);
 } finally {

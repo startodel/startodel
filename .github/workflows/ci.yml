@@ -26,7 +26,7 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     env:
-      NUXT_SESSION_PASSWORD: test-only-ci-session-password-of-at-least-32-characters
+      NUXT_APP_SECRET: test-only-ci-session-password-of-at-least-32-characters
       NUXT_OAUTH_GITHUB_CLIENT_ID: test-client
       NUXT_OAUTH_GITHUB_CLIENT_SECRET: test-secret
       DATABASE_URL_TEST: postgresql://startodel:startodel@127.0.0.1:5432/startodel_test
@@ -69,7 +69,7 @@ jobs:
           docker run -d --name startodel --network "${{ job.services.postgres.network }}" \
             -p 127.0.0.1:3000:3000 \
             -e DATABASE_URL=postgresql://startodel:startodel@postgres:5432/startodel_test \
-            -e NUXT_SESSION_PASSWORD="$(openssl rand -hex 32)" startodel:test
+            -e NUXT_APP_SECRET="$(openssl rand -hex 32)" startodel:test
       - name: Verify container health and startup migrations
         run: |
           for attempt in {1..60}; do

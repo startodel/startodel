@@ -6,7 +6,7 @@ defineProps<{
   to: LinkTarget;
   description?: string | null;
   /** Shown when the list mixes Owners, such as a list of Forks. */
-  owner?: { login: string; name?: string | null; avatarUrl?: string | null };
+  owner?: { login: string; name?: string | null; avatarUrl?: string | null; to?: LinkTarget };
   topics?: number;
   lessons?: number;
   forks?: number;
@@ -17,9 +17,11 @@ const countArgs = useCountArgs();
 <template>
   <article class="s-trackcard">
     <p v-if="owner" class="s-trackcard__owner">
-      <UiAvatar :name="owner.name || owner.login" :src="owner.avatarUrl" :size="20" />@{{
-        owner.login
-      }}
+      <UiAvatar :name="owner.name || owner.login" :src="owner.avatarUrl" :size="20" />
+      <NuxtLinkLocale v-if="owner.to" :to="owner.to" class="s-link s-trackcard__profile"
+        >@{{ owner.login }}</NuxtLinkLocale
+      >
+      <span v-else>@{{ owner.login }}</span>
     </p>
     <h3 class="s-trackcard__title">
       <NuxtLinkLocale :to="to" class="s-trackcard__link">{{ title }}</NuxtLinkLocale>
@@ -75,7 +77,11 @@ const countArgs = useCountArgs();
   color: inherit;
   text-decoration: none;
 }
-/* The whole card is the target. The link stays the only focusable element. */
+.s-trackcard__profile {
+  position: relative;
+  z-index: 1;
+}
+/* Extend the Track link across the card, below the separate profile link. */
 .s-trackcard__link::after {
   content: "";
   position: absolute;

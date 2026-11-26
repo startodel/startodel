@@ -17,6 +17,7 @@ const props = withDefaults(
     questions: QuizQuestion[];
     /** Set after submission. While it is set the options are locked. */
     result?: QuizResult;
+    readOnly?: boolean;
     disabled?: boolean;
     busy?: boolean;
     /** Shown when the answers could not be recorded. */
@@ -50,7 +51,19 @@ function optionState(question: number, option: number) {
 }
 </script>
 <template>
-  <form class="s-quiz" :class="{ 'is-judged': result }" @submit.prevent="$emit('submit')">
+  <section v-if="readOnly" class="s-quiz">
+    <div v-for="(q, i) in questions" :key="i" class="s-quiz__question">
+      <UiProse :markdown="q.prompt" size="sm" />
+      <ol class="s-quiz__options">
+        <li v-for="(option, j) in q.options" :key="j" class="s-cluster">
+          <span class="s-quiz__letter" aria-hidden="true">{{ letter(j) }}</span>
+          <UiInline :text="option" />
+        </li>
+      </ol>
+    </div>
+    <p class="s-quiz__score">{{ $t("lesson.forkPractice") }}</p>
+  </section>
+  <form v-else class="s-quiz" :class="{ 'is-judged': result }" @submit.prevent="$emit('submit')">
     <fieldset
       v-for="(q, i) in questions"
       :key="i"

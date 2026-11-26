@@ -12,7 +12,7 @@ Anyone with a GitHub account can sign in to a public installation. A Track ID ca
 
 Use GitHub OAuth through `nuxt-auth-utils`. The callback upserts the User by GitHub's numeric ID, refreshes display fields, and inserts an empty Profile if needed, all in one transaction. The Session's User contains the internal UUID, login, name, and avatar URL. The provider access token is used only during the OAuth exchange.
 
-The module seals an HTTP-only cookie using a key derived from Nuxt's private `appSecret`. Nitro resolves `NUXT_SESSION_PASSWORD` into that setting at runtime. The module's session endpoint reads the Session and expires the cookie on logout.
+The module seals an HTTP-only cookie using a key derived from Nuxt's private `appSecret`. Nuxt reads `NUXT_APP_SECRET` into that setting at runtime. The module's session endpoint reads the Session and expires the cookie on logout.
 
 API middleware requires a Session by default. The public exceptions are the exact health and module session paths and the authentication routes. Each learning-data handler also obtains its data access through `userData(event)`, which calls `requireUser(event)` and supplies the authenticated UUID to `forUser(db, userId)`.
 

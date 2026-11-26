@@ -4,6 +4,7 @@
  * solution is fetched only when the learner asks to see it.
  */
 const props = defineProps<{
+  readOnly?: boolean;
   prompt: string;
   hints?: string[];
   /** Empty until the learner reveals it. */
@@ -36,7 +37,7 @@ const total = computed(() => props.hints?.length ?? 0);
         <span class="s-exercise__count">{{ opened }} / {{ total }}</span>
       </UiButton>
     </div>
-    <div class="s-exercise__solution" :class="{ 'is-open': solution }">
+    <div v-if="!readOnly" class="s-exercise__solution" :class="{ 'is-open': solution }">
       <template v-if="solution">
         <p class="s-exercise__label">
           <UiIcon name="eye" :size="12" />{{ $t("lesson.solutionTitle") }}

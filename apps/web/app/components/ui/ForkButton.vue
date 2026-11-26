@@ -39,7 +39,7 @@ const countArgs = useCountArgs();
       class="s-fork__count"
       :aria-label="$t('count.forks', countArgs(count))"
     >
-      {{ count }}
+      {{ $n(count) }}
     </component>
   </span>
 </template>

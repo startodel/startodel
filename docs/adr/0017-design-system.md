@@ -6,9 +6,9 @@ Accepted
 
 ## Context
 
-The web app has one global stylesheet in `app.vue` and no shared components for common controls. [The design concept](../design/CONCEPT.md) defines a visual identity that needs tokens, fonts, brand files and a component library, in a dark and a light theme.
+Before the migration the web app had one global stylesheet in `app.vue` and each page supplied its own controls. [The design concept](../design/CONCEPT.md) defines a visual identity that needs tokens, fonts, brand files and a component library, in a dark and a light theme.
 
-The existing pages keep their current look until each one is migrated separately. The new system must therefore live beside the old styles without changing them.
+Pages adopted the system in stages so each route could retain its data and navigation while its presentation changed.
 
 ## Decision
 
@@ -22,9 +22,9 @@ The existing pages keep their current look until each one is migrated separately
 
 **Fonts are self-hosted.** Martian Mono, Onest and Literata come from the `@fontsource-variable` packages and are bundled by the build. All three are under the SIL Open Font License and cover Latin and Cyrillic. No font request leaves the site.
 
-**The system is scoped to `.s-root`.** Every class and token uses the `s-` prefix. `UiRoot` renders the `.s-root` element, imports the stylesheet, applies the theme and hosts the layer that overlays render in. `legacy-shield.css` holds the element reset. It also cancels the element styles that `app.vue` still applies globally and hides its header and footer. [The migration plan](../design/MIGRATION.md) gives the order in which pages adopt the system and the rules to delete afterwards.
+**The system is scoped to `.s-root`.** Every class and token uses the `s-` prefix. `UiRoot` renders the `.s-root` element, imports the stylesheet, applies the theme and hosts the layer that overlays render in. `reset.css` supplies the element defaults. Every product route uses the `app`, `site` or `focus` layout. [The migration record](../design/MIGRATION.md) maps each route to its layout and showcase screen.
 
-**Styles are ranked by specificity, never by source order.** The development server and the production build emit the same stylesheets in a different order, so two rules of equal specificity from different files can swap between them. There are four tiers. The element reset is written as `html :where(.s-root) button` and out-ranks the global rule it cancels by one element. Shared classes in `base.css` are written as `:where(.s-root) .s-name` and count as one class. Component rules, scoped or written as `.s-root .s-name`, count as two. A parent that places the root of a child component names its own block first, as in `.s-shell .s-shell__tabs`. `apps/web/test/cascade.mjs` loads pages in a browser and reports every pair of rules that still depends on order.
+**Styles are ranked by specificity, never by source order.** The development server and the production build emit the same stylesheets in a different order, so two rules of equal specificity from different files can swap between them. There are four tiers. Element defaults such as `:where(.s-root) button` count as one element. Shared classes in `base.css` are written as `:where(.s-root) .s-name` and count as one class. Component rules, scoped or written as `.s-root .s-name`, count as two. A parent that places the root of a child component names its own block first, as in `.s-shell .s-shell__tabs`. `apps/web/test/cascade.mjs` loads pages in a browser and reports every pair of rules that still depends on order.
 
 **Interactive behaviour comes from Reka UI.** `reka-ui` is a headless library: it supplies focus management, keyboard interaction, dismissal, positioning and ARIA wiring, and ships no styles. It backs the dropdown menu, popover, tooltip, select, combobox, dialog, tabs, segmented control, toast, checkbox, radio group, switch, collapsible and pagination. Each `Ui*` component wraps the Reka parts and owns every style, so the library does not appear in pages. Writing this behaviour by hand was rejected: correct focus trapping, typeahead and collision-aware positioning are a large surface to maintain and test. Styled component kits were rejected for the reason given above. The version is pinned exactly and installs under the workspace's minimum release age without an exclusion.
 
@@ -46,7 +46,7 @@ The existing pages keep their current look until each one is migrated separately
 
 ## Consequences
 
-Existing pages render exactly as before. Each page can adopt the system in its own change by rendering inside `.s-root`.
+The layout owns the theme, overlays and page chrome. The page guardrails apply to every route outside the showcase.
 
 A token change reaches every component and both themes at once. A new colour needs a light and a dark value and a contrast pair in the test.
 
@@ -59,5 +59,3 @@ A Reka UI upgrade can change the parts or the `data-state` attributes that the s
 A rule that ties with a rule in another file is a defect even when it looks right in development. Run `apps/web/test/cascade.mjs` after a style change. It needs Playwright and Chrome, which are not dependencies, so it does not run in CI.
 
 Browsers older than the baseline get an unstyled or partly styled interface. Startodel's audience uses current browsers.
-
-While the legacy shield exists, class names used by `app.vue`, such as `brand`, `bar`, `actions` and `muted`, must not be reused inside `.s-root`. A test enforces this.

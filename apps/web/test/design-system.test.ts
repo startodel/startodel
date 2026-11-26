@@ -126,44 +126,6 @@ test("only showcase paths skip the Session check", () => {
   ).toEqual([false, false, false, false, false, false, false]);
 });
 
-// app.vue still styles these class names globally. Remove this test with those styles.
-const legacyClasses = [
-  "actions",
-  "bar",
-  "brand",
-  "brand-mark",
-  "button",
-  "choice",
-  "choices",
-  "identity",
-  "mast",
-  "muted",
-  "narrow",
-  "panel",
-  "primary",
-  "quiet",
-];
-
-test("design system files use no class name that app.vue styles globally", () => {
-  const files = [
-    ...vueFiles("components/ui/"),
-    ...vueFiles("components/showcase/"),
-    ...vueFiles("pages/design/"),
-    ...migratedPages,
-    ...vueFiles("layouts/").filter((file) => file !== "layouts/default.vue"),
-  ];
-  expect(files.length).toBeGreaterThan(80);
-  const name = `(?:${legacyClasses.join("|")})`;
-  const inMarkup = new RegExp(`\\bclass="(?:[^"]*[\\s'])?${name}(?:[\\s'][^"]*)?"`);
-  const inStyle = new RegExp(`\\.${name}(?![\\w-])`);
-  const found = files.filter((file) => {
-    const source = sourceOf(file);
-    const style = source.slice(source.lastIndexOf("<style"));
-    return inMarkup.test(source) || inStyle.test(style);
-  });
-  expect(found).toEqual([]);
-});
-
 const appDir = new URL("../app/", import.meta.url);
 
 function vueFiles(dir: string) {
@@ -233,9 +195,13 @@ function usesDesignLayout(source: string) {
   return false;
 }
 
-const migratedPages = vueFiles("pages/").filter((file) => usesDesignLayout(sourceOf(file)));
+const productPages = vueFiles("pages/").filter((file) => !file.startsWith("pages/design/"));
 
-test("only an explicit design layout opts a page into migration checks", () => {
+test("every product page explicitly selects a design layout", () => {
+  expect(productPages.filter((file) => !usesDesignLayout(sourceOf(file)))).toEqual([]);
+});
+
+test("a layout must be declared directly in page metadata", () => {
   const page = (meta: string) => `<script setup>definePageMeta(${meta})</script>`;
   expect(usesDesignLayout("<template><input /></template>")).toBe(false);
   expect(usesDesignLayout(page('{ layout: "default" }'))).toBe(false);
@@ -244,8 +210,8 @@ test("only an explicit design layout opts a page into migration checks", () => {
     expect(usesDesignLayout(page(`{ custom: {}, layout: "${layout}" }`))).toBe(true);
 });
 
-test("pages with a design layout use tokens and UI controls", () => {
-  for (const file of migratedPages) {
+test("every product page uses tokens and UI controls", () => {
+  for (const file of productPages) {
     const source = sourceOf(file);
     for (const [, style] of source.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)) {
       expect(style, file).not.toMatch(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?)\(|\bfont-family\s*:/i);
@@ -257,6 +223,9 @@ test("pages with a design layout use tokens and UI controls", () => {
 });
 
 test.each([
+  ["u/[login]/index", "site"],
+  ["u/[login]/[slug]/index", "site"],
+  ["u/[login]/[slug]/lessons/[lessonId]", "site"],
   ["onboarding/index", "focus"],
   ["onboarding/connect", "focus"],
   ["index", "app"],
@@ -268,9 +237,9 @@ test.each([
   ["topics/[id]", "app"],
   ["grills/index", "app"],
   ["grills/[id]", "app"],
-])("%s selects the %s layout and participates in the migration checks", (page, layout) => {
+])("%s selects the %s layout", (page, layout) => {
   const file = "pages/" + page + ".vue";
-  expect(migratedPages).toContain(file);
+  expect(productPages).toContain(file);
   expect(sourceOf(file)).toContain('layout: "' + layout + '"');
 });
 

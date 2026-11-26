@@ -4,10 +4,9 @@ globs: ["apps/web/**"]
 alwaysApply: false
 ---
 
-New and migrated pages in `apps/web/app/pages/` must select the `app`, `site` or `focus` layout. Each wraps its page in `UiRoot`. Build the interface using only `Ui*` components from `apps/web/app/components/ui/` and `--s-*` tokens from `apps/web/app/assets/design/tokens.css`.
+All product pages in `apps/web/app/pages/` (excluding the `design/` showcase) must select the `app`, `site` or `focus` layout. Each wraps its page in `UiRoot`. Build the interface using only `Ui*` components from `apps/web/app/components/ui/` and `--s-*` tokens from `apps/web/app/assets/design/tokens.css`.
 
 - Keep page `<style scoped>` to minimal layout (grid, flex and gaps). Do not declare raw hex, RGB or HSL colours or font families in pages.
-- Use `UiInput`, `UiSelect`, `UiTextarea`, `UiButton` and the other design components. Bare `<input>`, `<select>`, `<textarea>` and `<button>` controls are forbidden in migrated pages.
+- Use `UiInput`, `UiSelect`, `UiTextarea`, `UiButton` and the other design components. Bare `<input>`, `<select>`, `<textarea>` and `<button>` controls are forbidden in product pages.
 - Put new reusable UI components in `apps/web/app/components/ui/` and give each a specimen in `/design/components` or a showcase screen. Follow the specificity tiers in `docs/adr/0017-design-system.md` so the development and production cascades agree.
 - Put all UI copy in both `ru.json` and `en.json`, using the terms in `docs/CONTEXT.md`. Use `NuxtLinkLocale` for internal links.
-- Keep the legacy global class names listed in `docs/design/MIGRATION.md` and `apps/web/test/design-system.test.ts` out of `.s-root`.
