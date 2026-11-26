@@ -23,7 +23,6 @@
   "legal": {
     "terms": "Terms",
     "rules": "Publishing rules",
-    "nav": "Legal",
     "version": "Version {version}"
   },
   "common": {
@@ -181,8 +180,6 @@
     "empty": "No Lessons yet.",
     "prerequisites": "Prerequisites",
     "dependents": "Dependents",
-    "level": "Mastery {level}",
-    "node": "{title}, Mastery {level}",
     "lessonsRead": "{read} of {total} read"
   },
   "lesson": {
@@ -190,16 +187,10 @@
     "read": "Marked as read",
     "mark": "Mark as read",
     "readError": "Could not save your read state. Try again.",
-    "video": "Load video",
-    "videoTitle": "Load video: {title}",
-    "quiz": "Quiz",
     "forkPractice": "Fork this track to practice",
-    "exercise": "Exercise",
     "hint": "Hint {index}",
     "solution": "Show solution",
-    "loading": "Loading solution…",
     "solutionError": "Could not load the solution. Try again.",
-    "loadError": "Could not load the solution. Close and reopen to retry.",
     "image": "Image:",
     "yourTurn": "Your turn",
     "showHint": "Show a hint",
@@ -328,7 +319,6 @@
   "quiz": {
     "right": "Correct",
     "wrong": "Incorrect",
-    "answer": "Correct answer: {answer}",
     "submit": "Submit answers",
     "score": "{correct} of {total} correct",
     "error": "Could not record your answers. Try again.",
@@ -342,7 +332,6 @@
     "name": "Token name",
     "create": "Create token",
     "once": "Copy this token now. You will not see it again.",
-    "copy": "Copy token",
     "dismiss": "Dismiss",
     "load": "Could not load tokens.",
     "revoked": "Revoked",
@@ -350,8 +339,6 @@
     "none": "No tokens yet.",
     "createError": "Could not create the token. Check the list before trying again.",
     "revokeError": "Could not revoke the token. Try again.",
-    "copied": "Token copied.",
-    "manual": "Select and copy the token manually.",
     "placeholder": "your-token"
   },
   "next": {
@@ -368,7 +355,6 @@
     "goals": "my learning goals"
   },
   "visibility": {
-    "label": "Track visibility",
     "public": "Visibility · Public",
     "private": "Visibility · Private",
     "unpublish": "Make private",

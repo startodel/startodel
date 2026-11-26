@@ -1,6 +1,6 @@
 @import "./fonts.css";
 @import "./tokens.css";
-@import "./legacy-shield.css";
+@import "./reset.css";
 @import "./base.css";
 @import "./control.css";
 @import "./overlay.css";

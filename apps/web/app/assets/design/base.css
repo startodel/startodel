@@ -1,6 +1,5 @@
 /*
- * Base layer. Everything is scoped to .s-root so the design system can live beside pages that
- * have not adopted it yet.
+ * Base styles for the theme and layout inside UiRoot.
  *
  * The shared classes below (type voices, helpers, layout) are written :where(.s-root) .s-name, so
  * they weigh one class: more than the element reset, less than any component rule. A component
@@ -47,7 +46,7 @@ html[data-theme="dark"]:has(.s-root) {
   background: var(--s-copper-fill);
   color: var(--s-on-copper);
 }
-/* Above app.vue's own focus rule, below any component, so a focused part keeps its corners. */
+/* Components can refine the focus ring for their own shape. */
 html :where(.s-root) :focus-visible {
   outline: 2px solid var(--s-focus);
   outline-offset: 2px;

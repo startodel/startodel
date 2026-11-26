@@ -1,18 +1,16 @@
-# Moving the app onto the design system
+# Design system migration
 
-The design system lives beside the existing pages: tokens, the `Ui*` components and the showcase at `/design`. No real page uses it yet. This document is the plan for moving every page onto it and then deleting the old styles and `legacy-shield.css`.
+Every product page now uses Signal. This record maps the completed migration steps to their routes, layouts and showcase screens.
 
 Each page has a mock screen in the showcase under `/design/screens`. A mock screen is built only from `Ui*` components and sample data, so it shows the target for the page and the components to use. It proves the layout, not the data wiring.
 
 Read [the design concept](CONCEPT.md) and [ADR 0017](../adr/0017-design-system.md) first.
 
-## Rules that hold during the migration
+## Product page rules
 
-- Migrate one page, or one closely related group, in each pull request. Do not change the API, the data model or the MCP Tools in the same change.
-- A migrated page renders inside `UiRoot` and uses only `Ui*` components and `--s-*` tokens. It has no styles of its own beyond layout.
+- Every product page renders inside `UiRoot` and uses only `Ui*` components and `--s-*` tokens. It has no styles of its own beyond layout.
 - Keep every user-facing string in `ru.json` and `en.json`. The showcase copy is English sample text and is not a source of messages. Use the Russian terms in [CONTEXT.md](../CONTEXT.md#russian-ui-terms).
 - Link to app pages with `NuxtLinkLocale`. Components that take a link accept a `LinkTarget` and render it that way.
-- Do not use the class names that `app.vue` styles globally inside `.s-root` until the cleanup step: `actions`, `bar`, `brand`, `brand-mark`, `button`, `choice`, `choices`, `identity`, `mast`, `muted`, `narrow`, `panel`, `primary`, `quiet`. A test in `apps/web/test/design-system.test.ts` enforces this.
 - Keep the content safety rules of [ADR 0014](../adr/0014-review-practice-and-ui-answers.md). `UiProse`, `UiCodeBlock`, `UiResourceLink` and `UiVideoEmbed` call the same `renderMarkdown`, `codeTokens`, `httpUrl` and `youtubeEmbed` utilities as the components they replace. `apps/web/test/rendering.test.ts` covers those utilities and stays as it is.
 
 ## Style rules that keep development and production identical
@@ -23,14 +21,14 @@ Styles are ranked by specificity, never by order:
 
 | Tier                            | Selector form                             | Specificity | Where                     |
 | ------------------------------- | ----------------------------------------- | ----------- | ------------------------- |
-| Element reset                   | `html :where(.s-root) button`             | (0,0,2)     | `legacy-shield.css`       |
+| Element reset                   | `:where(.s-root) button`                  | (0,0,1)     | `reset.css`               |
 | Shared classes                  | `:where(.s-root) .s-stack`                | (0,1,0)     | `base.css`                |
 | Component rules                 | scoped `.s-card`, or `.s-root .s-control` | (0,2,0)     | components, `control.css` |
 | A parent placing a child's root | `.s-shell .s-shell__tabs`                 | (0,3,0)     | the parent component      |
 
 Follow the same form in new code. A parent that styles the root element of a child component must name its own block first, as in the last row.
 
-`apps/web/test/cascade.mjs` finds any pair of rules that still depends on order. Run it against the development server after each migrated page:
+`apps/web/test/cascade.mjs` finds any pair of rules that still depends on order. Run it against the development server after changes to page or component styles:
 
 ```sh
 node apps/web/test/cascade.mjs http://localhost:3000 /design/components /settings
@@ -40,25 +38,19 @@ It needs Playwright and Chrome, which are not dependencies of the repository. Se
 
 ## Step 0. Layouts
 
-Do this once, before the first page.
+The three layouts each render `UiRoot` once. It hosts the theme, toasts and overlay layer `#s-layer`.
 
-1. Add `<NuxtLayout>` around `<NuxtPage>` in `apps/web/app/app.vue`.
-2. Move the header and footer markup of `app.vue` into `apps/web/app/layouts/default.vue` without changing it. Leave the global `<style>` block in `app.vue`. Pages that are not migrated keep the default layout and look the same.
-3. Add three layouts. Each one renders `UiRoot` once, so the theme, the toasts and the overlay layer `#s-layer` exist exactly once per page.
+| Layout  | Built from                 | Mock                           | Data it needs                                                                                                 |
+| ------- | -------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| `app`   | `UiAppShell`               | `components/showcase/App.vue`  | The User from the Session, the Track list from `/api/tracks`, the due count from `/api/dashboard`, and logout |
+| `site`  | `UiSiteHeader`, `UiFooter` | `components/showcase/Site.vue` | The Session, to choose between “Sign in” and “Dashboard”                                                      |
+| `focus` | `UiFocusLayout`            | the Onboarding screen          | The User from the Session                                                                                     |
 
-| Layout  | Built from                 | Mock                           | Data it needs                                                                                                                |
-| ------- | -------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `app`   | `UiAppShell`               | `components/showcase/App.vue`  | The User from the Session, the Track list from `/api/tracks`, the due count from `/api/dashboard`, and logout from `app.vue` |
-| `site`  | `UiSiteHeader`, `UiFooter` | `components/showcase/Site.vue` | The Session, to choose between “Sign in” and “Dashboard”                                                                     |
-| `focus` | `UiFocusLayout`            | the Onboarding screen          | The User from the Session                                                                                                    |
-
-A migrated page selects its layout with `definePageMeta({ layout: "app" })`. `UiAppShell` sets `--s-sticky-top`, which sticky elements inside a page use as their offset.
-
-After this step the rule in `legacy-shield.css` that hides `.mast` and the old footer has nothing to hide on a migrated page. It stays until the cleanup, because the default layout can remain mounted for a moment during a client-side navigation.
+Each product page selects its layout with `definePageMeta({ layout: "app" })`. `UiAppShell` sets `--s-sticky-top`, which sticky elements inside a page use as their offset.
 
 ## Step 1 to 11. Pages
 
-The order goes from pages with the least data and risk to the ones with the most. Each row names the mock screen to copy the structure from and the old components that the page stops using.
+The order goes from pages with the least data and risk to the ones with the most. Each row names the mock screen to copy the structure from and the components replaced during the migration.
 
 | #   | Route                                                                     | Layout  | Mock screen                                | Replaces                                                                                                                                                                             |
 | --- | ------------------------------------------------------------------------- | ------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -97,15 +89,9 @@ Some mock screens show more than the current handlers return. Decide for each it
 
 ## Step 12. Cleanup
 
-Do this after the last page is migrated.
+The default layout, the global styles from `app.vue` and the superseded components in the table above have been removed. Nuxt keys pages by route path so moving between Public Tracks, Lessons or languages reloads the matching data and metadata.
 
-1. Delete `apps/web/app/layouts/default.vue` and the whole `<style>` block of `app.vue`. `app.vue` keeps `useHead`, the public origin and `<NuxtLayout><NuxtPage /></NuxtLayout>`.
-2. Delete the old components: `AgentConfig`, `AgentPrompt`, `ForkedFrom`, `LanguageSwitcher`, `LegalDocument`, `LessonCode`, `LessonContent`, `LessonMarkdown`, `LessonQuiz`, `McpTokens`, `NextStep`, `QuestionChoices`, `TopicPanel`, `TrackGraph.client`, `TrackVisibility`.
-3. In `apps/web/app/assets/design/legacy-shield.css`, delete every rule marked “Legacy”: the rule that hides `.mast` and the old footer, the `main` and `nav` resets, `nav .router-link-exact-active`, and the `html .s-root input` selector, which then joins the `:where(.s-root)` list. Lower the `button:hover` and `button:disabled` rules to plain element selectors. Rename the file to `reset.css` and update `index.css`.
-4. Remove the test for forbidden class names in `apps/web/test/design-system.test.ts` and the last paragraph of the consequences in ADR 0017.
-5. Move `.s-root` to `body` if no page renders outside it. The `:where(.s-root)` prefixes can then go in one mechanical change. This is optional.
-6. Remove message keys that only the old components used. `pnpm i18n:check` reports unused keys.
-7. Run `apps/web/test/cascade.mjs` over every route, then compare a development and a production build of each page in both themes.
+The design entry point imports `reset.css` for element defaults. `UiRoot` retains `.s-root` and the overlay layer. Nuxt’s standalone error view renders outside this boundary. Every product page under `app/pages/` selects a Signal layout and participates in the colour, font and control checks. The showcase has its own roots and specimens.
 
 ## Checklist for each page
 
