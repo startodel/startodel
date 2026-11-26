@@ -34,7 +34,7 @@ describe.each([
     expect(appNavigation(prefix + "/tracks/queues", items, tracks)).toEqual({
       current: undefined,
       currentTrack: "queues",
-      crumbs: [{ label: "Message queues" }],
+      crumbs: [{ label: "Dashboard", to: "/dashboard" }, { label: "Message queues" }],
     });
   });
 

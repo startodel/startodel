@@ -5,6 +5,7 @@
  */
 defineProps<{
   title: string;
+  kicker?: string;
   /** What kind of step it is, such as "Continue grill" or "Review". */
   kind?: string;
   /** Why this is the next step. */
@@ -19,7 +20,8 @@ defineProps<{
   <section class="s-next" :aria-label="$t('next.title')">
     <div class="s-next__main">
       <p class="s-next__kicker">
-        <i aria-hidden="true" />{{ $t("next.title") }}<span v-if="kind"> · {{ kind }}</span>
+        <i aria-hidden="true" />{{ kicker ?? $t("next.title")
+        }}<span v-if="kind"> · {{ kind }}</span>
       </p>
       <h2 class="s-next__title">{{ title }}</h2>
       <p v-if="why" class="s-next__why">{{ why }}</p>

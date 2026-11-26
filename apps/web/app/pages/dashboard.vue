@@ -14,11 +14,24 @@ const [
   { data: progress, error: progressError, refresh: retryProgress },
   { data: reviews, error: reviewsError, refresh: retryReviews },
 ] = await Promise.all([
-  useFetch("/api/dashboard"),
+  useFetch("/api/dashboard", { key: "dashboard" }),
   useFetch("/api/next-step"),
   useFetch("/api/progress"),
   useFetch("/api/reviews"),
 ]);
+useEmptyDashboardRefresh(
+  () => data.value?.tracks.length,
+  async () => {
+    // Read the board first so the other requests see at least the first Track it saw.
+    await refresh();
+    await Promise.all([
+      refreshNuxtData("rail-tracks"),
+      retryStep(),
+      retryProgress(),
+      retryReviews(),
+    ]);
+  },
+);
 const levels = computed(() => trackLevels(progress.value?.perTopic ?? []));
 const { week, boxes, today } = useReviewSchedule(() => reviews.value);
 const nextTitle = computed(() => {
@@ -26,13 +39,10 @@ const nextTitle = computed(() => {
   if (s && "title" in s) return s.title;
   if (s && "suggestions" in s) return t("next.ready");
   if (s?.id === "first-steps") return t("next.onboarding");
-  if (s?.id === "build-track-technology") return t("progress.noTracks");
   if (s?.id === "review-loop") return t("count.reviews", countArgs(s.state.dueReviews));
   return t("next.plan");
 });
-const prompt = computed(() => {
-  if (!step.value || !("prompt" in step.value)) return;
-  if (step.value.id !== "build-track-technology") return t("next.planPrompt");
+const firstPrompt = computed(() => {
   const profile = me.value?.profile;
   const goals = profile?.goals.map((goal) => goalLabels.value.get(goal) ?? goal).join(", ");
   return t("next.buildPrompt", { goals: goals || profile?.stack.join(", ") || t("next.goals") });
@@ -60,10 +70,15 @@ const prompt = computed(() => {
         ><UiButton @click="retryStep()">{{ $t("common.retry") }}</UiButton></template
       >
     </UiNotice>
+    <UiFirstTrack
+      v-else-if="step?.id === 'build-track-technology' && data?.tracks.length === 0"
+      :connected="data.hasConnectedAgent"
+      :prompt="firstPrompt"
+    />
     <UiNextUp
-      v-else-if="step"
+      v-else-if="step && step.id !== 'build-track-technology'"
       :title="nextTitle"
-      :prompt="prompt"
+      :prompt="'prompt' in step ? $t('next.planPrompt') : undefined"
       :why="
         'title' in step
           ? $t('grill.unanswered', { count: n(step.unanswered) }) +
@@ -92,14 +107,6 @@ const prompt = computed(() => {
       <template #actions><UiButton @click="refresh()">{{ $t("common.retry") }}</UiButton></template>
     </UiNotice>
     <UiSkeletonList v-else-if="!data" />
-    <UiEmptyState v-else-if="!data.tracks.length" icon="track" :title="$t('dashboard.first')">
-      {{ $t("dashboard.start") }}
-      <template #actions
-        ><UiButton to="/onboarding/connect" icon="plug">{{
-          $t("agent.connect")
-        }}</UiButton></template
-      >
-    </UiEmptyState>
     <div
       v-if="
         data?.tracks.length ||

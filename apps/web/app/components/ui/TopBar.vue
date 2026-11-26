@@ -16,7 +16,10 @@ withDefaults(
     </NuxtLinkLocale>
     <UiBreadcrumbs v-if="crumbs?.length" :items="crumbs" class="s-topbar__crumbs" />
     <div class="s-topbar__actions">
-      <slot />
+      <!-- Vue also renders this fallback for empty forwarded or conditional actions. -->
+      <slot>
+        <span v-if="(crumbs?.length ?? 0) <= 1" class="s-topbar__idle" hidden />
+      </slot>
       <span v-if="user" class="s-topbar__user"
         ><UiAvatar :name="user.name || user.login" :src="user.avatarUrl" :size="26"
       /></span>
@@ -49,6 +52,11 @@ withDefaults(
   align-items: center;
   gap: var(--s-2);
   margin-left: auto;
+}
+@container s-shell (width > 52rem) {
+  .s-topbar:has(.s-topbar__idle) {
+    display: none;
+  }
 }
 @container s-shell (max-width: 52rem) {
   .s-topbar {

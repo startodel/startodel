@@ -10,14 +10,21 @@ export async function localGitHub() {
   const users = [
     { id, login: "alice", name: "Alice", avatar_url: "https://example.org/alice.png" },
     { id: id - 1, login: "bob", name: "Bob", avatar_url: null },
-    ...["practice", "reader", "guide", "schedule", "publisher", "forker", "learning-pages"].map(
-      (login, i) => ({
-        id: id - 2 - i,
-        login,
-        name: login,
-        avatar_url: null,
-      }),
-    ),
+    ...[
+      "practice",
+      "reader",
+      "guide",
+      "schedule",
+      "publisher",
+      "forker",
+      "learning-pages",
+      "dashboard",
+    ].map((login, i) => ({
+      id: id - 2 - i,
+      login,
+      name: login,
+      avatar_url: null,
+    })),
   ];
   const server = createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/json");

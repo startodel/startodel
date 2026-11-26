@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { LinkTarget } from "../ui/nav";
+import type { LinkTarget, NavTrack } from "../ui/nav";
 import { sampleNav, sampleNavTracks, sampleUser, screenPath } from "./sample";
 /** The signed-in shell with sample navigation, shared by the mock screens. */
 defineProps<{
   current?: string;
   currentTrack?: string;
+  tracks?: NavTrack[];
   crumbs?: { label: string; to?: LinkTarget }[];
   flush?: boolean;
 }>();
@@ -13,7 +14,7 @@ const { push: notify } = useToast();
 <template>
   <UiAppShell
     :items="sampleNav"
-    :tracks="sampleNavTracks"
+    :tracks="tracks ?? sampleNavTracks"
     :user="sampleUser"
     :current="current"
     :current-track="currentTrack"

@@ -37,8 +37,8 @@ const model = defineModel<boolean>({ default: false });
     border-color var(--s-dur-2) var(--s-ease);
 }
 .s-root .s-switch__track[data-state="checked"] {
-  border-color: var(--s-inverse);
-  background: var(--s-inverse);
+  border-color: var(--s-copper-fill);
+  background: var(--s-copper-fill);
 }
 .s-root .s-switch__thumb {
   display: block;
@@ -51,7 +51,7 @@ const model = defineModel<boolean>({ default: false });
     background var(--s-dur-2) var(--s-ease);
 }
 .s-root .s-switch__thumb[data-state="checked"] {
-  background: var(--s-copper-fill);
+  background: var(--s-on-copper);
   translate: 1rem 0;
 }
 .s-root .s-switch__track[data-disabled] {

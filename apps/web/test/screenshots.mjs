@@ -154,9 +154,73 @@ try {
   await page.getByLabel("Token name").fill("Local demo");
   await page.getByRole("button", { name: "Create token" }).click();
   await page.getByRole("button", { name: "Copy MCP Token" }).waitFor();
-  await page.getByRole("button", { name: "Dismiss" }).click();
+  const dismiss = page.getByRole("button", { name: "Dismiss" });
+  for (const theme of ["light", "dark"]) {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+    const aligned = await dismiss.evaluate((button) => {
+      const notice = button.closest(".s-notice");
+      const title = notice.querySelector(".s-notice__title");
+      const text = notice.querySelector(".s-notice__text");
+      return (
+        getComputedStyle(button).color === getComputedStyle(text).color &&
+        Math.abs(button.getBoundingClientRect().top - title.getBoundingClientRect().top) <= 1
+      );
+    });
+    assert.ok(aligned, "notice action alignment and ink in " + theme);
+    if (process.env.SCREENSHOT_DIR) {
+      await page
+        .locator(".s-notice")
+        .filter({ has: dismiss })
+        .screenshot({
+          path: directory + "/token-notice-" + theme + ".png",
+          animations: "disabled",
+        });
+    }
+  }
+  await page.emulateMedia({ colorScheme: "light", reducedMotion: null });
+  await dismiss.click();
   await page.getByRole("link", { name: "Skip for now" }).click();
-  await page.getByRole("heading", { name: "Build your first Track" }).waitFor();
+  await page.getByRole("link", { name: "Connect agent", exact: true }).waitFor();
+  const dashboardRequest = (r) => r.url() === origin + "/api/dashboard";
+  const expectQuiet = () =>
+    assert.rejects(page.waitForRequest(dashboardRequest, { timeout: 5500 }), {
+      name: "TimeoutError",
+    });
+  if (cascade) {
+    await checkCascade(page, "/en/dashboard");
+    await page.evaluate(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, value: "hidden" });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await Promise.all([
+      expectQuiet(),
+      page.evaluate(() => window.dispatchEvent(new Event("focus"))),
+    ]);
+    await Promise.all([
+      page.waitForRequest(dashboardRequest, { timeout: 3000 }),
+      page.evaluate(() => {
+        Reflect.deleteProperty(document, "visibilityState");
+        document.dispatchEvent(new Event("visibilitychange"));
+      }),
+    ]);
+  }
+  const connection = await owner.mcpTokens.create("Second client");
+  const ping = await request.post(origin + "/mcp", {
+    headers: {
+      authorization: "Bearer " + connection.token,
+      accept: "application/json, text/event-stream",
+    },
+    data: { jsonrpc: "2.0", id: 1, method: "ping", params: {} },
+  });
+  assert.ok(ping.ok());
+  await page.getByText("Agent connected · waiting for first track").waitFor();
+  if (cascade) await checkCascade(page, "/en/dashboard");
+  await context.grantPermissions(["clipboard-write"], { origin });
+  await page.getByRole("button", { name: "Copy prompt" }).click();
+  await page
+    .getByRole("status")
+    .filter({ hasText: "Copied — paste it into your agent's chat" })
+    .waitFor();
   const track = await owner.createTrack({
     title: "The browser event loop",
     description:
@@ -198,9 +262,15 @@ try {
     summary: "Trace a timer callback through a single browser task.",
     blocks,
   });
-  await page.reload();
-  await hydrated();
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await page.locator("main").getByRole("link", { name: track.title }).waitFor();
+  await page.locator(".s-rail__item--track").filter({ hasText: track.title }).waitFor();
+  if (cascade) {
+    await Promise.all([
+      expectQuiet(),
+      page.evaluate(() => window.dispatchEvent(new Event("focus"))),
+    ]);
+  }
   await shot("dashboard");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.locator("main").getByRole("link", { name: track.title }).click();
@@ -376,6 +446,13 @@ try {
       await checkCascade(page, path);
     }
     const previousViewport = page.viewportSize();
+    await visit("/en/design/components");
+    const shellWithActions = page
+      .locator(".s-topbar")
+      .filter({ has: page.locator(".s-topbar__actions button") })
+      .first();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    assert.ok(await shellWithActions.isVisible(), "desktop top bar keeps its actions");
     await page.setViewportSize({ width: 390, height: 900 });
     for (const prefix of ["", "/en"]) {
       await audit(prefix + "/progress");

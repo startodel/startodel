@@ -5,9 +5,14 @@ const { t } = useI18n();
 const { user } = useUserSession();
 const route = useRoute();
 const logout = useLogout();
+const collapsed = useCookie<boolean>("startodel-rail-collapsed", {
+  default: () => false,
+  sameSite: "lax",
+  maxAge: 60 * 60 * 24 * 365,
+});
 const [{ data: catalog }, { data: dashboard }] = await Promise.all([
-  useFetch("/api/tracks"),
-  useFetch("/api/dashboard"),
+  useFetch("/api/tracks", { key: "rail-tracks" }),
+  useFetch("/api/dashboard", { key: "dashboard" }),
 ]);
 const items = computed<NavItem[]>(() => [
   {
@@ -42,6 +47,7 @@ const navigation = computed(() => appNavigation(route.path, items.value, tracks.
 <template>
   <UiRoot>
     <UiAppShell
+      v-model:collapsed="collapsed"
       style="--s-sticky-top: 0px"
       :items="items"
       :tracks="tracks"

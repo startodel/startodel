@@ -85,8 +85,8 @@ const glyph = computed<IconName>(
   color: var(--s-ink);
 }
 .s-notice__actions {
+  --_ink: initial;
   display: flex;
   gap: var(--s-2);
-  align-self: center;
 }
 </style>

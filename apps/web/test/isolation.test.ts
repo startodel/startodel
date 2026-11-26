@@ -7,6 +7,8 @@ import { once } from "node:events";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 
 import { createDatabase, forUser } from "@startodel/db";
+import en from "../i18n/locales/en.json";
+import ru from "../i18n/locales/ru.json";
 import { localGitHub } from "./github";
 import { publicHttpTests } from "./public-http";
 import { practiceHttpTests } from "./practice-http";
@@ -428,6 +430,61 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
     });
   }
+
+  test("the zero-Track dashboard follows the Owner's first active MCP connection", async () => {
+    const cookie = await signIn("dashboard");
+    const { user } = await (await request("/api/me", cookie)).json();
+    const owner = forUser(db, user.id);
+    await owner.updateProfile({ onboardedAt: new Date(), goals: ["queues"] });
+
+    async function connected() {
+      const response = await request("/api/dashboard", cookie);
+      expect(response.status).toBe(200);
+      return (await response.json()).hasConnectedAgent;
+    }
+
+    async function page(prefix: string, cookies = cookie) {
+      const response = await request(prefix + "/dashboard", cookies);
+      expect(response.status).toBe(200);
+      const html = await response.text();
+      return html.slice(html.indexOf("<body"), html.indexOf("</main>"));
+    }
+
+    expect(await connected()).toBe(false);
+    const foreign = await issueToken(await signIn("bob"));
+    expect((await rpc("ping", {}, { authorization: "Bearer " + foreign.token })).status).toBe(200);
+    const token = await owner.mcpTokens.create("First connection");
+    expect(await connected()).toBe(false);
+
+    const locales = [
+      ["", ru],
+      ["/en", en],
+    ] as const;
+    for (const [prefix, messages] of locales) {
+      const html = await page(prefix);
+      expect(html).toContain(`href="${prefix}/onboarding/connect"`);
+      expect(html).toContain(prefix ? "Connect agent" : "Подключить агента");
+      expect(html).toContain(messages.dashboard.start);
+      expect(html).not.toMatch(/class="s-prompt"|class="s-empty|is-collapsed|s-rail--collapsed/);
+    }
+    const collapsed = await page("", cookie + "; startodel-rail-collapsed=true");
+    expect(collapsed).toContain("is-collapsed");
+    expect(collapsed).toContain("s-rail--collapsed");
+
+    expect((await rpc("ping", {}, { authorization: "Bearer " + token.token })).status).toBe(200);
+    expect(await connected()).toBe(true);
+    for (const [prefix, messages] of locales) {
+      const html = await page(prefix);
+      expect(html).toContain(messages.dashboard.waiting);
+      expect(html).toContain(messages.dashboard.first);
+      expect(html).toContain(messages.dashboard.sendPrompt);
+      expect(html).toContain(messages.next.buildPrompt.replace("{goals}", "queues"));
+      expect(html).toContain(messages.agent.copy);
+      expect(html).not.toMatch(/class="s-empty|href="(?:\/en)?\/onboarding\/connect"/);
+    }
+    await owner.mcpTokens.revoke(token.id);
+    expect(await connected()).toBe(false);
+  });
 
   test("proxied OAuth and MCP requests use the configured public origin", async () => {
     const forwarded = { "x-forwarded-host": "startodel.example", "x-forwarded-proto": "https" };
