@@ -14,6 +14,18 @@ type Request = (
   body?: unknown,
 ) => Promise<Response>;
 
+function expectShellNavigation(html: string, href: string, label: string) {
+  const links = html.match(/<a\b[^>]*\bs-rail__item\b[^>]*>/g) ?? [];
+  const current = links.filter((link) => link.includes("is-current"));
+  expect(current, href).toHaveLength(1);
+  expect(current[0]).toContain('href="' + href + '"');
+  expect(links.filter((link) => link.includes('aria-current="page"'))).toEqual(current);
+
+  const topBar = html.match(/<header\b[^>]*class="s-topbar"[^>]*>([\s\S]*?)<\/header>/)?.[1];
+  const crumb = topBar?.match(/class="s-crumbs__here"[^>]*>([^<]*)</)?.[1];
+  expect(crumb).toBe(label);
+}
+
 export function practiceHttpTests(
   env: () => { db: Database; origin: string },
   request: Request,
@@ -54,14 +66,17 @@ export function practiceHttpTests(
       topicId: topic.id,
       prompt: "What repeats?",
     }))!;
-    async function page(path: string) {
-      const response = await request("/en" + path, cookie);
+    async function page(path: string, prefix = "/en") {
+      const response = await request(prefix + path, cookie);
       expect(response.status, path).toBe(200);
       return (await response.text()).split('<script type="application/json"')[0]!;
     }
+    expectShellNavigation(await page("/progress", ""), "/progress", "Прогресс");
+    expectShellNavigation(await page("/progress"), "/en/progress", "Progress");
     const lessonPath = "/lessons/" + lesson.id + "?track=" + track.id;
     const trackPath = "/tracks/" + track.id + "?topic=" + topic.id;
     const board = await page(trackPath);
+    expectShellNavigation(board, "/en/tracks/" + track.id, track.title);
     expect(board).toContain('href="/en' + lessonPath + '"');
     expect(board).toContain('class="s-board');
     expect(await page("/topics/" + topic.id)).toContain('href="/en/lessons/' + lesson.id + '"');
@@ -75,7 +90,9 @@ export function practiceHttpTests(
 
     const grillPath = "/grills/" + grill.id;
     expect(await page("/grills")).toContain('href="/en' + grillPath + '"');
-    expect(await page(grillPath)).toContain("What repeats?");
+    const grillPage = await page(grillPath);
+    expectShellNavigation(grillPage, "/en/grills", "Grills");
+    expect(grillPage).toContain("What repeats?");
     expect(
       (
         await request(
@@ -407,7 +424,9 @@ export function practiceHttpTests(
     });
     await b.data.updateProfile({ onboardedAt: new Date() });
     const practice = await request("/en/reviews/" + topic.id + "/practice", b.cookie);
-    const quizForm = (await practice.text()).split('class="s-quiz"')[1]?.split("</form>")[0];
+    const practicePage = await practice.text();
+    expectShellNavigation(practicePage, "/en/reviews", "Reviews");
+    const quizForm = practicePage.split('class="s-quiz"')[1]?.split("</form>")[0];
     expect(quizForm).toContain("Which is a duplicate?");
     expect(quizForm).not.toMatch(/private key|correctIndex|explanation|is-judged/);
     const dashboard = await (await request("/en/dashboard", b.cookie)).text();

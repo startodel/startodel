@@ -355,7 +355,10 @@ try {
   await page.getByRole("button", { name: "Submit Practice Quiz" }).click();
   await page.locator(".outcome__title").filter({ hasText: "1 of 1 correct" }).waitFor();
   if (cascade) await checkCascade(page, "/en/reviews/" + by.tasks.id + "/practice");
-  await visit("/en/progress");
+  await page.locator('.s-rail a[href="/en/progress"]').click();
+  await page.getByRole("heading", { name: "Progress", exact: true }).waitFor();
+  assert.equal(await page.locator(".s-rail .is-current").getAttribute("href"), "/en/progress");
+  assert.equal(await page.locator(".s-topbar__crumbs").innerText(), "Progress");
   await page.getByRole("combobox", { name: "Sort by" }).click();
   await page.getByRole("option", { name: "Mastery (lowest first)" }).click();
   const levels = await page.locator("tbody .s-mastery__level").allTextContents();

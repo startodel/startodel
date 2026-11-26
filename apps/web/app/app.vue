@@ -13,5 +13,5 @@ useHead({
 });
 </script>
 <template>
-  <NuxtLayout><NuxtPage :page-key="route.path" /></NuxtLayout>
+  <NuxtLayout><NuxtPage :page-key="(pageRoute) => pageRoute.path" /></NuxtLayout>
 </template>
