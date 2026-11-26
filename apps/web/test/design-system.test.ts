@@ -144,20 +144,68 @@ const legacyClasses = [
 ];
 
 test("design system files use no class name that app.vue styles globally", () => {
-  const app = new URL("../app/", import.meta.url);
-  const files = ["components/ui/", "components/showcase/", "pages/design/"].flatMap((dir) =>
-    readdirSync(new URL(dir, app), { recursive: true, encoding: "utf8" })
-      .filter((name) => name.endsWith(".vue"))
-      .map((name) => dir + name),
-  );
+  const files = [
+    ...vueFiles("components/ui/"),
+    ...vueFiles("components/showcase/"),
+    ...vueFiles("pages/design/"),
+    ...migratedPages,
+    ...vueFiles("layouts/").filter((file) => file !== "layouts/default.vue"),
+  ];
   expect(files.length).toBeGreaterThan(80);
   const name = `(?:${legacyClasses.join("|")})`;
   const inMarkup = new RegExp(`\\bclass="(?:[^"]*[\\s'])?${name}(?:[\\s'][^"]*)?"`);
   const inStyle = new RegExp(`\\.${name}(?![\\w-])`);
   const found = files.filter((file) => {
-    const source = readFileSync(new URL(file, app), "utf8");
+    const source = sourceOf(file);
     const style = source.slice(source.lastIndexOf("<style"));
     return inMarkup.test(source) || inStyle.test(style);
   });
   expect(found).toEqual([]);
+});
+
+const appDir = new URL("../app/", import.meta.url);
+
+function vueFiles(dir: string) {
+  return readdirSync(new URL(dir, appDir), { recursive: true, encoding: "utf8" })
+    .filter((name) => name.endsWith(".vue"))
+    .map((name) => dir + name);
+}
+
+function sourceOf(file: string) {
+  return readFileSync(new URL(file, appDir), "utf8");
+}
+
+test("every UI component is rendered by a showcase specimen", () => {
+  const components = new Map(
+    vueFiles("components/ui/").map((file) => ["Ui" + file.split("/").at(-1)!.split(".")[0], file]),
+  );
+  // A specimen also exercises its nested parts, e.g. the rail and tab bar in UiAppShell.
+  const pending = [...vueFiles("pages/design/"), ...vueFiles("components/showcase/")];
+  const visited = new Set<string>();
+  while (pending.length) {
+    const file = pending.pop()!;
+    if (visited.has(file)) continue;
+    visited.add(file);
+    for (const [, tag] of sourceOf(file).matchAll(/<(Ui\w+)\b/g)) {
+      const component = components.get(tag!);
+      if (component) pending.push(component);
+    }
+  }
+  expect([...components.values()].filter((file) => !visited.has(file))).toEqual([]);
+});
+
+const migratedPages = vueFiles("pages/").filter((file) =>
+  /\bdefinePageMeta\s*\(\s*\{[^}]*?\blayout\s*:\s*["'](?:app|site|focus)["']/.test(sourceOf(file)),
+);
+
+test("pages with a design layout use tokens and UI controls", () => {
+  for (const file of migratedPages) {
+    const source = sourceOf(file);
+    for (const [, style] of source.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)) {
+      expect(style, file).not.toMatch(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?)\(|\bfont-family\s*:/i);
+    }
+    const template = source.match(/<template\b[^>]*>([\s\S]*)<\/template>/)?.[1];
+    expect(template, file).toBeDefined();
+    expect(template, file).not.toMatch(/<(?:input|select|textarea|button)(?=[\s/>])/i);
+  }
 });
