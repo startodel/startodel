@@ -10,6 +10,7 @@
 //   node apps/web/test/cascade.mjs http://localhost:3000 /design/components /design/screens/track
 // PLAYWRIGHT_MODULE may point to a local installation. CHROME may point to a browser binary.
 // The script exits with 1 when it finds a tie.
+import { basePath } from "../shared/locale.ts";
 import assert from "node:assert/strict";
 import { pathToFileURL } from "node:url";
 
@@ -207,7 +208,7 @@ export async function checkCascade(page, path = new URL(page.url()).pathname) {
         "unexpected redirect while checking " + path,
       );
       await page.locator(".s-root").first().waitFor();
-      const cabinet = path.replace(/^\/en\//, "/");
+      const cabinet = basePath(path);
       const topLevel = /^\/(dashboard|progress|reviews|grills|settings)$/.test(cabinet);
       if (topLevel || /^\/tracks\/[^/]+$/.test(cabinet)) {
         const bar = page.locator(".s-topbar");

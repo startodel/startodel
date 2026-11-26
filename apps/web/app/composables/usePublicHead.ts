@@ -1,4 +1,4 @@
-import { localizedPath } from "../../shared/locale";
+import { alternateUrls, localizedPath } from "../../shared/locale";
 export function usePublicOrigin() {
   return useState("public-origin", () => {
     const callback = import.meta.server ? useRuntimeConfig().oauth.github.redirectURL : "";
@@ -14,9 +14,8 @@ export function usePublicHead(
 ) {
   const origin = usePublicOrigin().value;
   const { locale, t } = useI18n();
-  const ru = origin + path;
-  const en = origin + localizedPath(path, "en");
-  const url = locale.value === "en" ? en : ru;
+  const alternates = alternateUrls(origin, path);
+  const url = alternates[locale.value];
   const image =
     origin + "/og" + (path.startsWith("/u/") ? path : "/site") + ".png?lang=" + locale.value;
   const schema = structuredData?.((path) => origin + localizedPath(path, locale.value));
@@ -37,7 +36,7 @@ export function usePublicHead(
       : [],
     link: [
       { rel: "canonical", href: url },
-      ...Object.entries({ ru, en, "x-default": ru }).map(([hreflang, href]) => ({
+      ...Object.entries(alternates).map(([hreflang, href]) => ({
         rel: "alternate" as const,
         type: "text/html",
         hreflang,

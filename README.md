@@ -16,7 +16,7 @@ The project is free to use with your own agent. You can [self-host](#quick-start
 - [Roadmap](https://github.com/orgs/startodel/projects/1/views/2)
 - [Documentation](docs/README.md)
 
-The interface opens in Russian by default. Choose **EN** in the header or footer for English. Both languages have shareable URLs, and learning content stays in the language its author used.
+The interface opens in English at `/`. Choose **Русский** in the header or footer to open the same page under `/ru`. Both languages have shareable URLs, and learning content stays in the language its author used.
 
 ## Learning loop
 
@@ -74,7 +74,7 @@ The public [Startodel Roadmap](https://github.com/orgs/startodel/projects/1/view
 - [x] Agent skills generated from `docs/agent-guide` ([#24](https://github.com/startodel/startodel/pull/24))
 - [x] Autodeploy on push to `main` ([#25](https://github.com/startodel/startodel/pull/25))
 - [x] Public tracks, forks, and public profiles ([#27](https://github.com/startodel/startodel/pull/27))
-- [x] Russian by default, with English locale ([#30](https://github.com/startodel/startodel/pull/30))
+- [x] Russian and English interface translations ([#30](https://github.com/startodel/startodel/pull/30))
 - [x] Signal design system foundations and showcase ([#29](https://github.com/startodel/startodel/pull/29))
 
 ### Now

@@ -67,22 +67,22 @@ export function practiceHttpTests(
       topicId: topic.id,
       prompt: "What repeats?",
     }))!;
-    async function page(path: string, prefix = "/en") {
+    async function page(path: string, prefix = "") {
       const response = await request(prefix + path, cookie);
       expect(response.status, path).toBe(200);
       return (await response.text()).split('<script type="application/json"')[0]!;
     }
-    expectShellNavigation(await page("/progress", ""), "/progress", "Прогресс");
-    expectShellNavigation(await page("/progress"), "/en/progress", "Progress");
+    expectShellNavigation(await page("/progress", "/ru"), "/ru/progress", "Прогресс");
+    expectShellNavigation(await page("/progress"), "/progress", "Progress");
     const lessonPath = "/lessons/" + lesson.id + "?track=" + track.id;
     const trackPath = "/tracks/" + track.id + "?topic=" + topic.id;
     const board = await page(trackPath);
-    expectShellNavigation(board, "/en/tracks/" + track.id, track.title);
-    expect(board).toContain('href="/en' + lessonPath + '"');
+    expectShellNavigation(board, "/tracks/" + track.id, track.title);
+    expect(board).toContain('href="' + lessonPath + '"');
     expect(board).toContain('class="s-board');
-    expect(await page("/topics/" + topic.id)).toContain('href="/en/lessons/' + lesson.id + '"');
+    expect(await page("/topics/" + topic.id)).toContain('href="/lessons/' + lesson.id + '"');
     const lessonPage = await page(lessonPath);
-    expect(lessonPage).toContain('href="/en' + trackPath + '"');
+    expect(lessonPage).toContain('href="' + trackPath + '"');
     expect(lessonPage).toContain("Mark as read");
     expect(lessonPage).not.toMatch(/Private explanation|Private solution|class="s-quiz__feedback"/);
     expect((await request("/api/lessons/" + lesson.id + "/read", cookie, "POST")).status).toBe(200);
@@ -90,9 +90,9 @@ export function practiceHttpTests(
     expect(await page(trackPath)).toContain("is-read");
 
     const grillPath = "/grills/" + grill.id;
-    expect(await page("/grills")).toContain('href="/en' + grillPath + '"');
+    expect(await page("/grills")).toContain('href="' + grillPath + '"');
     const grillPage = await page(grillPath);
-    expectShellNavigation(grillPage, "/en/grills", "Grills");
+    expectShellNavigation(grillPage, "/grills", "Grills");
     expect(grillPage).toContain("What repeats?");
     expect(
       (
@@ -114,13 +114,13 @@ export function practiceHttpTests(
     );
     const summary = await page(grillPath);
     expect(summary).toContain('class="s-tally"');
-    expect(summary).toContain('href="/en/topics/' + topic.id + '"');
+    expect(summary).toContain('href="/topics/' + topic.id + '"');
     expect(summary).toContain("Trace the delivery");
   });
 
   const dashboardLocales = [
-    ["", ru],
-    ["/en", en],
+    ["/ru", ru],
+    ["", en],
   ] as const;
   async function dashboardHero(
     cookie: string,
@@ -216,7 +216,7 @@ export function practiceHttpTests(
     await data.markLessonRead(unread.id);
     const reread = await dashboardHero(
       cookie,
-      "/en",
+      "",
       en.next.study,
       topic.title,
       "/lessons/" + read.id,
@@ -268,7 +268,7 @@ export function practiceHttpTests(
     });
     await dashboardHero(
       cookie,
-      "/en",
+      "",
       en.next.reviewKind,
       topic.title,
       "/reviews/" + topic.id + "/practice",
@@ -278,12 +278,12 @@ export function practiceHttpTests(
     await data.attachTopicToTrack(track.id, ready.id, 1);
     const mixed = await dashboardHero(
       cookie,
-      "/en",
+      "",
       en.next.study,
       ready.title,
       "/tracks/" + track.id,
     );
-    expect(mixed).toContain('href="/en/reviews"');
+    expect(mixed).toContain('href="/reviews"');
     expect(mixed).toContain("Review 1 Topic first");
 
     const grill = (await data.startGrill({ title: "Recall" }))!;
@@ -336,7 +336,7 @@ export function practiceHttpTests(
         onboardedAt: new Date(),
         goals: ["Understand internals", "queues"],
       });
-      const dashboard = await (await request("/dashboard", cookie)).text();
+      const dashboard = await (await request("/ru/dashboard", cookie)).text();
       expect(dashboard).toContain("Разобраться, как всё устроено внутри, queues");
       expect((await step("build-track-technology")).prompt).toContain("queues");
       const track = await data.createTrack("Delivery");
@@ -399,7 +399,7 @@ export function practiceHttpTests(
       ],
     });
     await data.updateProfile({ onboardedAt: new Date() });
-    const html = (await (await request("/en/reviews", cookie)).text()).split(
+    const html = (await (await request("/reviews", cookie)).text()).split(
       '<script type="application/json"',
     )[0]!;
     const groups = html.split('class="s-section__title"');
@@ -614,23 +614,23 @@ export function practiceHttpTests(
       upcoming: [],
     });
     await b.data.updateProfile({ onboardedAt: new Date() });
-    const practice = await request("/en/reviews/" + topic.id + "/practice", b.cookie);
+    const practice = await request("/reviews/" + topic.id + "/practice", b.cookie);
     const practicePage = await practice.text();
-    expectShellNavigation(practicePage, "/en/reviews", "Reviews");
+    expectShellNavigation(practicePage, "/reviews", "Reviews");
     const quizForm = practicePage.split('class="s-quiz"')[1]?.split("</form>")[0];
     expect(quizForm).toContain("Which is a duplicate?");
     expect(quizForm).not.toMatch(/private key|correctIndex|explanation|is-judged/);
-    const dashboard = await (await request("/en/dashboard", b.cookie)).text();
+    const dashboard = await (await request("/dashboard", b.cookie)).text();
     expect(dashboard).toContain('class="s-trackstrip__cells"');
     expect(dashboard).toContain('class="s-timeline-item__title"');
     expect(dashboard).toContain('class="s-week"');
     expect(dashboard).toContain('class="s-rack');
-    const overview = await (await request("/en/progress", b.cookie)).text();
+    const overview = await (await request("/progress", b.cookie)).text();
     expect(overview).toContain('class="s-histogram"');
-    expect(overview).toContain('href="/en/topics/' + topic.id + '"');
+    expect(overview).toContain('href="/topics/' + topic.id + '"');
     for (const [prefix, score] of [
-      ["", "Тренировочный тест: 2 из 2 верно"],
-      ["/en", "Practice Quiz: 2 of 2 correct"],
+      ["/ru", "Тренировочный тест: 2 из 2 верно"],
+      ["", "Practice Quiz: 2 of 2 correct"],
     ]) {
       expect(await (await request(prefix + "/reviews", b.cookie)).text()).toContain(
         "<p>" + score + "</p>",

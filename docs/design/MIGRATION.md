@@ -68,7 +68,7 @@ The order goes from pages with the least data and risk to the ones with the most
 
 Notes for single steps:
 
-- **Step 2.** The landing mock is the signed-out page. Anonymous visitors see it at `/` or `/en`. Signed-in visitors go to their localized Dashboard. Legacy `/login` links redirect.
+- **Step 2.** The landing mock is the signed-out page. Anonymous visitors see it at `/` or `/ru`. Signed-in visitors go to their localized Dashboard. Legacy `/login` links redirect.
 - **Step 3.** The plaintext MCP Token is shown once, in `UiCopyField`. Keep it out of logs and out of any stored state.
 - **Step 7 and 8.** `UiQuiz` receives questions and options only. The correct option and the explanation arrive in the `result` prop after submission. `UiExercise` receives the solution only after `reveal`. Do not preload either.
 - **Step 9.** `UiTrackBoard` and `UiTrackMap` share `boardModel()` in `components/ui/board.ts`, so the interactive board and the server-rendered board are identical. `@vue-flow/core` and `@dagrejs/dagre` stay. The board falls back to `UiTrackList` in a narrow container.
@@ -95,7 +95,7 @@ The design entry point imports `reset.css` for element defaults. `UiRoot` retain
 
 ## Checklist for each page
 
-- The page matches its mock screen at 390 and 1440 pixels, in the light and the dark theme, under `/` and `/en`.
+- The page matches its mock screen at 390 and 1440 pixels, in the light and the dark theme, under `/` and `/ru`.
 - Loading, empty and error states use `UiSkeletonList`, `UiEmptyState` and `UiNotice`.
 - Every state is carried by a shape and a word, not by colour alone.
 - Keyboard: every action is reachable, the focus ring is visible, and overlays return focus.

@@ -3,7 +3,12 @@ import { basePath, localizedPath } from "../../shared/locale";
 
 export default defineHandler((event) => {
   const url = getRequestURL(event);
-  const path = basePath(url.pathname).replace(/\/$/, "");
+  const base = basePath(url.pathname);
+  if (url.pathname === "/en" || url.pathname.startsWith("/en/")) {
+    const status = event.req.method === "GET" || event.req.method === "HEAD" ? 301 : 308;
+    return sendRedirect(event, base + url.search, status);
+  }
+  const path = base.replace(/\/$/, "");
   const lang = url.searchParams.get("lang");
   if ((path === "/terms" || path === "/rules") && (lang === "ru" || lang === "en")) {
     url.searchParams.delete("lang");

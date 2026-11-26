@@ -3,7 +3,7 @@ import { signIn } from "../../lib/database";
 import { languageCookie, localizedPath } from "../../../shared/locale";
 
 function destination(event: RequestEvent, path: string) {
-  return localizedPath(path, getCookie(event, languageCookie) === "en" ? "en" : "ru");
+  return localizedPath(path, getCookie(event, languageCookie) === "ru" ? "ru" : "en");
 }
 
 export default defineOAuthGitHubEventHandler({
