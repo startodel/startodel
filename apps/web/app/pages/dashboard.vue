@@ -10,12 +10,10 @@ const goalLabels = useGoalLabels();
 useHead({ title: t("nav.dashboard") });
 const [
   { data, error, refresh },
-  { data: step, error: stepError, refresh: retryStep },
   { data: progress, error: progressError, refresh: retryProgress },
   { data: reviews, error: reviewsError, refresh: retryReviews },
 ] = await Promise.all([
   useFetch("/api/dashboard", { key: "dashboard" }),
-  useFetch("/api/next-step"),
   useFetch("/api/progress"),
   useFetch("/api/reviews"),
 ]);
@@ -24,23 +22,62 @@ useEmptyDashboardRefresh(
   async () => {
     // Read the board first so the other requests see at least the first Track it saw.
     await refresh();
-    await Promise.all([
-      refreshNuxtData("rail-tracks"),
-      retryStep(),
-      retryProgress(),
-      retryReviews(),
-    ]);
+    await Promise.all([refreshNuxtData("rail-tracks"), retryProgress(), retryReviews()]);
   },
 );
 const levels = computed(() => trackLevels(progress.value?.perTopic ?? []));
 const { week, boxes, today } = useReviewSchedule(() => reviews.value);
-const nextTitle = computed(() => {
-  const s = step.value;
-  if (s && "title" in s) return s.title;
-  if (s && "suggestions" in s) return t("next.ready");
-  if (s?.id === "first-steps") return t("next.onboarding");
-  if (s?.id === "review-loop") return t("count.reviews", countArgs(s.state.dueReviews));
-  return t("next.plan");
+const step = computed(() => data.value?.nextStep);
+const hero = computed(() => {
+  const board = data.value;
+  if (!board) return;
+  const s = board.nextStep;
+  switch (s.kind) {
+    case "study": {
+      const { title, slug, trackId, firstLessonId, allLessonsRead } = s.topic;
+      const kind = t("next.study");
+      if (firstLessonId)
+        return {
+          title,
+          kind,
+          why: allLessonsRead ? t("next.reread") : t("next.lessonReady"),
+          to: "/lessons/" + firstLessonId,
+          action: t("next.openLesson"),
+        };
+      return {
+        title,
+        kind,
+        why: t("next.noLessons"),
+        to: "/tracks/" + trackId,
+        action: t("next.openTrack"),
+        prompt: t("next.lessonPrompt", { slug }),
+        tool: "create_lesson",
+      };
+    }
+    case "review":
+      return {
+        title: s.title,
+        kind: t("next.reviewKind"),
+        why: t("count.reviews", countArgs(board.dueReviewsCount)),
+        to: s.href,
+        action: t("next.review"),
+      };
+    case "grill":
+      return {
+        title: s.title,
+        kind: t("next.grill"),
+        why:
+          t("grill.unanswered", { count: n(s.unanswered) }) +
+          " · " +
+          t("grill.waitingCount", { waiting: n(s.waiting) }),
+        to: "/grills/" + s.id,
+        action: t("next.continue"),
+      };
+    case "onboarding":
+      return { title: t("next.onboarding"), to: "/onboarding", action: t("next.complete") };
+    case "plan":
+      return { title: t("next.plan"), prompt: t("next.planPrompt") };
+  }
 });
 const firstPrompt = computed(() => {
   const profile = me.value?.profile;
@@ -65,48 +102,36 @@ const firstPrompt = computed(() => {
           : undefined
       "
     />
-    <UiNotice v-if="stepError" tone="danger" :title="$t('next.load')">
-      <template #actions
-        ><UiButton @click="retryStep()">{{ $t("common.retry") }}</UiButton></template
-      >
+    <UiNotice v-if="error" tone="danger" :title="$t('dashboard.load')">
+      <template #actions><UiButton @click="refresh()">{{ $t("common.retry") }}</UiButton></template>
     </UiNotice>
     <UiFirstTrack
-      v-else-if="step?.id === 'build-track-technology' && data?.tracks.length === 0"
+      v-else-if="data && step?.kind === 'first-track'"
       :connected="data.hasConnectedAgent"
       :prompt="firstPrompt"
     />
     <UiNextUp
-      v-else-if="step && step.id !== 'build-track-technology'"
-      :title="nextTitle"
-      :prompt="'prompt' in step ? $t('next.planPrompt') : undefined"
-      :why="
-        'title' in step
-          ? $t('grill.unanswered', { count: n(step.unanswered) }) +
-            ' · ' +
-            $t('grill.waitingCount', { waiting: n(step.waiting) })
-          : undefined
-      "
+      v-else-if="hero"
+      :title="hero.title"
+      :kind="hero.kind"
+      :why="hero.why"
+      :prompt="hero.prompt"
+      :tool="hero.tool"
     >
-      <ul v-if="'suggestions' in step">
-        <li v-for="topic in step.suggestions" :key="topic.id">
-          <NuxtLinkLocale :to="'/topics/' + topic.id">{{ topic.title }}</NuxtLinkLocale>
-        </li>
-      </ul>
-      <template v-if="'href' in step" #actions
-        ><UiButton variant="primary" :to="step.href">{{
-          step.id === "first-steps"
-            ? $t("next.complete")
-            : step.id === "grill-session"
-              ? $t("next.continue")
-              : $t("next.review")
-        }}</UiButton></template
-      >
+      <template v-if="hero.to" #actions>
+        <UiButton variant="primary" :to="hero.to" icon-right="arrow-right">{{
+          hero.action
+        }}</UiButton>
+        <UiButton
+          v-if="step?.kind === 'study' && data?.dueReviewsCount"
+          variant="ghost"
+          to="/reviews"
+        >
+          {{ $t("next.reviewFirst", countArgs(data.dueReviewsCount)) }}
+        </UiButton>
+      </template>
     </UiNextUp>
     <UiSkeletonList v-else variant="cards" :rows="1" />
-    <UiNotice v-if="error" tone="danger" :title="$t('dashboard.load')">
-      <template #actions><UiButton @click="refresh()">{{ $t("common.retry") }}</UiButton></template>
-    </UiNotice>
-    <UiSkeletonList v-else-if="!data" />
     <div
       v-if="
         data?.tracks.length ||

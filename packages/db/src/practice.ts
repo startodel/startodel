@@ -42,35 +42,34 @@ async function practiceContent(tx: Transaction, userId: string, topicId: string,
   return { title: item.title, revision, quizzes };
 }
 
+export function reviewsThrough(db: Connection, userId: string, until: Date) {
+  return db
+    .select({
+      topicId: topics.id,
+      title: topics.title,
+      level: sql<MasteryLevel>`coalesce(${topicMastery.level},0)`,
+      box: reviewItems.box,
+      dueAt: reviewItems.dueAt,
+      lastResult: reviewItems.lastResult,
+      reason: reviewItems.reason,
+      practiceCorrect: reviewItems.practiceCorrect,
+      practiceTotal: reviewItems.practiceTotal,
+      hasQuiz: sql<boolean>`exists(select 1 from ${lessons} where ${lessons.userId}=${userId} and ${lessons.topicId}=${topics.id} and ${lessons.blocks} @> '[{"type":"quiz"}]'::jsonb)`,
+    })
+    .from(reviewItems)
+    .innerJoin(topics, and(eq(topics.userId, userId), eq(topics.id, reviewItems.topicId)))
+    .leftJoin(
+      topicMastery,
+      and(eq(topicMastery.userId, userId), eq(topicMastery.topicId, topics.id)),
+    )
+    .where(and(eq(reviewItems.userId, userId), lte(reviewItems.dueAt, until)))
+    .orderBy(reviewItems.dueAt, topics.id);
+}
+
 export function practiceForUser(db: Connection, userId: string) {
   return {
     async listReviews(now = new Date()) {
-      const rows = await db
-        .select({
-          topicId: topics.id,
-          title: topics.title,
-          level: sql<MasteryLevel>`coalesce(${topicMastery.level},0)`,
-          box: reviewItems.box,
-          dueAt: reviewItems.dueAt,
-          lastResult: reviewItems.lastResult,
-          reason: reviewItems.reason,
-          practiceCorrect: reviewItems.practiceCorrect,
-          practiceTotal: reviewItems.practiceTotal,
-          hasQuiz: sql<boolean>`exists(select 1 from ${lessons} where ${lessons.userId}=${userId} and ${lessons.topicId}=${topics.id} and ${lessons.blocks} @> '[{"type":"quiz"}]'::jsonb)`,
-        })
-        .from(reviewItems)
-        .innerJoin(topics, and(eq(topics.userId, userId), eq(topics.id, reviewItems.topicId)))
-        .leftJoin(
-          topicMastery,
-          and(eq(topicMastery.userId, userId), eq(topicMastery.topicId, topics.id)),
-        )
-        .where(
-          and(
-            eq(reviewItems.userId, userId),
-            lte(reviewItems.dueAt, new Date(now.getTime() + 7 * 86400000)),
-          ),
-        )
-        .orderBy(reviewItems.dueAt, topics.id);
+      const rows = await reviewsThrough(db, userId, new Date(now.getTime() + 7 * 86400000));
       return {
         due: rows.filter((r) => r.dueAt <= now),
         upcoming: rows.filter((r) => r.dueAt > now),

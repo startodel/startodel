@@ -5,6 +5,7 @@ import { forUser, type Database } from "@startodel/db";
 import { expect, test } from "vite-plus/test";
 
 import { practiceFailure } from "../app/utils/practice-failure";
+import en from "../i18n/locales/en.json";
 import ru from "../i18n/locales/ru.json";
 
 type Request = (
@@ -115,6 +116,196 @@ export function practiceHttpTests(
     expect(summary).toContain('class="s-tally"');
     expect(summary).toContain('href="/en/topics/' + topic.id + '"');
     expect(summary).toContain("Trace the delivery");
+  });
+
+  const dashboardLocales = [
+    ["", ru],
+    ["/en", en],
+  ] as const;
+  async function dashboardHero(
+    cookie: string,
+    prefix: string,
+    mode: string,
+    title: string,
+    primaryPath: string,
+  ) {
+    const response = await request(prefix + "/dashboard", cookie);
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    const cards = html.match(/<section class="s-next"[^>]*>[\s\S]*?<\/section>/g);
+    expect(cards).toHaveLength(1);
+    const hero = cards![0]!;
+    expect(hero).not.toMatch(/Эти темы уже можно изучать|These Topics are ready to study|<ul\b/i);
+    expect(hero).toContain(" · " + mode + "</span>");
+    expect(hero).toContain(">" + title + "</h2>");
+    const primary = hero.match(/<a\b[^>]*\bs-button--primary\b[^>]*>/g);
+    expect(primary).toHaveLength(1);
+    expect(primary![0]).toContain('href="' + prefix + primaryPath + '"');
+    return hero;
+  }
+
+  async function dashboardStep(cookie: string) {
+    const response = await request("/api/dashboard", cookie);
+    expect(response.status).toBe(200);
+    return (await response.json()).nextStep;
+  }
+
+  test("Next Step opens the first unread Lesson for one ready Topic", async () => {
+    const { cookie, data } = await owner("hero");
+    await data.updateProfile({ onboardedAt: new Date() });
+    const track = await data.createTrack("Reactivity");
+    const topic = await data.upsertTopic({
+      slug: "react/snapshot",
+      title: "Снимок состояния React vs Vue Proxy",
+    });
+    await data.attachTopicToTrack(track.id, topic.id, 0);
+    const other = await data.upsertTopic({ slug: "vue/refs", title: "Refs" });
+    await data.attachTopicToTrack(track.id, other.id, 1);
+    expect(await dashboardStep(cookie)).toMatchObject({
+      kind: "study",
+      topic: { id: topic.id, trackId: track.id, firstLessonId: null },
+    });
+    for (const [prefix, messages] of dashboardLocales) {
+      const card = await dashboardHero(
+        cookie,
+        prefix,
+        messages.next.study,
+        topic.title,
+        "/tracks/" + track.id,
+      );
+      expect(card).toContain(messages.next.noLessons);
+      expect(card).toContain(messages.next.openTrack);
+      expect(card).toContain('class="s-prompt"');
+      expect(card).toContain(messages.next.lessonPrompt.replace("{slug}", topic.slug));
+      expect(card).toMatch(/class="s-prompt__text"[^>]*>[^<]*create_lesson/);
+    }
+    const read = (await data.createLesson({
+      topicId: topic.id,
+      title: "Introduction",
+      blocks: [],
+    }))!;
+    const unread = (await data.createLesson({
+      topicId: topic.id,
+      title: "State updates",
+      blocks: [],
+    }))!;
+    await data.markLessonRead(read.id);
+    for (const [prefix, messages] of dashboardLocales) {
+      const hero = await dashboardHero(
+        cookie,
+        prefix,
+        messages.next.study,
+        topic.title,
+        "/lessons/" + unread.id,
+      );
+      expect(hero).toContain(messages.next.lessonReady);
+      expect(hero).toContain(messages.next.openLesson);
+      expect(hero).not.toContain(other.title);
+      expect(hero).not.toContain('class="s-prompt"');
+    }
+    expect(await dashboardStep(cookie)).toMatchObject({
+      kind: "study",
+      topic: {
+        id: topic.id,
+        slug: topic.slug,
+        title: topic.title,
+        trackId: track.id,
+        firstLessonId: unread.id,
+      },
+    });
+    await data.markLessonRead(unread.id);
+    const reread = await dashboardHero(
+      cookie,
+      "/en",
+      en.next.study,
+      topic.title,
+      "/lessons/" + read.id,
+    );
+    expect(reread).toContain(en.next.reread);
+  });
+
+  test("Next Step opens the due Review or active Grill and offers reviews alongside study", async () => {
+    const { cookie, data, id } = await owner("hero-schedule");
+    await data.updateProfile({ onboardedAt: new Date() });
+    const track = await data.createTrack("Delivery");
+    const topic = await data.upsertTopic({ slug: "queues", title: "Queues" });
+    await data.attachTopicToTrack(track.id, topic.id, 0);
+    await data.recordReviewResult(topic.id, "weak");
+    await env().db.$client.query("update review_items set due_at=now() where user_id=$1", [id]);
+    expect(await dashboardStep(cookie)).toMatchObject({
+      kind: "review",
+      title: topic.title,
+      topicId: topic.id,
+      href: "/reviews",
+    });
+    for (const [prefix, messages] of dashboardLocales) {
+      const card = await dashboardHero(
+        cookie,
+        prefix,
+        messages.next.reviewKind,
+        topic.title,
+        "/reviews",
+      );
+      expect(card).toContain(messages.next.review);
+    }
+    await data.createLesson({
+      topicId: topic.id,
+      title: "Queue practice",
+      blocks: [
+        {
+          id: "recall",
+          type: "quiz",
+          questions: [
+            {
+              prompt: "Which is FIFO?",
+              options: ["Queue", "Stack"],
+              correctIndex: 0,
+              explanation: "A queue.",
+            },
+          ],
+        },
+      ],
+    });
+    await dashboardHero(
+      cookie,
+      "/en",
+      en.next.reviewKind,
+      topic.title,
+      "/reviews/" + topic.id + "/practice",
+    );
+
+    const ready = await data.upsertTopic({ slug: "streams", title: "Streams" });
+    await data.attachTopicToTrack(track.id, ready.id, 1);
+    const mixed = await dashboardHero(
+      cookie,
+      "/en",
+      en.next.study,
+      ready.title,
+      "/tracks/" + track.id,
+    );
+    expect(mixed).toContain('href="/en/reviews"');
+    expect(mixed).toContain("Review 1 Topic first");
+
+    const grill = (await data.startGrill({ title: "Recall" }))!;
+    await data.addGrillQuestion(grill.id, { prompt: "Explain delivery" });
+    expect(await dashboardStep(cookie)).toMatchObject({
+      kind: "grill",
+      id: grill.id,
+      title: grill.title,
+      unanswered: 1,
+      waiting: 0,
+    });
+    for (const [prefix, messages] of dashboardLocales) {
+      const card = await dashboardHero(
+        cookie,
+        prefix,
+        messages.next.grill,
+        grill.title,
+        "/grills/" + grill.id,
+      );
+      expect(card).toContain(messages.next.continue);
+      expect(card).toContain(messages.grill.unanswered.replace("{count}", "1"));
+    }
   });
 
   test("dashboard and get_guide agree on all six Next Steps and their precedence", async () => {
