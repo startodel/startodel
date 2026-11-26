@@ -4,7 +4,7 @@ const props = withDefaults(
   defineProps<{
     level: number;
     size?: "sm" | "md" | "lg";
-    /** bars: the meter only. level: meter and numeral. full: meter, numeral and name. */
+    /** bars: the meter only. level: meter and numeral. full: meter and name, with a numeral above level 0. */
     show?: "bars" | "level" | "full";
   }>(),
   { size: "md", show: "level" },
@@ -22,7 +22,12 @@ const name = computed(() => t(`mastery.level${level.value}`));
     <span class="s-mastery__bars" aria-hidden="true">
       <i v-for="n in 4" :key="n" :class="{ 'is-on': n <= level }" />
     </span>
-    <span v-if="show !== 'bars'" class="s-mastery__level" aria-hidden="true">{{ level }}</span>
+    <span
+      v-if="show === 'level' || (show === 'full' && level > 0)"
+      class="s-mastery__level"
+      aria-hidden="true"
+      >{{ level }}</span
+    >
     <span v-if="show === 'full'" class="s-mastery__name" aria-hidden="true">{{ name }}</span>
   </span>
 </template>

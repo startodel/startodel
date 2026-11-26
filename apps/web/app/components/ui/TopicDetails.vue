@@ -29,7 +29,6 @@ const lessons = computed(() =>
     <section class="s-stack" style="--s-gap: var(--s-5)" aria-live="polite">
       <UiTopicCard
         :title="details.topic.title"
-        :slug="details.topic.slug"
         :level="details.mastery.level"
         :tag="selected?.tag"
         :state="state"

@@ -63,11 +63,6 @@ const topics = computed(
     })) ?? [],
 );
 const selected = ref<string | undefined>(topics.value[0]?.id);
-const sources = computed(() =>
-  [data.value?.sources.repo, ...(data.value?.sources.docs ?? [])].filter(
-    (url): url is string => !!url,
-  ),
-);
 const perPage = 4;
 const page = ref(1);
 const forks = computed(() =>
@@ -85,7 +80,7 @@ const forks = computed(() =>
         <span>/ {{ slug }}</span>
       </p>
       <h1 class="s-title">{{ data.title }}</h1>
-      <p v-if="data.description" class="public__lead">{{ data.description }}</p>
+      <UiClampedDescription v-if="data.description" class="public__lead" :text="data.description" />
       <div class="s-cluster" style="--s-gap: var(--s-2) var(--s-4)">
         <UiForkedFrom
           v-if="data.forkedFrom"
@@ -174,9 +169,7 @@ const forks = computed(() =>
           <UiEmptyState v-else :title="$t('topic.empty')" icon="lesson" compact />
         </UiCollapsible>
         <UiEmptyState v-if="!topics.length" :title="$t('track.empty')" icon="track" compact />
-        <UiCollapsible v-if="sources.length" :title="$t('track.sources')" keep-mounted>
-          <UiResourceLink v-for="url in sources" :key="url" :title="url" :url="url" />
-        </UiCollapsible>
+        <UiTrackSources :sources="data.sources" />
       </section>
       <aside id="forks" class="s-stack">
         <UiSectionHeading :title="$t('public.forks')" :count="$n(data.forks.length)" />

@@ -36,12 +36,6 @@ watch(
 const { data: details, error: topicError, refresh: retryTopic } = await useTopicDetails(selected);
 const states = computed(() => topicStates(topics.value, edges.value));
 const completed = computed(() => topics.value.filter((t) => t.level >= COMPLETE_LEVEL).length);
-const sources = computed(() =>
-  [data.value?.track.sources.repo, ...(data.value?.track.sources.docs ?? [])]
-    .flatMap((s) => (s ? (httpUrl(s) ?? []) : []))
-    .map((href) => ({ href, label: href })),
-);
-
 const { user } = useUserSession();
 const origin = usePublicOrigin();
 const localePath = useLocalePath();
@@ -91,10 +85,14 @@ async function save() {
     </UiNotice>
     <UiSkeletonList v-else-if="!data" />
     <template v-else>
-      <UiPageHeader :title="data.track.title" :description="data.track.description ?? undefined">
+      <UiPageHeader
+        clamp-description
+        :title="data.track.title"
+        :description="data.track.description ?? undefined"
+      >
         <template #meta>
           <UiBadge tone="copper" pad>{{
-            $t("dashboard.atLevel", { done: $n(completed), total: $n(topics.length) })
+            $t("track.mastered", { done: $n(completed), total: $n(topics.length) })
           }}</UiBadge>
           <UiBadge v-if="topics.length && completed === topics.length" icon="check">{{
             $t("dashboard.completed")
@@ -215,14 +213,14 @@ async function save() {
           :board="topics"
           :selected="topics.find((t) => t.id === selected)"
           :state="states.get(selected)"
-          ><template v-if="sources.length" #sources><UiTrackSources :sources="sources" /></template
+          ><template #sources><UiTrackSources :sources="data.track.sources" /></template
         ></UiTopicDetails>
         <UiSkeletonList v-else />
       </template>
       <UiEmptyState v-else :title="$t('track.empty')" icon="track" />
       <UiTrackSources
-        v-if="sources.length && (!details || details.topic.id !== selected || topicError)"
-        :sources="sources"
+        v-if="!details || details.topic.id !== selected || topicError"
+        :sources="data.track.sources"
       />
     </template>
   </div>

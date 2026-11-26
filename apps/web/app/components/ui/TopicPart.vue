@@ -46,8 +46,10 @@ const label = computed(() =>
   >
     <span class="s-part__head" aria-hidden="true">
       <span class="s-part__tag">{{ topic.tag }}</span>
-      <UiIcon v-if="state === 'blocked'" name="lock" :size="11" class="s-part__lock" />
-      <span v-else-if="state === 'ready'" class="s-part__ready">{{ topicWord("ready") }}</span>
+      <UiIcon v-if="state === 'blocked'" name="lock" :size="11" />
+      <span v-if="state === 'blocked' || state === 'ready'" class="s-part__state">{{
+        topicWord(state)
+      }}</span>
       <UiMastery
         v-if="state !== 'outline'"
         :level="topic.level"
@@ -104,11 +106,14 @@ button.s-part:hover {
   border-style: dashed;
   border-color: var(--s-line-strong);
   background: var(--s-surface);
-  color: var(--s-ink-3);
+  color: var(--s-ink-2);
   box-shadow: none;
 }
 .s-part.is-faded {
   opacity: 0.5;
+}
+.s-part.is-blocked.is-faded {
+  opacity: 0.85;
 }
 .s-part.is-selected {
   outline: 2px solid var(--s-ink);
@@ -124,17 +129,19 @@ button.s-part:hover {
   margin-left: auto;
 }
 .s-part__tag,
-.s-part__ready {
+.s-part__state {
   font: 500 var(--s-text-2xs) / 1 var(--s-font-mono);
   font-stretch: 75%;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.s-part__tag,
-.s-part__lock {
+.s-part__tag {
   color: var(--s-ink-3);
 }
-.s-part__ready {
+.is-blocked .s-part__tag {
+  color: inherit;
+}
+.is-ready .s-part__state {
   color: var(--s-copper);
 }
 .s-part__title {

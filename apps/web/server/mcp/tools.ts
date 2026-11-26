@@ -66,13 +66,13 @@ export function createToolServer(data: UserData, origin: string) {
   });
   register(
     "create_track",
-    "Create a Track for a learning goal. Optionally supply a description and sources (one GitHub repo and up to 20 documentation links). Returns the Track.",
+    "Create a Track for a learning goal. Describe the learning outcome and scope in one or two sentences. Put versioned references in sources (one GitHub repo and up to 20 documentation links). Returns the Track.",
     track,
     async (input) => trackLinks(await data.createTrack(input)),
   );
   register(
     "update_track",
-    "Revise a Track by ID. Supplied sources replace previous sources. Returns the updated Track.",
+    "Revise a Track by ID. Keep the description to one or two sentences on the learning outcome and scope. Put versioned references in sources. Supplied sources replace previous sources. Returns the updated Track.",
     track.partial().extend({ id }),
     async ({ id, ...patch }) => {
       const track = await data.updateTrack(id, patch);

@@ -81,8 +81,9 @@ li:last-child > .s-tracklist__row {
   background: var(--s-raised);
   box-shadow: inset 3px 0 0 var(--s-ink);
 }
-.s-tracklist__row.is-blocked {
-  color: var(--s-ink-3);
+.s-tracklist__row.is-blocked,
+.is-blocked .s-tracklist__tag {
+  color: var(--s-ink-2);
 }
 .s-tracklist__rail {
   position: relative;

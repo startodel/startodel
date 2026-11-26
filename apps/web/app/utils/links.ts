@@ -1,15 +1,25 @@
-export function httpUrl(value: string) {
+function parseHttpUrl(value: string) {
   try {
     const url = new URL(value);
-    if (url.protocol === "https:" || url.protocol === "http:") return url.href;
+    if (url.protocol === "https:" || url.protocol === "http:") return url;
   } catch {
     /* Legacy content may contain an invalid URL. */
   }
 }
+export function httpUrl(value: string) {
+  return parseHttpUrl(value)?.href;
+}
+export function trackSourceLink(value: string) {
+  const url = parseHttpUrl(value);
+  if (!url) return;
+  return {
+    href: url.href,
+    label: url.host.replace(/^www\./, "") + url.pathname.replace(/\/+$/, ""),
+  };
+}
 export function youtubeEmbed(value: string) {
-  const href = httpUrl(value);
-  if (!href) return;
-  const url = new URL(href);
+  const url = parseHttpUrl(value);
+  if (!url) return;
   let id: string | null | undefined;
   if (url.hostname === "youtu.be") id = /^\/([\w-]{11})\/?$/.exec(url.pathname)?.[1];
   if (["youtube.com", "www.youtube.com"].includes(url.hostname)) {

@@ -53,7 +53,7 @@ function publish() {
           <span>{{ track.slug }}</span>
         </p>
         <h1 class="s-title">{{ track.title }}</h1>
-        <p class="public__lead">{{ track.description }}</p>
+        <UiClampedDescription class="public__lead" :text="track.description" />
         <div class="s-cluster" style="--s-gap: var(--s-2) var(--s-4)">
           <UiForkedFrom
             :login="track.forkedFrom.login"
@@ -133,6 +133,7 @@ function publish() {
               <p v-else class="s-muted">This Topic has no Lessons yet.</p>
             </UiCollapsible>
           </div>
+          <UiTrackSources :sources="track.sources" />
         </section>
 
         <aside id="forks" class="s-stack" style="--s-gap: var(--s-4)">

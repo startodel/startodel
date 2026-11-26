@@ -7,6 +7,7 @@ withDefaults(
     /** system: a page the product names. content: a title written for the learner. */
     voice?: "system" | "content";
     description?: string;
+    clampDescription?: boolean;
   }>(),
   { voice: "system" },
 );
@@ -16,7 +17,12 @@ withDefaults(
     <div class="s-page-header__main">
       <p v-if="kicker" class="s-page-header__kicker">{{ kicker }}</p>
       <h1 class="s-page-header__title" :class="'s-page-header__title--' + voice">{{ title }}</h1>
-      <p v-if="description || $slots.default" class="s-page-header__description">
+      <UiClampedDescription
+        v-if="clampDescription && description && !$slots.default"
+        class="s-page-header__description"
+        :text="description"
+      />
+      <p v-else-if="description || $slots.default" class="s-page-header__description">
         <slot>{{ description }}</slot>
       </p>
       <div v-if="$slots.meta" class="s-page-header__meta"><slot name="meta" /></div>
