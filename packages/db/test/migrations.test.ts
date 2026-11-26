@@ -103,6 +103,17 @@ test.skipIf(!url)(
         { title: "Existing 2", slug: "existing-2-2", public: false },
         { title: "中文", slug: "track", public: false },
       ]);
+      await apply("0005_review_practice_score");
+      await apply("0006_profile_preferred_language");
+      await apply("0007_uuidv7_defaults");
+      const existing = await client.query(
+        "select id, uuid_extract_version(id) as version from users",
+      );
+      expect(existing.rows).toEqual([{ id: before.account.id, version: 4 }]);
+      const inserted = await client.query(
+        "insert into mcp_tokens(user_id, name, token_prefix, token_hash) select id, 'New', 'prefix', 'new-digest' from users returning uuid_extract_version(id) as version",
+      );
+      expect(inserted.rows).toEqual([{ version: 7 }]);
     } finally {
       try {
         await client.query("rollback");

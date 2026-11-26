@@ -20,6 +20,9 @@ test.skipIf(!url)(
         signInWithGitHub(db, identity),
         signInWithGitHub(db, identity),
       ]);
+      expect(first.id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      );
       expect(second.id).toBe(first.id);
       const owned = eq(profiles.userId, first.id);
       expect(await db.select().from(profiles).where(owned)).toMatchObject([{ goals: [] }]);
