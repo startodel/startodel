@@ -4,7 +4,7 @@ const { t } = useI18n();
 const displayDate = useDisplayDate();
 useHead({ title: t("nav.reviews") });
 const { data, error, refresh } = await useFetch("/api/reviews");
-const { boxes, week } = useReviewSchedule(() => data.value);
+const { boxes, week, today } = useReviewSchedule(() => data.value);
 </script>
 <template>
   <div class="s-stack" style="--s-gap: var(--s-8)">
@@ -15,27 +15,19 @@ const { boxes, week } = useReviewSchedule(() => data.value);
       ></UiNotice
     >
     <UiSkeletonList v-else-if="!data" variant="cards" />
-    <div v-else class="s-split">
-      <div class="s-stack">
-        <section v-for="group in ['due', 'upcoming'] as const" :key="group" class="s-stack">
-          <UiSectionHeading
-            :title="group === 'due' ? $t('review.due') : $t('review.upcoming')"
-            :count="data[group].length"
-          />
-          <UiEmptyState
-            v-if="!data[group].length"
-            compact
-            icon="check"
-            :title="group === 'due' ? $t('review.done') : $t('review.none')"
-          />
+    <div v-else class="s-split" style="--s-aside: 21rem">
+      <div class="s-stack" style="--s-gap: var(--s-8)">
+        <section class="s-stack" style="--s-gap: var(--s-3)">
+          <UiSectionHeading :title="$t('review.due')" :count="data.due.length" />
+          <UiEmptyState v-if="!data.due.length" compact icon="check" :title="$t('review.done')" />
           <UiReviewCard
-            v-for="item in data[group]"
+            v-for="item in data.due"
             :key="item.topicId"
             :title="item.title"
             :level="item.level"
             :box="item.box"
             :due="$t('review.schedule', { date: displayDate(item.dueAt), box: $n(item.box) })"
-            :overdue="group === 'due'"
+            :overdue="item.dueAt.slice(0, 10) < today"
             :last-result="item.lastResult"
           >
             <p v-if="item.practiceCorrect !== null && item.practiceTotal !== null">
@@ -68,12 +60,70 @@ const { boxes, week } = useReviewSchedule(() => data.value);
             </template>
           </UiReviewCard>
         </section>
+        <section class="s-stack" style="--s-gap: var(--s-3)">
+          <UiSectionHeading :title="$t('review.upcoming')" :count="data.upcoming.length" />
+          <UiEmptyState
+            v-if="!data.upcoming.length"
+            :title="$t('review.none')"
+            compact
+            icon="check"
+          />
+          <UiTable
+            v-else
+            dense
+            :caption="$t('review.upcoming')"
+            :rows="data.upcoming"
+            :row-key="(row) => row.topicId"
+            :columns="[
+              { key: 'title', label: $t('progress.topic') },
+              { key: 'box', label: $t('review.boxLabel') },
+              { key: 'dueAt', label: $t('review.nextDate') },
+              { key: 'practice', label: $t('review.practice') },
+            ]"
+          >
+            <template #cell-title="{ row }"
+              ><NuxtLinkLocale class="s-link" :to="'/topics/' + row.topicId">{{
+                row.title
+              }}</NuxtLinkLocale>
+              <p v-if="row.practiceCorrect !== null && row.practiceTotal !== null">
+                {{
+                  $t("review.score", {
+                    correct: $n(row.practiceCorrect),
+                    total: $n(row.practiceTotal),
+                  })
+                }}
+              </p>
+              <p v-else-if="row.reason">{{ row.reason }}</p>
+            </template>
+            <template #cell-box="{ row }">{{ $n(row.box) }}</template
+            ><template #cell-dueAt="{ row }">{{ displayDate(row.dueAt) }}</template>
+            <template #cell-practice="{ row }"
+              ><UiButton
+                v-if="row.hasQuiz"
+                size="sm"
+                icon="quiz"
+                :to="'/reviews/' + row.topicId + '/practice'"
+                >{{ $t("review.practice") }}</UiButton
+              >
+              <UiAgentPrompt
+                v-else
+                compact
+                :label="$t('review.ask')"
+                :text="$t('review.prompt', { title: row.title, id: row.topicId })"
+                tool="record_review_result"
+            /></template>
+          </UiTable>
+        </section>
       </div>
       <aside class="s-stack">
-        <UiSectionHeading :title="$t('review.week')" :level="3" />
-        <UiWeekStrip :days="week" />
-        <UiSectionHeading :title="$t('review.scheduledBoxes')" :level="3" />
-        <UiLeitnerRack :counts="boxes" />
+        <section class="s-stack" style="--s-gap: var(--s-3)">
+          <UiSectionHeading :title="$t('review.week')" :level="3" />
+          <UiWeekStrip :days="week" />
+        </section>
+        <section class="s-stack" style="--s-gap: var(--s-3)">
+          <UiSectionHeading :title="$t('review.scheduledBoxes')" :level="3" />
+          <UiLeitnerRack :counts="boxes" />
+        </section>
       </aside>
     </div>
   </div>

@@ -3,6 +3,7 @@ export default defineHandler((event) => {
   const origin = new URL(useRuntimeConfig().oauth.github.redirectURL || event.req.url).origin;
   const privatePaths = [
     "/api/",
+    "/dashboard",
     "/settings",
     "/onboarding",
     "/grills",
@@ -16,7 +17,7 @@ export default defineHandler((event) => {
     [
       "User-agent: *",
       ...["", "/en"].flatMap((prefix) => [
-        ...["/u/", "/terms", "/rules", "/login"].map((path) => "Allow: " + prefix + path),
+        ...["/u/", "/terms", "/rules"].map((path) => "Allow: " + prefix + path),
         ...privatePaths.map((path) => "Disallow: " + prefix + path),
       ]),
       "Sitemap: " + origin + "/sitemap.xml",

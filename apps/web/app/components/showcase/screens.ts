@@ -14,7 +14,7 @@ export const screens: ScreenInfo[] = [
     id: "landing",
     title: "Landing",
     group: "Public",
-    route: "/login",
+    route: "/",
     note: "What a signed-out visitor sees: the idea, how it works, sign in with GitHub.",
   },
   {
@@ -72,7 +72,7 @@ export const screens: ScreenInfo[] = [
     id: "dashboard",
     title: "Dashboard",
     group: "Learning",
-    route: "/",
+    route: "/dashboard",
     note: "The Next Step, the Tracks and what is due.",
     states: [
       { id: "active", label: "Active" },

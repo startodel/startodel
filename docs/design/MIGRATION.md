@@ -8,7 +8,7 @@ Read [the design concept](CONCEPT.md) and [ADR 0017](../adr/0017-design-system.m
 
 ## Product page rules
 
-- Every product page renders inside `UiRoot` and uses only `Ui*` components and `--s-*` tokens. It has no styles of its own beyond layout.
+- Every product page renders inside `UiRoot` and uses only `Ui*` components and `--s-*` tokens. Its token-based styles reproduce the composition of its showcase screen.
 - Keep every user-facing string in `ru.json` and `en.json`. The showcase copy is English sample text and is not a source of messages. Use the Russian terms in [CONTEXT.md](../CONTEXT.md#russian-ui-terms).
 - Link to app pages with `NuxtLinkLocale`. Components that take a link accept a `LinkTarget` and render it that way.
 - Keep the content safety rules of [ADR 0014](../adr/0014-review-practice-and-ui-answers.md). `UiProse`, `UiCodeBlock`, `UiResourceLink` and `UiVideoEmbed` call the same `renderMarkdown`, `codeTokens`, `httpUrl` and `youtubeEmbed` utilities as the components they replace. `apps/web/test/rendering.test.ts` covers those utilities and stays as it is.
@@ -34,7 +34,7 @@ Follow the same form in new code. A parent that styles the root element of a chi
 node apps/web/test/cascade.mjs http://localhost:3000 /design/components /settings
 ```
 
-It needs Playwright and Chrome, which are not dependencies of the repository. Set `PLAYWRIGHT_MODULE` and `CHROME` to their paths. Pages behind the Session need a signed-in browser profile or a seeded Session.
+It needs Playwright and Chrome, which are not dependencies of the repository. Set `PLAYWRIGHT_MODULE` and `CHROME` to their paths. To exercise the product routes with seeded Track, Lesson, Grill and Review data, run `node apps/web/test/screenshots.mjs --cascade` with `DATABASE_URL_TEST` set to the local `startodel_test` database. It starts the development server, signs in through the local OAuth fixture and checks both 390px and 1440px, including the guest Landing after clearing the Session.
 
 ## Step 0. Layouts
 
@@ -55,10 +55,10 @@ The order goes from pages with the least data and risk to the ones with the most
 | #   | Route                                                                     | Layout  | Mock screen                                | Replaces                                                                                                                                                                             |
 | --- | ------------------------------------------------------------------------- | ------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 1   | `/terms`, `/rules`                                                        | `site`  | `legal`                                    | `LegalDocument` → `UiDocument`                                                                                                                                                       |
-| 2   | `/login`                                                                  | `site`  | `landing`                                  | page markup                                                                                                                                                                          |
+| 2   | `/`                                                                       | `site`  | `landing`                                  | page markup                                                                                                                                                                          |
 | 3   | `/settings`                                                               | `app`   | `settings`                                 | `McpTokens` → `UiTable`, `UiCopyField`, `UiModal`; `LanguageSwitcher` → `UiLanguageSwitcher`                                                                                         |
 | 4   | `/onboarding`, `/onboarding/connect`                                      | `focus` | `onboarding`, `connect`                    | `AgentConfig` → `UiTabs`, `UiCodeBlock`, `UiCopyField`; `AgentPrompt` → `UiAgentPrompt`                                                                                              |
-| 5   | `/`                                                                       | `app`   | `dashboard`                                | `NextStep` → `UiNextUp`; Track rows → `UiTrackStrip`                                                                                                                                 |
+| 5   | `/dashboard`                                                              | `app`   | `dashboard`                                | `NextStep` → `UiNextUp`; Track rows → `UiTrackStrip`                                                                                                                                 |
 | 6   | `/progress`                                                               | `app`   | `progress`                                 | page markup → `UiMasteryHistogram`, `UiVerdictTally`, `UiTable`, `UiTimelineItem`                                                                                                    |
 | 7   | `/reviews`, `/reviews/[topicId]/practice`                                 | `app`   | `reviews`                                  | `QuestionChoices` → `UiQuiz`; rows → `UiReviewCard`                                                                                                                                  |
 | 8   | `/lessons/[id]`                                                           | `app`   | `lesson`                                   | `LessonContent`, `LessonMarkdown`, `LessonCode`, `LessonQuiz` → `UiLessonBlock` with `UiProse`, `UiCodeBlock`, `UiCallout`, `UiResourceLink`, `UiVideoEmbed`, `UiQuiz`, `UiExercise` |
@@ -68,7 +68,7 @@ The order goes from pages with the least data and risk to the ones with the most
 
 Notes for single steps:
 
-- **Step 2.** The landing mock is the signed-out page. Keep the GitHub sign-in link and the redirect behaviour of `/login`.
+- **Step 2.** The landing mock is the signed-out page. Anonymous visitors see it at `/` or `/en`. Signed-in visitors go to their localized Dashboard. Legacy `/login` links redirect.
 - **Step 3.** The plaintext MCP Token is shown once, in `UiCopyField`. Keep it out of logs and out of any stored state.
 - **Step 7 and 8.** `UiQuiz` receives questions and options only. The correct option and the explanation arrive in the `result` prop after submission. `UiExercise` receives the solution only after `reveal`. Do not preload either.
 - **Step 9.** `UiTrackBoard` and `UiTrackMap` share `boardModel()` in `components/ui/board.ts`, so the interactive board and the server-rendered board are identical. `@vue-flow/core` and `@dagrejs/dagre` stay. The board falls back to `UiTrackList` in a narrow container.

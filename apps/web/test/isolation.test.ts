@@ -34,17 +34,17 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
   publicHttpTests(() => ({ db, origin }), request, signIn);
   practiceHttpTests(() => ({ db, origin }), request, signIn);
 
-  async function signIn(login: string) {
+  async function signIn(login: string, english = false) {
     const start = await request("/auth/github");
     expect(start.status).toBe(302);
     const state = new URL(start.headers.get("location")!).searchParams.get("state");
     expect(state).toBeTruthy();
     const callback = await request(
       `/auth/github?code=${login}&state=${state}`,
-      start.headers.getSetCookie()[0].split(";")[0],
+      start.headers.getSetCookie()[0].split(";")[0] + (english ? "; startodel_language=en" : ""),
     );
     expect(callback.status).toBe(302);
-    expect(callback.headers.get("location")).toBe("/");
+    expect(callback.headers.get("location")).toBe(english ? "/en/dashboard" : "/dashboard");
     const cookie = callback.headers
       .getSetCookie()
       .find((value) => value.startsWith("nuxt-auth-session="))!;
@@ -105,27 +105,38 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
   test("the design showcase is not served unless its flag is set", async () => {
     for (const path of ["/design", "/design/components", "/design/og", "/en/design"]) {
       const response = await request(path);
-      expect(response.headers.get("location"), path).toBe(
-        path.startsWith("/en") ? "/en/login" : "/login",
-      );
+      expect(response.headers.get("location"), path).toBe(path.startsWith("/en") ? "/en" : "/");
       expect(await response.text(), path).not.toContain("s-root");
     }
   });
 
-  test("the landing page requires sign-in and logout expires the sealed Session", async () => {
-    expect((await request("/")).headers.get("location")).toBe("/login");
+  test("guests see the Landing and logout expires the sealed Session", async () => {
+    expect((await request("/")).status).toBe(200);
     for (const [path, label] of [
-      ["/login", "Войти через GitHub"],
-      ["/en/login", "Sign in with GitHub"],
+      ["/", "Войти через GitHub"],
+      ["/en", "Sign in with GitHub"],
     ] as const) {
       const html = await (await request(path)).text();
       expect(html).toContain(label);
       expect(html).toMatch(/<a\b[^>]*href="\/auth\/github"[^>]*>[\s\S]*?<\/a>/);
       expect(html.match(/id="s-layer"/g)).toHaveLength(1);
     }
-    expect((await request("/", "startodel_language=en")).headers.get("location")).toBe("/en/login");
+    expect((await request("/", "startodel_language=en")).headers.get("location")).toBe("/en");
     for (const prefix of ["", "/en"]) {
+      const failed = await request(
+        "/auth/github?error=access_denied",
+        prefix ? "startodel_language=en" : "",
+      );
+      expect(failed.headers.get("location")).toBe((prefix || "/") + "?error=oauth");
+      const legacy = await request(prefix + "/login?error=oauth");
+      expect(legacy.status).toBe(302);
+      expect(legacy.headers.get("location")).toBe((prefix || "/") + "?error=oauth");
+      const landing = await (await request((prefix || "/") + "?error=oauth")).text();
+      expect(landing).toContain(
+        prefix ? "Please try signing in again" : "Попробуйте войти ещё раз",
+      );
       for (const path of [
+        "/dashboard",
         "/settings",
         "/progress",
         "/grills",
@@ -134,10 +145,11 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
         "/tracks/unknown",
       ]) {
         const response = await request(prefix + path);
-        expect(response.headers.get("location"), prefix + path).toBe(prefix + "/login");
+        expect(response.status).toBe(302);
+        expect(response.headers.get("location"), prefix + path).toBe(prefix || "/");
         expect(response.headers.get("cache-control")).toBe("private, no-store");
       }
-      for (const path of [prefix || "/", prefix + "/mcp", prefix + "/api/profile"]) {
+      for (const path of [prefix + "/dashboard", prefix + "/mcp", prefix + "/api/profile"]) {
         expect((await request(path)).headers.get("cache-control"), path).toBe("private, no-store");
       }
       expect((await request(prefix + "/api/profile")).status).toBe(401);
@@ -227,7 +239,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
 
   test("learning pages and writes bind each Session to its own Profile, Track, Topic and Lesson", async () => {
     const a = await signIn("alice");
-    const b = await signIn("bob");
+    const b = await signIn("bob", true);
     const me = await (await request("/api/me", b)).json();
     expect(me).toMatchObject({
       user: { login: "bob" },
@@ -288,7 +300,8 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       { stack: [] },
       { goals: [" "] },
       { experience: "other" },
-      { notes: "extra" },
+      { unexpected: "extra" },
+      { yearsOfExperience: 61 },
     ]) {
       expect(
         (await request("/api/profile/questionnaire", a, "PUT", { ...questionnaire, ...patch }))
@@ -301,7 +314,18 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       onboarded: true,
       profile: { ...questionnaire, onboardedAt: expect.any(String) },
     });
-    expect((await request("/", a)).status).toBe(200);
+    for (const prefix of ["", "/en"]) {
+      for (const entry of [prefix || "/", prefix + "/login"]) {
+        const response = await request(entry + "?from=link", a);
+        expect(response.status).toBe(302);
+        expect(response.headers.get("location")).toBe(prefix + "/dashboard?from=link");
+        expect(response.headers.get("cache-control")).toBe("private, no-store");
+        expect(await response.text()).not.toContain("Alice");
+      }
+      const dashboard = await request(prefix + "/dashboard", a);
+      expect(dashboard.status).toBe(200);
+      expect(dashboard.headers.get("cache-control")).toBe("private, no-store");
+    }
     expect((await request("/onboarding/connect", a)).status).toBe(200);
     expect((await (await request("/api/dashboard", a)).json()).tracks).not.toContainEqual(
       expect.objectContaining({ trackId: track.id }),

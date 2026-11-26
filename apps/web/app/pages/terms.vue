@@ -3,7 +3,7 @@ definePageMeta({ layout: "site" });
 const doc = useLegalDocument("terms");
 </script>
 <template>
-  <div class="s-page">
+  <div class="s-page legal">
     <UiDocument
       :title="doc.title"
       :markdown="doc.body"

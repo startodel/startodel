@@ -37,7 +37,7 @@ const index = computed(
 );
 </script>
 <template>
-  <article v-if="data" class="s-page s-stack">
+  <article v-if="data" class="s-page lesson">
     <UiBreadcrumbs
       :items="[
         { label: '@' + route.params.login, to: '/u/' + login },
@@ -46,40 +46,49 @@ const index = computed(
       ]"
     />
     <UiPageHeader :title="data.title" :description="data.summary ?? undefined" voice="content" />
-    <div v-if="data.blocks.length" class="s-split">
-      <div class="s-stack">
-        <UiLessonBlock
-          v-for="(b, i) in data.blocks"
-          :key="b.id"
-          :index="i + 1"
-          :kind="b.type"
-          :anchor="'lesson-block-' + b.id"
-        >
-          <UiProse v-if="b.type === 'theory'" :markdown="b.markdown" />
-          <template v-else-if="b.type === 'code'">
-            <UiCodeBlock :code="b.code" :language="b.language" />
-            <UiProse v-if="b.explanation" :markdown="b.explanation" size="sm" />
-          </template>
-          <UiCallout v-else-if="b.type === 'callout'" :kind="b.variant"
-            ><UiProse :markdown="b.markdown" size="sm"
-          /></UiCallout>
-          <template v-else-if="b.type === 'link' || b.type === 'video'">
-            <UiResourceLink v-if="b.type === 'link'" :title="b.title" :url="b.url" />
-            <UiVideoEmbed v-else :title="b.title" :url="b.url" />
-            <UiProse v-if="b.note" :markdown="b.note" size="sm" />
-          </template>
-          <UiQuiz v-else-if="b.type === 'quiz'" :name="b.id" :questions="b.questions" read-only />
-          <UiExercise
-            v-else-if="b.type === 'exercise'"
-            :prompt="b.prompt"
-            :hints="b.hints"
-            read-only
-          />
-        </UiLessonBlock>
-      </div>
-      <UiLessonIndex :blocks="index" />
-    </div>
+    <UiLessonLayout v-if="data.blocks.length">
+      <UiLessonBlock
+        v-for="(b, i) in data.blocks"
+        :key="b.id"
+        :index="i + 1"
+        :kind="b.type"
+        :anchor="'lesson-block-' + b.id"
+      >
+        <UiProse v-if="b.type === 'theory'" :markdown="b.markdown" />
+        <template v-else-if="b.type === 'code'">
+          <UiCodeBlock :code="b.code" :language="b.language" />
+          <UiProse v-if="b.explanation" :markdown="b.explanation" size="sm" />
+        </template>
+        <UiCallout v-else-if="b.type === 'callout'" :kind="b.variant"
+          ><UiProse :markdown="b.markdown" size="sm"
+        /></UiCallout>
+        <template v-else-if="b.type === 'link' || b.type === 'video'">
+          <UiResourceLink v-if="b.type === 'link'" :title="b.title" :url="b.url" />
+          <UiVideoEmbed v-else :title="b.title" :url="b.url" />
+          <UiProse v-if="b.note" :markdown="b.note" size="sm" />
+        </template>
+        <UiQuiz v-else-if="b.type === 'quiz'" :name="b.id" :questions="b.questions" read-only />
+        <UiExercise
+          v-else-if="b.type === 'exercise'"
+          :prompt="b.prompt"
+          :hints="b.hints"
+          read-only
+        />
+      </UiLessonBlock>
+      <template #aside><UiLessonIndex :blocks="index" /></template>
+      <template #end
+        ><div>
+          <UiButton :to="path" icon="arrow-left">{{ data.trackTitle }}</UiButton>
+        </div></template
+      >
+    </UiLessonLayout>
     <UiEmptyState v-else :title="$t('lesson.empty')" icon="lesson" />
   </article>
   <UiSkeletonList v-else />
 </template>
+<style scoped>
+.lesson {
+  display: grid;
+  gap: var(--s-10);
+}
+</style>

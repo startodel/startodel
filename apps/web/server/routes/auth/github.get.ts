@@ -1,5 +1,10 @@
-import { sendRedirect } from "nuxt/server";
+import { getCookie, sendRedirect, type RequestEvent } from "nuxt/server";
 import { signIn } from "../../lib/database";
+import { languageCookie, localizedPath } from "../../../shared/locale";
+
+function destination(event: RequestEvent, path: string) {
+  return localizedPath(path, getCookie(event, languageCookie) === "en" ? "en" : "ru");
+}
 
 export default defineOAuthGitHubEventHandler({
   async onSuccess(event, { user }) {
@@ -10,9 +15,9 @@ export default defineOAuthGitHubEventHandler({
       avatarUrl: user.avatar_url,
     });
     await replaceUserSession(event, { user: account });
-    return sendRedirect(event, "/");
+    return sendRedirect(event, destination(event, "/dashboard"));
   },
   onError(event) {
-    return sendRedirect(event, "/login");
+    return sendRedirect(event, destination(event, "/") + "?error=oauth");
   },
 });

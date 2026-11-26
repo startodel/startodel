@@ -33,6 +33,27 @@ usePublicHead(
   }),
 );
 const { user } = useUserSession();
+const { state: copyState, copy } = useCopy();
+const publicUrl = usePublicOrigin().value + localePath(path);
+const workspaceError = ref(false);
+async function openWorkspace(visibility = false) {
+  workspaceError.value = false;
+  try {
+    // Resolve the private ID through the Session only when the Owner opens the workspace.
+    const tracks = await $fetch("/api/tracks");
+    const owned = tracks.find((track) => track.slug === slug);
+    if (!owned) {
+      workspaceError.value = true;
+      return;
+    }
+    await navigateTo({
+      path: localePath("/tracks/" + owned.id),
+      query: visibility ? { visibility: "edit" } : {},
+    });
+  } catch {
+    workspaceError.value = true;
+  }
+}
 const busy = ref(false);
 const forkFailed = ref(false);
 async function fork() {
@@ -72,78 +93,87 @@ const forks = computed(() =>
 );
 </script>
 <template>
-  <div v-if="data" class="s-page s-stack">
-    <div class="s-stack">
-      <div class="s-cluster">
-        <UiAvatar :name="data.author.name || login" :src="data.author.avatarUrl" :size="32" />
-        <NuxtLinkLocale class="s-link" :to="'/u/' + encodeURIComponent(login)"
+  <div v-if="data" class="s-page public">
+    <header class="public__head">
+      <p class="public__owner">
+        <UiAvatar :name="data.author.name || login" :src="data.author.avatarUrl" :size="24" />
+        <NuxtLinkLocale class="public__login" :to="'/u/' + encodeURIComponent(login)"
           >{{ data.author.name ? data.author.name + " · " : "" }}@{{ login }}</NuxtLinkLocale
         >
-        <span class="s-mono s-muted">/ {{ slug }}</span>
-      </div>
-      <UiPageHeader
-        :title="data.title"
-        :description="data.description ?? undefined"
-        voice="content"
-      >
-        <template #meta>
-          <UiForkedFrom
-            v-if="data.forkedFrom"
-            :login="data.forkedFrom.login"
-            :slug="data.forkedFrom.slug"
-            :to="
-              data.forkedFrom.source
-                ? '/u/' +
-                  encodeURIComponent(data.forkedFrom.source.login) +
-                  '/' +
-                  encodeURIComponent(data.forkedFrom.source.slug)
-                : undefined
-            "
-          />
-          <UiBadge icon="track">{{ $t("count.topics", countArgs(topics.length)) }}</UiBadge>
-          <UiBadge icon="fork">{{ $t("count.forks", countArgs(data.forkCount)) }}</UiBadge>
-          <span class="s-muted">{{
-            $t("public.created", {
-              created: displayDate(data.createdAt),
-              updated: displayDate(data.updatedAt),
-            })
-          }}</span>
-        </template>
-        <template v-if="user?.login !== login" #actions>
-          <UiForkButton
-            v-if="user"
-            :count="data.forkCount"
-            :busy="busy"
-            :count-to="{ path, hash: '#forks' }"
-            @fork="fork"
-          />
-          <UiButton v-else variant="primary" icon="fork" to="/login">{{
-            $t("public.loginFork")
-          }}</UiButton>
-        </template>
-      </UiPageHeader>
-      <UiNotice v-if="forkFailed" tone="danger" :title="$t('public.forkError')" />
-      <UiCollapsible v-if="sources.length" :title="$t('track.sources')" keep-mounted>
-        <UiResourceLink v-for="url in sources" :key="url" :title="url" :url="url" />
-      </UiCollapsible>
-    </div>
-    <section v-if="topics.length" class="s-stack">
-      <UiSectionHeading :title="$t('track.graph')" />
-      <UiCard variant="sunken" padding="none">
-        <UiTrackMap
-          v-model:selected="selected"
-          class="s-grid"
-          :topics="topics"
-          :edges="data.edges"
-          :label="$t('track.graph')"
-          :flow="false"
-          outline
-          interactive
+        <span>/ {{ slug }}</span>
+      </p>
+      <h1 class="s-title">{{ data.title }}</h1>
+      <p v-if="data.description" class="public__lead">{{ data.description }}</p>
+      <div class="s-cluster" style="--s-gap: var(--s-2) var(--s-4)">
+        <UiForkedFrom
+          v-if="data.forkedFrom"
+          :login="data.forkedFrom.login"
+          :slug="data.forkedFrom.slug"
+          :to="
+            data.forkedFrom.source
+              ? '/u/' +
+                encodeURIComponent(data.forkedFrom.source.login) +
+                '/' +
+                encodeURIComponent(data.forkedFrom.source.slug)
+              : undefined
+          "
         />
-      </UiCard>
-    </section>
-    <div class="s-split">
-      <section class="s-stack">
+        <UiBadge icon="track">{{ $t("count.topics", countArgs(topics.length)) }}</UiBadge>
+        <UiBadge icon="lesson">{{
+          $t("count.lessons", countArgs(topics.reduce((n, topic) => n + topic.lessons.length, 0)))
+        }}</UiBadge>
+        <UiBadge icon="fork">{{ $t("count.forks", countArgs(data.forkCount)) }}</UiBadge>
+        <span class="s-muted public__updated">{{
+          $t("public.created", {
+            created: displayDate(data.createdAt),
+            updated: displayDate(data.updatedAt),
+          })
+        }}</span>
+      </div>
+      <div class="s-cluster public__actions" v-if="user?.login !== login">
+        <UiForkButton
+          v-if="user"
+          :count="data.forkCount"
+          :busy="busy"
+          :count-to="{ path, hash: '#forks' }"
+          @fork="fork"
+        />
+        <UiButton v-else variant="primary" icon="fork" to="/">{{
+          $t("public.loginFork")
+        }}</UiButton>
+        <p class="s-muted public__hint">{{ $t("public.forkHint") }}</p>
+      </div>
+      <div v-else class="s-cluster public__actions">
+        <UiBadge tone="verdigris" icon="globe">{{ $t("visibility.public") }}</UiBadge>
+        <UiButton icon="link" @click="copy(publicUrl)">{{ $t("visibility.copy") }}</UiButton>
+        <UiButton icon="lock" @click="openWorkspace(true)">{{ $t("public.visibility") }}</UiButton>
+        <UiButton variant="ghost" icon-right="arrow-right" @click="openWorkspace()">{{
+          $t("public.workspace")
+        }}</UiButton>
+        <span role="status">{{
+          copyState === "copied" ? $t("common.copied") : copyState === "failed" ? publicUrl : ""
+        }}</span>
+      </div>
+      <UiNotice v-if="workspaceError" tone="danger" :title="$t('common.error')" />
+      <UiNotice v-if="forkFailed" tone="danger" :title="$t('public.forkError')" />
+    </header>
+    <figure v-if="topics.length" class="public__board">
+      <UiTrackMap
+        v-model:selected="selected"
+        class="s-grid"
+        :topics="topics"
+        :edges="data.edges"
+        :label="$t('track.graph')"
+        :flow="false"
+        outline
+        interactive
+      />
+      <figcaption class="public__caption">
+        <span class="s-label">{{ $t("track.graph") }} · {{ $t("public.inspect") }}</span>
+      </figcaption>
+    </figure>
+    <div class="s-split" style="--s-aside: 22rem">
+      <section class="s-stack" style="--s-gap: var(--s-4)">
         <UiSectionHeading :title="$t('track.topics')" :count="$n(topics.length)" />
         <UiCollapsible
           v-for="topic in topics"
@@ -159,6 +189,9 @@ const forks = computed(() =>
           <UiEmptyState v-else :title="$t('topic.empty')" icon="lesson" compact />
         </UiCollapsible>
         <UiEmptyState v-if="!topics.length" :title="$t('track.empty')" icon="track" compact />
+        <UiCollapsible v-if="sources.length" :title="$t('track.sources')" keep-mounted>
+          <UiResourceLink v-for="url in sources" :key="url" :title="url" :url="url" />
+        </UiCollapsible>
       </section>
       <aside id="forks" class="s-stack">
         <UiSectionHeading :title="$t('public.forks')" :count="$n(data.forks.length)" />
@@ -183,3 +216,56 @@ const forks = computed(() =>
   </div>
   <UiSkeletonList v-else />
 </template>
+<style scoped>
+.public {
+  display: grid;
+  gap: var(--s-10);
+  padding-block: var(--s-10) var(--s-16);
+}
+.public__head {
+  display: grid;
+  gap: var(--s-4);
+}
+.public__owner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  font: 500 var(--s-text-sm) / 1.3 var(--s-font-mono);
+  font-stretch: 75%;
+  color: var(--s-ink-3);
+}
+.public__login {
+  color: var(--s-ink);
+  text-decoration: none;
+}
+.public__login:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.public__lead {
+  max-width: 44rem;
+  font-size: var(--s-text-lg);
+  color: var(--s-ink-2);
+}
+.public__updated,
+.public__hint {
+  font-size: var(--s-text-sm);
+}
+.public__actions {
+  margin-top: var(--s-2);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--s-line);
+}
+.public__board {
+  border: 1px solid var(--s-line-strong);
+  border-radius: var(--s-radius-md);
+  background: var(--s-sunken);
+  overflow: hidden;
+}
+.public__caption {
+  padding: var(--s-3) var(--s-4);
+  border-top: 1px solid var(--s-line);
+  background: var(--s-surface);
+}
+</style>

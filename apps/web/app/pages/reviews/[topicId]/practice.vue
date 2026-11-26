@@ -1,10 +1,18 @@
 <script setup lang="ts">
 definePageMeta({ layout: "app" });
 const { t } = useI18n();
+const countArgs = useCountArgs();
 const displayDate = useDisplayDate();
 const id = String(useRoute().params.topicId);
 const url = `/api/reviews/${id}/practice` as const;
 const { data, error, refresh } = await useFetch(url);
+const { data: schedule, refresh: refreshSchedule } = await useFetch("/api/reviews");
+const { boxes } = useReviewSchedule(() => schedule.value);
+const item = computed(() =>
+  [...(schedule.value?.due ?? []), ...(schedule.value?.upcoming ?? [])].find(
+    (r) => r.topicId === id,
+  ),
+);
 if (error.value?.statusCode === 404)
   throw createError({
     statusCode: error.value.statusCode,
@@ -42,6 +50,7 @@ async function submit() {
   message.value = "";
   try {
     result.value = await send(data.value);
+    await refreshSchedule();
   } catch (error) {
     const failure = practiceFailure(
       error && typeof error === "object" && "statusCode" in error ? error.statusCode : undefined,
@@ -64,11 +73,17 @@ async function reload() {
 const quiz = computed(() => practiceQuizProps(data.value?.questions ?? [], result.value?.results));
 </script>
 <template>
-  <div class="s-stack">
+  <div class="practice">
     <div>
       <UiButton to="/reviews" variant="ghost" icon="arrow-left">{{ $t("nav.reviews") }}</UiButton>
     </div>
-    <UiPageHeader :title="data?.title ?? $t('review.practice')" :kicker="$t('review.practice')" />
+    <UiPageHeader :title="data?.title ?? $t('review.practice')" :kicker="$t('review.practice')">
+      <template v-if="data" #meta>
+        <UiBadge icon="quiz">{{ $t("count.questions", countArgs(data.questions.length)) }}</UiBadge>
+        <UiBadge v-if="item" icon="box">{{ $t("review.boxFull", { box: $n(item.box) }) }}</UiBadge>
+        <UiMastery v-if="item" :level="item.level" show="full" />
+      </template>
+    </UiPageHeader>
     <UiNotice v-if="error" tone="danger" :title="$t('common.error')"
       ><template #actions
         ><UiButton @click="reload">{{ $t("common.retry") }}</UiButton></template
@@ -76,20 +91,27 @@ const quiz = computed(() => practiceQuizProps(data.value?.questions ?? [], resul
     >
     <UiSkeletonList v-else-if="!data" variant="cards" />
     <template v-else>
-      <UiCard v-if="result" aria-live="polite">
-        <div class="s-stack">
-          <UiVerdict :verdict="result.verdict" size="lg" />
-          <p>
-            {{
-              $t("review.next", {
-                box: $n(result.box),
-                date: displayDate(result.dueAt),
-                level: $n(result.mastery),
-              })
+      <section
+        v-if="result"
+        class="outcome"
+        :class="'outcome--' + result.verdict"
+        aria-live="polite"
+      >
+        <div class="outcome__main">
+          <p class="s-label">{{ $t("grill.verdictTitle") }}</p>
+          <h2 class="outcome__title">
+            <UiVerdict :verdict="result.verdict" size="lg" />{{
+              $t("quiz.score", { correct: $n(result.correct), total: $n(result.total) })
             }}
-          </p>
+          </h2>
         </div>
-      </UiCard>
+        <UiLeitnerRack v-if="schedule" :counts="boxes" :current="result.box" compact />
+        <dl class="outcome__facts">
+          <UiStat :label="$t('review.boxLabel')" :value="$n(result.box)" />
+          <UiStat :label="$t('review.nextDate')" :value="displayDate(result.dueAt)" />
+          <UiStat :label="$t('progress.mastery')" :value="$n(result.mastery)" />
+        </dl>
+      </section>
       <UiQuiz
         v-model="answers"
         name="practice"
@@ -112,3 +134,53 @@ const quiz = computed(() => practiceQuizProps(data.value?.questions ?? [], resul
     </template>
   </div>
 </template>
+<style scoped>
+.practice {
+  display: grid;
+  gap: var(--s-8);
+  max-width: 48rem;
+  margin: 0 auto;
+}
+.outcome {
+  display: grid;
+  gap: var(--s-5);
+  padding: var(--s-5) var(--s-6);
+  border: 1px solid var(--s-line-strong);
+  border-radius: var(--s-radius-lg);
+  background: var(--s-raised);
+  box-shadow:
+    inset 3px 0 0 var(--s-outcome-edge, var(--s-brass)),
+    var(--s-shadow-2);
+}
+.outcome__main {
+  display: grid;
+  gap: var(--s-2);
+}
+.outcome__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  font: 600 var(--s-text-2xl) / 1.15 var(--s-font-mono);
+  font-stretch: 75%;
+  letter-spacing: -0.03em;
+}
+.outcome--strong {
+  --s-outcome-edge: var(--s-verdigris);
+}
+.outcome--weak {
+  --s-outcome-edge: var(--s-oxide);
+}
+.outcome__facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--s-line);
+}
+@container s-main (max-width: 32rem) {
+  .outcome__facts {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

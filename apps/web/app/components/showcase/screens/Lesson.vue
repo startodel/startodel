@@ -97,79 +97,75 @@ onMounted(() => {
         </template>
       </UiPageHeader>
 
-      <div class="lesson__layout">
-        <div class="lesson__blocks">
-          <UiLessonBlock
-            v-for="(b, i) in lesson.blocks"
-            :key="b.id"
-            :index="i + 1"
-            :kind="b.type"
-            :label="b.type === 'callout' ? b.kind : undefined"
-            :anchor="b.id"
+      <UiLessonLayout>
+        <UiLessonBlock
+          v-for="(b, i) in lesson.blocks"
+          :key="b.id"
+          :index="i + 1"
+          :kind="b.type"
+          :label="b.type === 'callout' ? b.kind : undefined"
+          :anchor="b.id"
+        >
+          <UiProse v-if="b.type === 'theory'" :markdown="b.markdown" />
+          <div v-else-if="b.type === 'code'" class="s-stack" style="--s-gap: var(--s-3)">
+            <UiCodeBlock :code="b.code" :language="b.language" :title="b.title" />
+            <UiProse :markdown="b.explanation" size="sm" />
+          </div>
+          <UiCallout v-else-if="b.type === 'callout'" :kind="b.kind">
+            <UiProse :markdown="b.markdown" size="sm" />
+          </UiCallout>
+          <UiResourceLink
+            v-else-if="b.type === 'link'"
+            :title="b.title"
+            :url="b.url"
+            :note="b.note"
+          />
+          <UiVideoEmbed
+            v-else-if="b.type === 'video'"
+            :title="b.title"
+            :url="b.url"
+            :note="b.note"
+          />
+          <UiQuiz
+            v-else-if="b.type === 'quiz'"
+            v-model="answers"
+            :name="b.id"
+            :questions="b.questions"
+            :result="result"
+            :busy="busy"
+            @submit="submit"
+            @retry="((result = undefined), (answers = []))"
           >
-            <UiProse v-if="b.type === 'theory'" :markdown="b.markdown" />
-            <div v-else-if="b.type === 'code'" class="s-stack" style="--s-gap: var(--s-3)">
-              <UiCodeBlock :code="b.code" :language="b.language" :title="b.title" />
-              <UiProse :markdown="b.explanation" size="sm" />
-            </div>
-            <UiCallout v-else-if="b.type === 'callout'" :kind="b.kind">
-              <UiProse :markdown="b.markdown" size="sm" />
-            </UiCallout>
-            <UiResourceLink
-              v-else-if="b.type === 'link'"
-              :title="b.title"
-              :url="b.url"
-              :note="b.note"
-            />
-            <UiVideoEmbed
-              v-else-if="b.type === 'video'"
-              :title="b.title"
-              :url="b.url"
-              :note="b.note"
-            />
-            <UiQuiz
-              v-else-if="b.type === 'quiz'"
-              v-model="answers"
-              :name="b.id"
-              :questions="b.questions"
-              :result="result"
-              :busy="busy"
-              @submit="submit"
-              @retry="((result = undefined), (answers = []))"
-            >
-              <template #result>
-                <UiBadge v-if="allCorrect" tone="verdigris" icon="check"
-                  >Mastery raised to 2</UiBadge
-                >
-              </template>
-            </UiQuiz>
-            <UiExercise
-              v-else-if="b.type === 'exercise'"
-              :prompt="b.prompt"
-              :hints="b.hints"
-              :solution="solution"
-              :revealing="revealing"
-              @reveal="reveal"
-            />
-          </UiLessonBlock>
+            <template #result>
+              <UiBadge v-if="allCorrect" tone="verdigris" icon="check">Mastery raised to 2</UiBadge>
+            </template>
+          </UiQuiz>
+          <UiExercise
+            v-else-if="b.type === 'exercise'"
+            :prompt="b.prompt"
+            :hints="b.hints"
+            :solution="solution"
+            :revealing="revealing"
+            @reveal="reveal"
+          />
+        </UiLessonBlock>
 
-          <footer class="lesson__end">
-            <UiNotice tone="success" title="Lesson read">
-              Reading every Lesson in a Topic raises its Mastery to 1. A fully correct Quiz raises
-              it to 2.
-            </UiNotice>
-            <div class="s-cluster lesson__nav">
-              <UiButton icon="arrow-left" :to="screenPath('lesson')">L01 The timers phase</UiButton>
-              <UiButton variant="primary" icon-right="arrow-right" :to="screenPath('lesson')"
-                >L03 setImmediate and nextTick</UiButton
-              >
-            </div>
-          </footer>
-        </div>
-        <aside class="lesson__aside">
+        <template #end>
+          <UiNotice tone="success" title="Lesson read">
+            Reading every Lesson in a Topic raises its Mastery to 1. A fully correct Quiz raises it
+            to 2.
+          </UiNotice>
+          <div class="s-cluster lesson__nav">
+            <UiButton icon="arrow-left" :to="screenPath('lesson')">L01 The timers phase</UiButton>
+            <UiButton variant="primary" icon-right="arrow-right" :to="screenPath('lesson')"
+              >L03 setImmediate and nextTick</UiButton
+            >
+          </div>
+        </template>
+        <template #aside>
           <UiLessonIndex :blocks="index" :current="current" />
-        </aside>
-      </div>
+        </template>
+      </UiLessonLayout>
     </article>
   </ShowcaseApp>
 </template>
@@ -178,38 +174,7 @@ onMounted(() => {
   display: grid;
   gap: var(--s-10);
 }
-.lesson__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--s-10);
-}
-.lesson__blocks {
-  display: grid;
-  gap: var(--s-10);
-  min-width: 0;
-}
-.lesson__aside {
-  display: none;
-}
-.lesson__end {
-  display: grid;
-  gap: var(--s-5);
-  max-width: calc(var(--s-block-margin, 6.5rem) + var(--s-6) + var(--s-read-measure));
-  padding-top: var(--s-8);
-  border-top: 1px solid var(--s-line);
-}
 .lesson__nav {
   justify-content: space-between;
-}
-@container s-main (min-width: 66rem) {
-  .lesson__layout {
-    grid-template-columns: minmax(0, 1fr) 15rem;
-  }
-  .lesson__aside {
-    display: block;
-    position: sticky;
-    top: calc(var(--s-sticky-top, 0px) + 5rem);
-    align-self: start;
-  }
 }
 </style>

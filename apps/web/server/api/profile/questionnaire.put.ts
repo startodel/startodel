@@ -5,6 +5,8 @@ import { userData } from "../../lib/database";
 import { found } from "../../utils/input";
 const choices = z.array(z.string().trim().min(1)).min(1);
 const questionnaire = z.strictObject({
+  yearsOfExperience: ProfileQuestionnaire.shape.yearsOfExperience.optional(),
+  notes: ProfileQuestionnaire.shape.notes.optional(),
   stack: choices,
   goals: choices,
   experience: ProfileQuestionnaire.shape.experience.unwrap(),

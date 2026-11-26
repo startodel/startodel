@@ -184,6 +184,16 @@ export function grillsForUser(db: Connection, userId: string) {
           track: tracks.title,
           answered: count(grillQuestions.answeredAt),
           judged: count(grillQuestions.judgedAt),
+          strong: sql<number>`count(*) filter (where ${grillQuestions.verdict} = 'strong')`.mapWith(
+            Number,
+          ),
+          partial:
+            sql<number>`count(*) filter (where ${grillQuestions.verdict} = 'partial')`.mapWith(
+              Number,
+            ),
+          weak: sql<number>`count(*) filter (where ${grillQuestions.verdict} = 'weak')`.mapWith(
+            Number,
+          ),
           total: count(grillQuestions.id),
         })
         .from(grillSessions)

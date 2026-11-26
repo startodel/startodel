@@ -9,7 +9,10 @@ useHead({ title: () => data.value?.topic.title ?? t("topic.lessons") });
 </script>
 <template>
   <div class="s-stack">
-    <UiPageHeader :title="$t('topic.lessons')" />
+    <UiPageHeader
+      :kicker="$t('progress.topic')"
+      :title="data?.topic.title ?? $t('topic.lessons')"
+    />
     <UiNotice v-if="error" tone="danger" :title="$t('topic.load')">
       <template #actions><UiButton @click="refresh()">{{ $t("common.retry") }}</UiButton></template>
     </UiNotice>

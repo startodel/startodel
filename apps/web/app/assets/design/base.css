@@ -316,3 +316,8 @@ html :where(.s-root) :focus-visible {
     grid-template-columns: minmax(0, 1fr) var(--s-aside, 20rem);
   }
 }
+
+:where(.s-root) .legal,
+:where(.s-root) .lesson.s-page {
+  padding-block: var(--s-10) var(--s-16);
+}

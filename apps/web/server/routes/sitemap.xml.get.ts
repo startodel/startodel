@@ -7,7 +7,7 @@ import { escapeXml } from "../lib/xml";
 export default defineHandler(async (event) => {
   const origin = new URL(useRuntimeConfig().oauth.github.redirectURL || event.req.url).origin;
   const paths = new Map<string, string | undefined>([
-    ["/login", undefined],
+    ["/", undefined],
     ["/rules", undefined],
     ["/terms", undefined],
   ]);

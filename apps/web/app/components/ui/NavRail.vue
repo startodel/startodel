@@ -9,7 +9,7 @@ withDefaults(
     user?: NavUser;
     home?: LinkTarget;
   }>(),
-  { home: "/" },
+  { home: "/dashboard" },
 );
 defineEmits<{ logout: [] }>();
 const collapsed = defineModel<boolean>("collapsed", { default: false });

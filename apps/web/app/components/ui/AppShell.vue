@@ -13,7 +13,7 @@ withDefaults(
     /** Where the logo leads. */
     home?: LinkTarget;
   }>(),
-  { home: "/" },
+  { home: "/dashboard" },
 );
 defineEmits<{ logout: [] }>();
 const collapsed = defineModel<boolean>("collapsed", { default: false });

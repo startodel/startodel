@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { LEGAL_TERMS_VERSION } from "@startodel/core";
-import { COMPLETE_LEVEL } from "../../components/ui/board";
+import { COMPLETE_LEVEL, topicStates } from "../../components/ui/board";
 
 definePageMeta({ layout: "app" });
 const { t } = useI18n();
@@ -12,6 +12,7 @@ const { data, error, refresh } = await useFetch(`${url}/graph`);
 if (error.value?.statusCode === 404)
   throw createError({ statusCode: 404, message: t("common.error") });
 useHead({ title: () => data.value?.track.title });
+const animate = useBoardMotion();
 const topics = computed(
   () =>
     data.value?.topics.map(({ id, title, level }, i) => ({
@@ -26,18 +27,19 @@ const edges = computed(
 );
 const selected = ref<string>();
 watch(
-  () => topics.value.find((row) => row.id === route.query.topic)?.id,
+  () => topics.value.find((row) => row.id === route.query.topic)?.id ?? topics.value[0]?.id,
   (id) => {
     selected.value = id;
   },
   { immediate: true },
 );
 const { data: details, error: topicError, refresh: retryTopic } = await useTopicDetails(selected);
+const states = computed(() => topicStates(topics.value, edges.value));
 const completed = computed(() => topics.value.filter((t) => t.level >= COMPLETE_LEVEL).length);
 const sources = computed(() =>
-  [data.value?.track.sources.repo, ...(data.value?.track.sources.docs ?? [])].flatMap((s) =>
-    s ? (httpUrl(s) ?? []) : [],
-  ),
+  [data.value?.track.sources.repo, ...(data.value?.track.sources.docs ?? [])]
+    .flatMap((s) => (s ? (httpUrl(s) ?? []) : []))
+    .map((href) => ({ href, label: href })),
 );
 
 const { user } = useUserSession();
@@ -47,7 +49,7 @@ const publicPath = computed(
   () => "/u/" + encodeURIComponent(user.value?.login ?? "") + "/" + data.value?.track.slug,
 );
 const { state: copyState, copy } = useCopy();
-const open = ref(false);
+const open = ref(route.query.visibility === "edit");
 const agree = ref(false);
 const saving = ref(false);
 const saveError = ref(false);
@@ -83,14 +85,14 @@ async function save() {
 }
 </script>
 <template>
-  <div class="s-stack">
+  <div class="s-stack" style="--s-gap: var(--s-6)">
     <UiNotice v-if="error" tone="danger" :title="$t('common.error')">
       <template #actions><UiButton @click="refresh()">{{ $t("common.retry") }}</UiButton></template>
     </UiNotice>
     <UiSkeletonList v-else-if="!data" />
     <template v-else>
       <UiBreadcrumbs
-        :items="[{ label: $t('nav.dashboard'), to: '/' }, { label: data.track.title }]"
+        :items="[{ label: $t('nav.dashboard'), to: '/dashboard' }, { label: data.track.title }]"
       />
       <UiPageHeader :title="data.track.title" :description="data.track.description ?? undefined">
         <template #meta>
@@ -145,6 +147,11 @@ async function save() {
         :description="data.track.public ? $t('visibility.closeInfo') : $t('visibility.publishInfo')"
       >
         <template v-if="!data.track.public">
+          <ul class="publish__facts">
+            <li><UiIcon name="eye" :size="14" />{{ $t("visibility.shared") }}</li>
+            <li><UiIcon name="lock" :size="14" />{{ $t("visibility.personal") }}</li>
+            <li><UiIcon name="fork" :size="14" />{{ $t("visibility.copies") }}</li>
+          </ul>
           <p v-if="accepted">{{ $t("visibility.accepted", { date: displayDate(accepted) }) }}</p>
           <UiCheckbox v-else v-model="agree" required>
             <i18n-t keypath="visibility.agree" scope="global">
@@ -183,42 +190,61 @@ async function save() {
           >
         </template>
       </UiModal>
-      <div v-if="topics.length" class="s-split">
+      <template v-if="topics.length">
         <UiTrackBoard
           v-model:selected="selected"
           :topics="topics"
           :edges="edges"
+          :flow="animate"
           :label="$t('track.graph')"
-        />
-        <aside>
-          <UiEmptyState v-if="!selected" :title="$t('track.details')" icon="track" compact>{{
-            $t("track.select")
-          }}</UiEmptyState>
-          <UiNotice v-else-if="topicError" tone="danger" :title="$t('topic.load')"
-            ><template #actions
-              ><UiButton @click="retryTopic()">{{ $t("common.retry") }}</UiButton></template
-            ></UiNotice
-          >
-          <UiTopicDetails
-            v-else-if="details && details.topic.id === selected"
-            :details="details"
-            :track="data.track.id"
-          />
-          <UiSkeletonList v-else />
-        </aside>
-      </div>
+          ><template #lead
+            ><span class="s-label"
+              >{{ $t("track.graph") }} · {{ $t("track.select") }}</span
+            ></template
+          ></UiTrackBoard
+        >
+        <UiEmptyState v-if="!selected" :title="$t('track.details')" icon="track" compact>{{
+          $t("track.select")
+        }}</UiEmptyState>
+        <UiNotice v-else-if="topicError" tone="danger" :title="$t('topic.load')"
+          ><template #actions
+            ><UiButton @click="retryTopic()">{{ $t("common.retry") }}</UiButton></template
+          ></UiNotice
+        >
+        <UiTopicDetails
+          v-else-if="details && details.topic.id === selected"
+          :details="details"
+          :track="data.track.id"
+          :board="topics"
+          :selected="topics.find((t) => t.id === selected)"
+          :state="states.get(selected)"
+          ><template v-if="sources.length" #sources><UiTrackSources :sources="sources" /></template
+        ></UiTopicDetails>
+        <UiSkeletonList v-else />
+      </template>
       <UiEmptyState v-else :title="$t('track.empty')" icon="track" />
-      <section v-if="sources.length">
-        <UiCollapsible :title="$t('track.sources')" icon="link">
-          <ul>
-            <li v-for="(source, i) in sources" :key="i">
-              <a class="s-link" :href="source" target="_blank" rel="noopener noreferrer">{{
-                source
-              }}</a>
-            </li>
-          </ul>
-        </UiCollapsible>
-      </section>
+      <UiTrackSources
+        v-if="sources.length && (!details || details.topic.id !== selected || topicError)"
+        :sources="sources"
+      />
     </template>
   </div>
 </template>
+<style scoped>
+.publish__facts {
+  display: grid;
+  gap: var(--s-2);
+  list-style: none;
+  font-size: var(--s-text-sm);
+}
+.publish__facts li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: start;
+}
+.publish__facts svg {
+  margin-top: var(--s-1);
+  color: var(--s-ink-3);
+}
+</style>

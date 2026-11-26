@@ -4,12 +4,16 @@ import { basePath, localizedPath, pageLocale, languageCookie } from "../../share
 export default defineNuxtRouteMiddleware(async (to) => {
   const path = basePath(to.path);
   const target = (value: string) => localizedPath(value, pageLocale(to.path));
+  const { session, loggedIn } = useUserSession();
+  const redirectEntry = (value: string) =>
+    navigateTo({ path: target(value), query: to.query, hash: to.hash });
+  if (path === "/" && loggedIn.value) return redirectEntry("/dashboard");
   if (to.path === "/" && useCookie(languageCookie).value === "en")
     return navigateTo({ path: "/en", query: to.query, hash: to.hash });
   if (/^\/api(?:\/|$)/i.test(path)) return;
   if (isPublicPage(to.path)) {
     // Keep the sealed Session's contents out of public hydration payloads.
-    if (import.meta.server) useUserSession().session.value = null;
+    if (import.meta.server) session.value = null;
     return;
   }
   // The design showcase holds no learner data. It is served only in development or behind a flag.
@@ -17,14 +21,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
     isDesignShowcasePath(to.path) &&
     designShowcaseEnabled(import.meta.dev, useRuntimeConfig().public.designShowcase)
   ) {
-    if (import.meta.server) useUserSession().session.value = null;
+    if (import.meta.server) session.value = null;
     return;
   }
   const me = useMe();
-  if (!useUserSession().loggedIn.value) {
+  if (!loggedIn.value) {
     me.value = undefined;
-    if (path !== "/login") return navigateTo(target("/login"));
-    return;
+    if (/^\/login\/?$/.test(path)) return redirectEntry("/");
+    return navigateTo(target("/"));
   }
   const account = await fetchMe();
   me.value = account;
@@ -41,5 +45,5 @@ export default defineNuxtRouteMiddleware(async (to) => {
     }
     return navigateTo(target("/onboarding"));
   }
-  if (path === "/login") return navigateTo(target("/"));
+  if (/^\/login\/?$/.test(path)) return redirectEntry("/dashboard");
 });
