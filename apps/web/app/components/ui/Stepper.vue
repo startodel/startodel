@@ -44,6 +44,8 @@ const at = computed(() => props.steps.findIndex((s) => s.id === current.value));
 </template>
 <style scoped>
 .s-stepper {
+  --s-stepper-pad-size: 1.5rem;
+  --s-stepper-trace-inset: calc(var(--s-stepper-pad-size) / 2 + var(--s-2));
   container: s-stepper / inline-size;
 }
 .s-stepper__list {
@@ -55,25 +57,31 @@ const at = computed(() => props.steps.findIndex((s) => s.id === current.value));
   flex: 1;
   min-width: 0;
 }
-/* The trace between two steps. It turns to copper once the step before it is done. */
+/* Each trace spans two column centers, leaving the same gap at each pad's visible edge. */
 .s-stepper__step + .s-stepper__step::before {
   content: "";
   position: absolute;
-  top: 0.75rem;
-  right: calc(100% - 0.25rem);
-  width: calc(100% - 2.25rem);
+  top: calc(var(--s-stepper-pad-size) / 2);
+  inset-inline: calc(-50% + var(--s-stepper-trace-inset)) calc(50% + var(--s-stepper-trace-inset));
+  transform: translateY(-50%);
   border-top: 1.5px dashed var(--s-line-strong);
+  pointer-events: none;
+}
+.s-stepper__step.is-current + .s-stepper__step::before {
+  margin-inline-start: var(--s-1);
+}
+.s-stepper__step.is-current::before {
+  margin-inline-end: var(--s-1);
 }
 .s-stepper__step.is-done + .s-stepper__step::before {
   border-top: 2px solid var(--s-copper-fill);
 }
 .s-stepper__button {
   display: grid;
-  justify-items: start;
+  justify-items: center;
   gap: var(--s-2);
   width: 100%;
-  padding-right: var(--s-3);
-  text-align: left;
+  text-align: center;
   color: var(--s-ink-3);
 }
 .s-stepper__button:disabled {
@@ -83,8 +91,8 @@ const at = computed(() => props.steps.findIndex((s) => s.id === current.value));
   position: relative;
   display: grid;
   place-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: var(--s-stepper-pad-size);
+  height: var(--s-stepper-pad-size);
   border: 1.5px solid var(--s-line-strong);
   border-radius: 50%;
   background: var(--s-bg);
@@ -99,14 +107,15 @@ const at = computed(() => props.steps.findIndex((s) => s.id === current.value));
 .is-current .s-stepper__pad {
   border-color: var(--s-ink);
   color: var(--s-ink);
-  box-shadow:
-    0 0 0 3px var(--s-bg),
-    0 0 0 4px var(--s-copper-fill);
+  outline: 1px solid var(--s-copper-fill);
+  outline-offset: calc(var(--s-1) - 1px);
 }
 .s-stepper__text {
   display: grid;
   gap: 0.125rem;
   min-width: 0;
+  padding-inline: var(--s-1);
+  overflow-wrap: anywhere;
 }
 .s-stepper__label {
   font-size: var(--s-text-sm);
