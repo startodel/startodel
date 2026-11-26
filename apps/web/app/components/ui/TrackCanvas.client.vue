@@ -199,6 +199,10 @@ const zoom = computed(() => Math.round((instance.value?.viewport.value.zoom ?? 1
 .s-root .s-canvas .vue-flow__node {
   cursor: default;
 }
+/* Vue Flow disables pointer events on its non-selectable node wrapper. */
+.s-root .s-canvas .s-part {
+  pointer-events: auto;
+}
 .s-root .s-canvas__handle {
   visibility: hidden;
   pointer-events: none;
