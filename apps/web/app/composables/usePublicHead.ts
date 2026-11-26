@@ -13,7 +13,7 @@ export function usePublicHead(
   structuredData?: (pageUrl: (path: string) => string) => Record<string, unknown>,
 ) {
   const origin = usePublicOrigin().value;
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const ru = origin + path;
   const en = origin + localizedPath(path, "en");
   const url = locale.value === "en" ? en : ru;
@@ -52,7 +52,7 @@ export function usePublicHead(
     ogUrl: url,
     ogLocale: locale.value === "ru" ? "ru_RU" : "en_US",
     ogType: type,
-    ogSiteName: "Startodel",
+    ogSiteName: () => t("brand"),
     ogImage: image,
     ogImageWidth: 1200,
     ogImageHeight: 630,

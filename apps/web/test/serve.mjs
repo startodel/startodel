@@ -10,7 +10,10 @@ const outputDir = join(buildDir, "output");
 const nuxt = await loadNuxt({
   cwd: rootDir,
   dev: false,
-  overrides: { buildDir, nitro: { preset: "node-listener", output: { dir: outputDir } } },
+  overrides: {
+    buildDir,
+    nitro: { preset: "node-listener", serveStatic: true, output: { dir: outputDir } },
+  },
 });
 try {
   await buildNuxt(nuxt);
