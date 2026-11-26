@@ -5,6 +5,8 @@ const privatePage = { headers: { "cache-control": "private, no-store" } };
 export default defineNuxtConfig({
   compatibilityDate: "2026-11-25",
   typescript: { strict: true },
+  // Render providers and their slots with the same Vue instance during SSR.
+  build: { transpile: ["reka-ui"] },
   modules: ["nuxt-auth-utils", "@nuxtjs/i18n"],
   i18n: {
     strategy: "prefix_except_default",
