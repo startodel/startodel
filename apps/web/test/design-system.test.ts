@@ -148,6 +148,23 @@ test.each(["s-display", "s-title"])(
   },
 );
 
+test("the top bar hides only an empty action slot with at most one crumb on wide shells", () => {
+  const bar = sourceOf("components/ui/TopBar.vue");
+  expect(bar).toMatch(
+    /<slot>\s*<span v-if="\(crumbs\?\.length \?\? 0\) <= 1" class="s-topbar__idle" hidden \/>\s*<\/slot>/,
+  );
+  expect(bar).toMatch(
+    /@container s-shell \(width > 52rem\)\s*\{\s*\.s-topbar:has\(\.s-topbar__idle\)\s*\{\s*display: none/,
+  );
+});
+
+test("notice actions align with the title and use the button's own ink", () => {
+  const notice = sourceOf("components/ui/Notice.vue");
+  const actions = notice.match(/\.s-notice__actions\s*\{([^}]*)\}/)?.[1];
+  expect(actions).toContain("--_ink: initial");
+  expect(actions).not.toMatch(/align-self:\s*center/);
+});
+
 test("every UI component is rendered by a showcase specimen", () => {
   const components = new Map(
     vueFiles("components/ui/").map((file) => ["Ui" + file.split("/").at(-1)!.split(".")[0], file]),

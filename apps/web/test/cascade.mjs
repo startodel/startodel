@@ -207,6 +207,17 @@ export async function checkCascade(page, path = new URL(page.url()).pathname) {
         "unexpected redirect while checking " + path,
       );
       await page.locator(".s-root").first().waitFor();
+      const cabinet = path.replace(/^\/en\//, "/");
+      const topLevel = /^\/(dashboard|progress|reviews|grills|settings)$/.test(cabinet);
+      if (topLevel || /^\/tracks\/[^/]+$/.test(cabinet)) {
+        const bar = page.locator(".s-topbar");
+        assert.equal(await bar.count(), 1);
+        assert.equal(
+          await bar.isVisible(),
+          !topLevel || width <= 832,
+          path + " top bar at " + width,
+        );
+      }
       const ties = await page.evaluate(findTies);
       assert.deepEqual(ties, [], path + " at " + width + "px: " + JSON.stringify(ties));
     }

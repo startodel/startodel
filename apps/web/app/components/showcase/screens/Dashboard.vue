@@ -8,7 +8,8 @@ import {
   sampleWeek,
   screenPath,
 } from "../sample";
-defineProps<{ state?: string }>();
+const props = defineProps<{ state?: string }>();
+const empty = computed(() => props.state === "empty" || props.state === "waiting");
 const week = sampleWeek.map((d) => ({
   label: d.day,
   date: String(d.date),
@@ -17,14 +18,18 @@ const week = sampleWeek.map((d) => ({
 }));
 </script>
 <template>
-  <ShowcaseApp current="dashboard" :crumbs="[{ label: 'Dashboard' }]">
+  <ShowcaseApp
+    :tracks="empty ? [] : undefined"
+    current="dashboard"
+    :crumbs="[{ label: 'Dashboard' }]"
+  >
     <div class="s-stack" style="--s-gap: var(--s-8)">
       <UiPageHeader
         kicker="Wednesday 25 November"
         title="Good afternoon, Alice"
         :description="
-          state === 'empty'
-            ? 'Your board is empty. One prompt fixes that.'
+          empty
+            ? '0 Tracks · 0 reviews due'
             : '4 Topics are due for review. One Grill is waiting for your agent.'
         "
       />
@@ -37,26 +42,12 @@ const week = sampleWeek.map((d) => ({
         </div>
       </template>
 
-      <template v-else-if="state === 'empty'">
-        <UiNextUp
-          kind="Build your first Track"
-          title="Ask your agent for a Track"
-          why="You are connected. Your agent reads your Profile, plans a Track around your goal and writes the first Lesson."
-          prompt="Use the Startodel MCP server. Read my Profile, then create a Track for my goal and write the first Lesson."
-          tool="create_track"
-        >
-          <template #actions>
-            <UiButton :to="screenPath('connect')" icon="plug">Connection details</UiButton>
-          </template>
-        </UiNextUp>
-        <UiEmptyState title="No Tracks yet" icon="track">
-          A Track is a board of Topics your agent assembles around one goal. It appears here as soon
-          as the agent creates it.
-          <template #actions
-            ><UiButton variant="ghost" icon="review">Check again</UiButton></template
-          >
-        </UiEmptyState>
-      </template>
+      <UiFirstTrack
+        v-else-if="empty"
+        :connected="state === 'waiting'"
+        :prompt="$t('next.buildPrompt', { goals: 'browser internals' })"
+        :connect-to="screenPath('connect')"
+      />
 
       <template v-else>
         <UiNextUp

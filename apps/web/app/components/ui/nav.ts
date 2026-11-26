@@ -35,6 +35,13 @@ export function appNavigation(
   const [, section, id] = basePath(path).split("/");
   const item = items.find(({ to }) => to === "/" + section);
   const currentTrack = section === "tracks" && id ? id : undefined;
-  const label = item?.label ?? tracks.find((track) => track.id === currentTrack)?.title;
-  return { current: item?.id, currentTrack, crumbs: label ? [{ label }] : [] };
+  const crumbs: { label: string; to?: LinkTarget }[] = [];
+  if (item) crumbs.push({ label: item.label });
+  const track = currentTrack && tracks.find(({ id }) => id === currentTrack);
+  if (track) {
+    const dashboard = items.find(({ id }) => id === "dashboard");
+    if (dashboard) crumbs.push({ label: dashboard.label, to: dashboard.to });
+    crumbs.push({ label: track.title });
+  }
+  return { current: item?.id, currentTrack, crumbs };
 }

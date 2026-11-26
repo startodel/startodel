@@ -76,7 +76,8 @@ export const screens: ScreenInfo[] = [
     note: "The Next Step, the Tracks and what is due.",
     states: [
       { id: "active", label: "Active" },
-      { id: "empty", label: "First run" },
+      { id: "empty", label: "Connect" },
+      { id: "waiting", label: "Waiting for first Track" },
       { id: "loading", label: "Loading" },
     ],
   },

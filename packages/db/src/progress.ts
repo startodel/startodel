@@ -1,9 +1,10 @@
 import { topicActivity } from "./activity.ts";
-import { and, count, desc, eq, lte, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import type { MasteryLevel } from "@startodel/core";
 import type { Transaction } from "./owned.ts";
 import type { Connection } from "./index.ts";
 import {
+  mcpTokens,
   tracks,
   trackTopics,
   topicMastery,
@@ -46,7 +47,19 @@ export function progressForUser(db: Connection, userId: string) {
       return db.transaction(
         async (tx) => {
           const { perTrack, dueReviewsCount } = await dashboard(tx);
+          const usedTokens = await tx
+            .select({ id: mcpTokens.id })
+            .from(mcpTokens)
+            .where(
+              and(
+                eq(mcpTokens.userId, userId),
+                isNull(mcpTokens.revokedAt),
+                isNotNull(mcpTokens.lastUsedAt),
+              ),
+            )
+            .limit(1);
           return {
+            hasConnectedAgent: usedTokens.length > 0,
             dueReviewsCount,
             tracks: perTrack.map((track) => ({
               ...track,

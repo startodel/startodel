@@ -91,9 +91,6 @@ async function save() {
     </UiNotice>
     <UiSkeletonList v-else-if="!data" />
     <template v-else>
-      <UiBreadcrumbs
-        :items="[{ label: $t('nav.dashboard'), to: '/dashboard' }, { label: data.track.title }]"
-      />
       <UiPageHeader :title="data.track.title" :description="data.track.description ?? undefined">
         <template #meta>
           <UiBadge tone="copper" pad>{{
