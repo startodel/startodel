@@ -44,12 +44,14 @@ test("skill files have valid front matter and identical bytes across builds and 
   const second = await outputDirectory();
   const crlf = await outputDirectory();
   await cp(source, crlf, { recursive: true });
-  for (const file of await readdir(crlf)) {
-    const path = join(crlf, file);
+  for (const file of await readdir(crlf, { recursive: true, withFileTypes: true })) {
+    if (!file.isFile()) continue;
+    const path = join(file.parentPath, file.name);
     await writeFile(path, (await readFile(path, "utf8")).replaceAll("\n", "\r\n"));
   }
   await buildSkills(source, first);
   await buildSkills(crlf, second);
+  await checkSkills(source, second);
   for (const name of Object.keys(workflows)) {
     const file = join(name, "SKILL.md");
     const skill = await readFile(join(first, file), "utf8");
@@ -63,6 +65,31 @@ test("skill files have valid front matter and identical bytes across builds and 
     expect(description.trim().length).toBeGreaterThan(0);
     expect(description.length).toBeLessThan(1024);
   }
+});
+
+test("only Track skills install the linked seven-Block reference and check its contents", async () => {
+  const output = await outputDirectory();
+  await buildSkills(source, output);
+  const file = "references/browser-tasks.md";
+  const example = await readFile(join(source, file), "utf8");
+  for (const name of Object.keys(workflows)) {
+    const skill = await readFile(join(output, name, "SKILL.md"), "utf8");
+    const references = [...skill.matchAll(/\]\((references\/[^)]+)\)/g)].map((match) => match[1]);
+    if (!name.startsWith("startodel-build-track")) {
+      expect(references).toEqual([]);
+      expect(await readdir(join(output, name))).toEqual(["SKILL.md"]);
+      continue;
+    }
+    expect(references).toEqual([file]);
+    expect(skill).not.toContain("```json");
+    expect(await readFile(join(output, name, file), "utf8")).toBe(example);
+  }
+  await appendFile(join(output, "startodel-build-track", file), "edited\n");
+  await rm(join(output, "startodel-build-track-from-repo", file));
+  await expect(checkSkills(source, output)).rejects.toThrow(/M startodel-build-track\/references/);
+  await expect(checkSkills(source, output)).rejects.toThrow(
+    /D startodel-build-track-from-repo\/references/,
+  );
 });
 
 test("check reports edited, missing and extra paths without changing files", async () => {

@@ -62,7 +62,23 @@ export function learningMcpTests(environment: () => { origin: string; db: Databa
       const { client, call, user } = await connect();
       expect(client.getInstructions()).toContain("get_guide");
       const { resources } = await client.listResources();
-      expect(resources).toHaveLength(11);
+      const guideIds = [
+        "index",
+        "platform",
+        "first-steps",
+        "user-workflow",
+        "agent-workflow",
+        "build-track-technology",
+        "build-track-from-repo",
+        "lessons-and-blocks",
+        "grill-session",
+        "review-loop",
+        "rules",
+        "references/browser-tasks",
+      ];
+      expect(resources.map((r) => r.uri).sort()).toEqual(
+        guideIds.map((id) => "startodel://guide/" + id).sort(),
+      );
       const documents = await Promise.all(
         resources.map(async (r) => {
           const { contents } = await client.readResource({ uri: r.uri });
@@ -75,7 +91,10 @@ export function learningMcpTests(environment: () => { origin: string; db: Databa
         expect(documents.join("\n")).toContain("`" + tool.name + "`");
       const lessonGuide =
         documents[resources.findIndex((r) => r.uri === "startodel://guide/lessons-and-blocks")];
-      const blocks = JSON.parse(/```json\n([\s\S]+?)\n```/.exec(lessonGuide)![1]);
+      const exampleUri = /\]\((startodel:\/\/guide\/references\/[^)]+)\)/.exec(lessonGuide)?.[1];
+      expect(exampleUri).toBe("startodel://guide/references/browser-tasks");
+      const example = documents[resources.findIndex((r) => r.uri === exampleUri)];
+      const blocks = JSON.parse(/```json\n([\s\S]+?)\n```/.exec(example)![1]);
       expect(blocks.map((b: { type: string }) => b.type)).toEqual([
         "theory",
         "code",
