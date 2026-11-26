@@ -5,7 +5,7 @@
  */
 const props = withDefaults(
   defineProps<{ id: string; busy?: boolean; error?: string; rows?: number; maxLength?: number }>(),
-  { rows: 7, maxLength: 20_000 },
+  { rows: 7 },
 );
 const draft = defineModel<string>({ default: "" });
 const emit = defineEmits<{ submit: [] }>();

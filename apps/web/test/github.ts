@@ -6,16 +6,18 @@ import type { AddressInfo } from "node:net";
 // Only the provider's token and identity endpoints are replaced. The app handles
 // OAuth state and issues its own sealed Session cookie through /auth/github.
 export async function localGitHub() {
-  const id = -randomInt(1, 2 ** 44) * 8;
+  const id = -randomInt(1, 2 ** 44) * 16;
   const users = [
     { id, login: "alice", name: "Alice", avatar_url: "https://example.org/alice.png" },
     { id: id - 1, login: "bob", name: "Bob", avatar_url: null },
-    ...["practice", "reader", "guide", "schedule", "publisher", "forker"].map((login, i) => ({
-      id: id - 2 - i,
-      login,
-      name: login,
-      avatar_url: null,
-    })),
+    ...["practice", "reader", "guide", "schedule", "publisher", "forker", "learning-pages"].map(
+      (login, i) => ({
+        id: id - 2 - i,
+        login,
+        name: login,
+        avatar_url: null,
+      }),
+    ),
   ];
   const server = createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/json");

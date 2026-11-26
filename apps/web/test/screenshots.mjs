@@ -177,32 +177,79 @@ try {
   await hydrated();
   await page.locator("main").getByRole("link", { name: track.title }).waitFor();
   await shot("dashboard");
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.locator("main").getByRole("link", { name: track.title }).click();
   const node = page
     .locator(".vue-flow__node")
     .filter({ hasText: "Tasks and timers" })
-    .getByRole("button", { name: "Tasks and timers", exact: true });
+    .getByRole("button", { name: /Tasks and timers/ });
   await node.click();
   await page.getByRole("link", { name: lesson.title }).waitFor();
-  assert.equal(await page.locator(".vue-flow__edge-path").count(), 4);
+  assert.equal(await page.locator(".s-canvas .vue-flow__edge .s-trace").count(), 4);
   await shot("track-graph");
+  const lessonApi = "/api/lessons/" + lesson.id;
+  let enriched = false;
+  let reveals = 0;
+  page.on("request", (request) => {
+    if (request.url().includes(lessonApi + "/exercise/")) reveals++;
+  });
+  await page.route("**" + lessonApi, async (route) => {
+    const response = await route.fetch();
+    const json = await response.json();
+    for (const block of json.lesson.blocks) {
+      if (block.type === "exercise") block.solution = "Preloaded solution";
+      if (block.type === "quiz") {
+        for (const q of block.questions)
+          Object.assign(q, { correctIndex: 0, explanation: "Preloaded explanation" });
+      }
+    }
+    enriched = true;
+    await route.fulfill({ response, json });
+  });
   await page.getByRole("link", { name: lesson.title }).click();
+  await page.locator(".s-quiz").waitFor();
+  assert.ok(enriched);
+  const projected = await page.evaluate((id) => {
+    const payload = Object.values(window.useNuxtApp().payload.data).find(
+      (data) => data?.lesson?.id === id,
+    );
+    return payload.lesson.blocks;
+  }, lesson.id);
+  for (const block of projected) {
+    if (block.type === "quiz") {
+      for (const question of block.questions)
+        assert.deepEqual(Object.keys(question).sort(), ["options", "prompt"]);
+    }
+    if (block.type === "exercise") assert.ok(!("solution" in block));
+  }
+  const rendered = await page.locator("main").innerText();
+  assert.doesNotMatch(rendered, /Preloaded solution|Preloaded explanation/);
+  assert.equal(await page.locator(".s-quiz .is-correct, .s-quiz__feedback").count(), 0);
+  assert.equal(reveals, 0);
   await page.getByText("Show solution", { exact: true }).click();
-  await page.getByRole("radio", { name: "sync", exact: true }).check();
+  await page.locator(".s-exercise__solution.is-open").waitFor();
+  assert.equal(reveals, 1);
+  await page.getByRole("radio", { name: /\bsync$/ }).check();
   await page.getByRole("button", { name: "Submit answers" }).click();
   await page.getByText("1 of 1 correct").waitFor();
-  await page.getByRole("button", { name: "Mark as read" }).click();
+  const [read] = await Promise.all([
+    page.waitForResponse(
+      (r) => r.url() === origin + lessonApi + "/read" && r.request().method() === "POST",
+    ),
+    page.getByRole("button", { name: "Mark as read" }).click(),
+  ]);
+  assert.ok(read.ok());
   await page.getByRole("button", { name: "Marked as read" }).waitFor();
   await page.locator("figure pre code span").first().waitFor();
   await shot("lesson");
-  await page.getByRole("button", { name: /Load video/ }).click();
+  await page.locator(".s-video__poster").click();
   assert.equal(
     await page.locator("iframe[title]").getAttribute("src"),
-    "https://www.youtube-nocookie.com/embed/8aGhZQkoFbQ",
+    "https://www.youtube-nocookie.com/embed/8aGhZQkoFbQ?autoplay=1",
   );
   await page.setViewportSize({ width: 375, height: 812 });
   await visit("/en/tracks/" + track.id);
-  await page.getByRole("button", { name: "Tasks and timers", exact: true }).click();
+  await page.locator(".s-tracklist__row").filter({ hasText: "Tasks and timers" }).click();
   await page.getByRole("link", { name: lesson.title }).waitFor();
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
   await page.setViewportSize({ width: 1280, height: 900 });
@@ -249,13 +296,13 @@ try {
     .getByLabel("Your answer")
     .fill("After the current task returns and before the next task starts.");
   await page.getByRole("button", { name: "Submit answer" }).click();
-  await page.getByRole("heading", { name: "Waiting for your agent" }).waitFor();
+  await page.getByText("Waiting for your agent", { exact: true }).waitFor();
   assert.equal(
     (await owner.getGrill(grill.id)).questions.find((q) => q.id === waiting.id).answerSource,
     "ui",
   );
   await page.getByRole("button", { name: "Previous" }).click();
-  await page.getByText("Verdict · weak").waitFor();
+  await page.locator(".s-judgment__verdict").getByText("weak", { exact: true }).waitFor();
   await shot("pr9-grill-open");
   await visit("/en");
   await page.getByRole("link", { name: "Continue grill session" }).waitFor();
@@ -294,12 +341,13 @@ try {
   await page.locator(".s-timeline-item").first().waitFor();
   await shot("pr9-progress");
   if (pr12) {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await visit("/");
     await page.getByRole("heading", { name: "Главная", exact: true }).waitFor();
     await page.locator("main").getByRole("link", { name: track.title }).waitFor();
     await shot("pr12-ru-dashboard");
     await page.locator("main").getByRole("link", { name: track.title }).click();
-    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await page.locator(".s-canvas .s-trace").first().waitFor();
     await page.getByRole("button", { name: "Открыть доступ" }).waitFor();
     await shot("pr12-ru-track");
     await visit("/reviews");
@@ -341,16 +389,22 @@ try {
     await shot("pr12-en-public-track");
     await visit("/");
     await page.waitForURL(origin + "/en/login");
-    await page.locator("footer").getByRole("link", { name: "RU", exact: true }).click();
+    await page
+      .locator("footer")
+      .getByRole("button", { name: /language/i })
+      .click();
+    await page.getByRole("menuitem", { name: /Русский/ }).click();
     await page.waitForURL(origin + "/login");
     await visit("/");
     await page.waitForURL(origin + "/login");
   }
   if (process.argv.includes("--pr11")) {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await visit("/en/tracks/" + track.id);
     await page.getByRole("button", { name: "Make public" }).click();
     await page.getByRole("dialog").waitFor();
     await shot("pr11-publish-dialog");
+    assert.ok(await page.getByRole("button", { name: "Publish", exact: true }).isDisabled());
     await page
       .getByRole("checkbox", { name: "I agree to the Publishing rules and Terms of Use" })
       .check();
@@ -376,12 +430,12 @@ try {
     await page.getByRole("button", { name: "Fork", exact: true }).click();
     await page.waitForURL("**/en/tracks/*");
     await page.getByText("Forked from", { exact: false }).waitFor();
-    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await page.locator(".s-canvas .s-trace").first().waitFor();
     await shot("pr11-fork-result");
     await signIn("bob");
     await visit("/en/tracks/" + track.id);
     await page.getByText("1 fork", { exact: true }).waitFor();
-    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await page.locator(".s-canvas .s-trace").first().waitFor();
     await shot("pr11-track-visibility");
   }
   assert.deepEqual(errors, []);

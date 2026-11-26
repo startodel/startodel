@@ -1077,6 +1077,21 @@ const prompt =
           :after="['T09', 'T11']"
         />
       </ShowcaseSpecimen>
+      <ShowcaseSpecimen label="Topic details" layout="stack">
+        <UiTopicDetails
+          :details="{
+            topic: {
+              title: 'Timers and scheduling',
+              slug: 'node/timers',
+              summary: 'When the event loop runs a timer.',
+            },
+            mastery: { level: 1 },
+            lessons: [],
+            prerequisites: [{ id: 'loop', title: 'Event loop' }],
+            dependents: [{ id: 'delay', title: 'Measuring delay' }],
+          }"
+        />
+      </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Track strip" note="One cell per Topic" layout="stack">
         <UiTrackStrip
           v-for="t in sampleTracks"

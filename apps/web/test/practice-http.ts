@@ -24,6 +24,79 @@ export function practiceHttpTests(
     const { user } = await (await request("/api/me", cookie)).json();
     return { cookie, data: forUser(env().db, user.id), id: user.id as string };
   }
+  test("private learning pages link Track, Topic and Lesson and reflect read and Grill transitions", async () => {
+    const { cookie, data } = await owner("learning-pages");
+    await data.updateProfile({ onboardedAt: new Date() });
+    const track = await data.createTrack("Delivery");
+    const topic = await data.upsertTopic({ slug: "delivery", title: "Delivery modes" });
+    await data.attachTopicToTrack(track.id, topic.id, 0);
+    const lesson = (await data.createLesson({
+      topicId: topic.id,
+      title: "Redelivery",
+      blocks: [
+        {
+          id: "quiz",
+          type: "quiz",
+          questions: [
+            {
+              prompt: "Choose",
+              options: ["A", "B"],
+              correctIndex: 0,
+              explanation: "Private explanation",
+            },
+          ],
+        },
+        { id: "exercise", type: "exercise", prompt: "Build", solution: "Private solution" },
+      ],
+    }))!;
+    const grill = (await data.startGrill({ title: "Delivery recall", trackId: track.id }))!;
+    const question = (await data.addGrillQuestion(grill.id, {
+      topicId: topic.id,
+      prompt: "What repeats?",
+    }))!;
+    async function page(path: string) {
+      const response = await request("/en" + path, cookie);
+      expect(response.status, path).toBe(200);
+      return (await response.text()).split('<script type="application/json"')[0]!;
+    }
+    const lessonPath = "/lessons/" + lesson.id + "?track=" + track.id;
+    const trackPath = "/tracks/" + track.id + "?topic=" + topic.id;
+    const board = await page(trackPath);
+    expect(board).toContain('href="/en' + lessonPath + '"');
+    expect(board).toContain('class="s-board');
+    expect(await page("/topics/" + topic.id)).toContain('href="/en/lessons/' + lesson.id + '"');
+    const lessonPage = await page(lessonPath);
+    expect(lessonPage).toContain('href="/en' + trackPath + '"');
+    expect(lessonPage).toContain("Mark as read");
+    expect(lessonPage).not.toMatch(/Private explanation|Private solution|class="s-quiz__feedback"/);
+    expect((await request("/api/lessons/" + lesson.id + "/read", cookie, "POST")).status).toBe(200);
+    expect(await page(lessonPath)).toContain("Marked as read");
+    expect(await page(trackPath)).toContain("is-read");
+
+    const grillPath = "/grills/" + grill.id;
+    expect(await page("/grills")).toContain('href="/en' + grillPath + '"');
+    expect(await page(grillPath)).toContain("What repeats?");
+    expect(
+      (
+        await request(
+          "/api" + grillPath + "/questions/" + question.id + "/answer",
+          cookie,
+          "POST",
+          { answer: "The message" },
+        )
+      ).status,
+    ).toBe(200);
+    const waiting = await page(grillPath);
+    expect(waiting).toContain("The message");
+    expect(waiting).toContain("Refresh feedback");
+    expect(waiting).not.toContain('class="s-tally"');
+    await data.judgeGrillQuestion(question.id, "partial", "Trace the delivery");
+    const summary = await page(grillPath);
+    expect(summary).toContain('class="s-tally"');
+    expect(summary).toContain('href="/en/topics/' + topic.id + '"');
+    expect(summary).toContain("Trace the delivery");
+  });
+
   test("dashboard and get_guide agree on all six Next Steps and their precedence", async () => {
     const { cookie, data, id } = await owner("guide");
     const { token } = await data.mcpTokens.create("Guide parity");
