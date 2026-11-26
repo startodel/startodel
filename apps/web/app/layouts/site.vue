@@ -6,9 +6,9 @@ const rememberLanguage = useSignInLanguage();
   <UiRoot>
     <div class="site">
       <UiSiteHeader
-        home="/login"
+        home="/"
         :user="user ?? undefined"
-        :links="[{ label: $t('login.how'), to: { path: '/login', hash: '#how' } }]"
+        :links="[{ label: $t('login.how'), to: { path: '/', hash: '#how' } }]"
         @sign-in="rememberLanguage"
       />
       <main class="site__main"><slot /></main>
@@ -24,6 +24,8 @@ const rememberLanguage = useSignInLanguage();
 </template>
 <style scoped>
 .site {
+  --s-page: 72rem;
+  --s-page-gutter: var(--s-5);
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
@@ -32,6 +34,5 @@ const rememberLanguage = useSignInLanguage();
   container: s-main / inline-size;
   flex: 1;
   width: 100%;
-  padding-block: var(--s-10) var(--s-16);
 }
 </style>

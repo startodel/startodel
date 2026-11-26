@@ -7,6 +7,11 @@ const profile = useMe().value?.profile;
 const stack = ref(profile?.stack ?? []);
 const goals = ref(profile?.goals ?? []);
 const goalLabels = useGoalLabels();
+const notes = ref(profile?.notes ?? "");
+const years = ref(profile?.yearsOfExperience?.toString() ?? "");
+const invalidYears = computed(
+  () => !!years.value.trim() && (!/^\d+$/.test(years.value.trim()) || Number(years.value) > 60),
+);
 const grade = ref(profile?.experience ?? undefined);
 const busy = ref(false);
 const message = ref("");
@@ -58,12 +63,24 @@ async function submit() {
     message.value = t("onboarding.required");
     return;
   }
+  if (invalidYears.value) {
+    message.value = t("onboarding.yearsRange");
+    return;
+  }
   busy.value = true;
   message.value = "";
   try {
     await $fetch("/api/profile/questionnaire", {
       method: "PUT",
-      body: { stack: stack.value, goals: goals.value, experience: grade.value },
+      body: {
+        stack: stack.value,
+        goals: goals.value,
+        experience: grade.value,
+        ...(notes.value !== (profile?.notes ?? "") && { notes: notes.value.trim() || null }),
+        ...(years.value !== (profile?.yearsOfExperience?.toString() ?? "") && {
+          yearsOfExperience: years.value.trim() ? Number(years.value) : null,
+        }),
+      },
     });
     await navigateTo(localePath("/onboarding/connect"));
   } catch {
@@ -74,17 +91,28 @@ async function submit() {
 }
 </script>
 <template>
-  <form class="s-stack" @submit.prevent="submit">
-    <UiPageHeader
-      :kicker="$t('onboarding.title')"
-      :title="$t('onboarding.profile')"
-      :description="$t('onboarding.intro')"
-    />
+  <form class="s-stack" style="--s-gap: var(--s-8)" @submit.prevent="submit">
+    <header class="s-stack" style="--s-gap: var(--s-3)">
+      <p class="s-label">
+        {{ $t("onboarding.title") }} · {{ $n(steps.findIndex((s) => s.id === step) + 1) }} /
+        {{ $n(steps.length) }}
+      </p>
+      <h1 class="s-title">
+        {{
+          step === "stack"
+            ? $t("onboarding.stack")
+            : step === "goals"
+              ? $t("onboarding.goal")
+              : $t("onboarding.grade")
+        }}
+      </h1>
+      <p class="lead">{{ $t("onboarding.intro") }}</p>
+    </header>
     <UiStepper v-model="step" :steps="steps" />
     <div v-if="step === 'stack'" class="s-stack">
       <UiChoiceChips
         v-model="stack"
-        :legend="$t('onboarding.stack')"
+        :legend="$t('onboarding.stackStep')"
         name="stack"
         multiple
         :options="stackOptions"
@@ -96,7 +124,7 @@ async function submit() {
     <div v-else-if="step === 'goals'" class="s-stack">
       <UiChoiceChips
         v-model="goals"
-        :legend="$t('onboarding.goal')"
+        :legend="$t('onboarding.goalsStep')"
         name="goals"
         multiple
         :options="goalOptions"
@@ -104,9 +132,11 @@ async function submit() {
       <UiField :label="$t('onboarding.goals')"
         ><UiTagInput :max-length="Infinity" @add="goals = [...new Set([...goals, ...$event])]"
       /></UiField>
+      <UiField :label="$t('onboarding.notes')" optional :hint="$t('onboarding.notesHint')"
+        ><UiTextarea v-model="notes" :rows="3"
+      /></UiField>
     </div>
     <section v-else class="s-stack">
-      <UiSectionHeading :title="$t('onboarding.grade')" />
       <UiRadioGroup
         v-model="grade"
         :label="$t('onboarding.grade')"
@@ -114,9 +144,16 @@ async function submit() {
         variant="cards"
         :options="grades"
       />
+      <UiField
+        :label="$t('onboarding.years')"
+        optional
+        :error="invalidYears ? $t('onboarding.yearsRange') : undefined"
+      >
+        <UiInput v-model="years" inputmode="numeric" mono class="years" />
+      </UiField>
     </section>
     <UiNotice v-if="message" tone="danger" :title="message" />
-    <div class="s-cluster">
+    <footer class="actions-row">
       <UiButton
         v-if="step !== 'stack'"
         icon="arrow-left"
@@ -124,9 +161,34 @@ async function submit() {
         @click="step = step === 'grade' ? 'goals' : 'stack'"
         >{{ $t("onboarding.back") }}</UiButton
       >
+      <span class="summary">{{
+        $t("onboarding.summary", { stack: $n(stack.length), goals: $n(goals.length) })
+      }}</span>
       <UiButton type="submit" variant="primary" icon-right="arrow-right" :loading="busy">{{
         step === "grade" ? $t("onboarding.continue") : $t("onboarding.forward")
       }}</UiButton>
-    </div>
+    </footer>
   </form>
 </template>
+<style scoped>
+.lead {
+  font-size: var(--s-text-lg);
+  color: var(--s-ink-2);
+}
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--s-line);
+}
+.summary {
+  margin-left: auto;
+  font-size: var(--s-text-sm);
+  color: var(--s-ink-3);
+}
+.years {
+  max-width: 8rem;
+}
+</style>

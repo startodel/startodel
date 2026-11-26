@@ -5,6 +5,9 @@ const { activityLabel, verdictLabel } = useLearningLabels();
 const displayDate = useDisplayDate();
 useHead({ title: t("nav.progress") });
 const { data, error, refresh } = await useFetch("/api/progress");
+const countArgs = useCountArgs();
+const page = ref(1);
+const perPage = 8;
 const sort = ref("title");
 const view = ref("topics");
 const topics = computed(() =>
@@ -20,6 +23,8 @@ const summary = computed(() => {
   return {
     complete: topics.filter((topic) => topic.level >= 2).length,
     read: topics.reduce((count, topic) => count + topic.read, 0),
+    answers: data.value?.activity.filter((a) => a.kind === "Grill answer").length ?? 0,
+    reviews: data.value?.activity.filter((a) => a.kind === "Review result").length ?? 0,
     lessons: topics.reduce((count, topic) => count + topic.lessons, 0),
   };
 });
@@ -52,7 +57,7 @@ const columns = computed(() => [
     >
     <UiSkeletonList v-else-if="!data" variant="table" />
     <template v-else>
-      <dl class="s-cluster">
+      <dl class="stats">
         <UiStat
           :label="$t('progress.completedTopics')"
           :value="$n(summary.complete)"
@@ -64,9 +69,15 @@ const columns = computed(() => [
           :value="$n(summary.read)"
           :unit="'/ ' + $n(summary.lessons)"
         />
+        <UiStat :label="$t('progress.answers')" :value="$n(summary.answers)">{{
+          $t("progress.history")
+        }}</UiStat>
+        <UiStat :label="$t('nav.reviews')" :value="$n(summary.reviews)">{{
+          $t("progress.history")
+        }}</UiStat>
       </dl>
-      <div class="s-split">
-        <div class="s-stack">
+      <div class="s-split" style="--s-aside: 24rem">
+        <div class="s-stack" style="--s-gap: var(--s-8)">
           <section class="s-stack">
             <UiSectionHeading :title="$t('progress.completion')" :count="data.perTrack.length" />
             <p class="s-muted">{{ $t("progress.threshold") }}</p>
@@ -76,13 +87,15 @@ const columns = computed(() => [
               compact
               icon="track"
             />
-            <UiTrackStrip
-              v-for="track in data.perTrack"
-              :key="track.trackId"
-              :title="track.title"
-              :levels="levels.get(track.trackId) ?? []"
-              :to="'/tracks/' + track.trackId"
-            />
+            <div class="rows">
+              <UiTrackStrip
+                v-for="track in data.perTrack"
+                :key="track.trackId"
+                :title="track.title"
+                :levels="levels.get(track.trackId) ?? []"
+                :to="'/tracks/' + track.trackId"
+              />
+            </div>
           </section>
           <UiTabs
             v-model="view"
@@ -105,12 +118,12 @@ const columns = computed(() => [
                 /></UiField>
                 <UiTable
                   :caption="$t('track.topics')"
-                  :rows="topics"
+                  :rows="topics.slice((page - 1) * perPage, page * perPage)"
                   :columns="columns"
                   :row-key="(row) => row.id"
                 >
                   <template #cell-title="{ row }"
-                    ><NuxtLinkLocale :to="'/topics/' + row.id">{{
+                    ><NuxtLinkLocale class="topic-link" :to="'/topics/' + row.id">{{
                       row.title
                     }}</NuxtLinkLocale></template
                   >
@@ -125,8 +138,14 @@ const columns = computed(() => [
                   >
                   <template #cell-last="{ row }">{{
                     row.lastActivity ? displayDate(row.lastActivity) : "—"
-                  }}</template>
-                </UiTable>
+                  }}</template> </UiTable
+                ><UiPagination
+                  v-if="topics.length > perPage"
+                  v-model:page="page"
+                  :total="topics.length"
+                  :per-page="perPage"
+                  :label="$t('track.topics')"
+                />
               </div>
             </template>
             <template #activity>
@@ -135,7 +154,7 @@ const columns = computed(() => [
                 :title="$t('progress.emptyHistory')"
                 compact
               />
-              <ol v-else>
+              <ol v-else class="timeline">
                 <UiTimelineItem
                   v-for="a in data.activity"
                   :key="a.kind + a.id"
@@ -156,8 +175,10 @@ const columns = computed(() => [
         </div>
         <aside class="s-stack">
           <UiCard :tag="$t('progress.levels')"
-            ><UiMasteryHistogram :counts="data.masteryDistribution"
-          /></UiCard>
+            ><div class="s-stack" style="--s-gap: var(--s-5)">
+              <p class="histogram-lead">{{ $t("count.topics", countArgs(topics.length)) }}</p>
+              <UiMasteryHistogram :counts="data.masteryDistribution" /></div
+          ></UiCard>
           <UiCard :tag="$t('progress.recentVerdicts')"
             ><UiVerdictTally v-bind="tally" :label="$t('progress.recentVerdicts')"
           /></UiCard>
@@ -166,3 +187,29 @@ const columns = computed(() => [
     </template>
   </div>
 </template>
+<style scoped>
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: var(--s-4);
+}
+.rows > * + * {
+  border-top: 1px solid var(--s-line);
+}
+.timeline {
+  list-style: none;
+}
+.topic-link {
+  color: var(--s-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.topic-link:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--s-copper-fill);
+  text-underline-offset: 0.2em;
+}
+.histogram-lead {
+  color: var(--s-ink-2);
+}
+</style>

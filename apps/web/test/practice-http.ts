@@ -91,6 +91,9 @@ export function practiceHttpTests(
     expect(waiting).toContain("Refresh feedback");
     expect(waiting).not.toContain('class="s-tally"');
     await data.judgeGrillQuestion(question.id, "partial", "Trace the delivery");
+    expect(await (await request("/api/grills", cookie)).json()).toContainEqual(
+      expect.objectContaining({ id: grill.id, strong: 0, partial: 1, weak: 0 }),
+    );
     const summary = await page(grillPath);
     expect(summary).toContain('class="s-tally"');
     expect(summary).toContain('href="/en/topics/' + topic.id + '"');
@@ -125,7 +128,7 @@ export function practiceHttpTests(
         onboardedAt: new Date(),
         goals: ["Understand internals", "queues"],
       });
-      const dashboard = await (await request("/", cookie)).text();
+      const dashboard = await (await request("/dashboard", cookie)).text();
       expect(dashboard).toContain("Разобраться, как всё устроено внутри, queues");
       expect((await step("build-track-technology")).prompt).toContain("queues");
       const track = await data.createTrack("Delivery");
@@ -407,7 +410,7 @@ export function practiceHttpTests(
     const quizForm = (await practice.text()).split('class="s-quiz"')[1]?.split("</form>")[0];
     expect(quizForm).toContain("Which is a duplicate?");
     expect(quizForm).not.toMatch(/private key|correctIndex|explanation|is-judged/);
-    const dashboard = await (await request("/en", b.cookie)).text();
+    const dashboard = await (await request("/en/dashboard", b.cookie)).text();
     expect(dashboard).toContain('class="s-trackstrip__cells"');
     expect(dashboard).toContain('class="s-timeline-item__title"');
     expect(dashboard).toContain('class="s-week"');

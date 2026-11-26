@@ -10,13 +10,8 @@
 //   node apps/web/test/cascade.mjs http://localhost:3000 /design/components /design/screens/track
 // PLAYWRIGHT_MODULE may point to a local installation. CHROME may point to a browser binary.
 // The script exits with 1 when it finds a tie.
-const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
-const [, , origin, ...paths] = process.argv;
-if (!origin || !paths.length) {
-  console.error("usage: node apps/web/test/cascade.mjs <origin> <path>...");
-  process.exit(2);
-}
-const widths = (process.env.WIDTHS || "1440,390").split(",").map(Number);
+import assert from "node:assert/strict";
+import { pathToFileURL } from "node:url";
 
 /** Runs in the page. Returns the pairs of rules that tie, each with the properties both set. */
 function findTies() {
@@ -195,27 +190,46 @@ function findTies() {
   return [...ties].map(([key, properties]) => [key, [...properties]]);
 }
 
-const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined });
-const found = new Map();
-for (const path of paths) {
-  for (const width of widths) {
-    const page = await browser.newPage({ viewport: { width, height: 900 } });
-    await page.goto(origin + path, { waitUntil: "networkidle" });
-    await page.waitForTimeout(500);
-    for (const [pair, properties] of await page.evaluate(findTies)) {
-      if (!found.has(pair)) found.set(pair, { properties: new Set(), pages: new Set() });
-      properties.forEach((property) => found.get(pair).properties.add(property));
-      found.get(pair).pages.add(path);
+/** Check the rendered route in its existing browser Session, including interactive states. */
+export async function checkCascade(page, path = new URL(page.url()).pathname) {
+  const previous = page.viewportSize();
+  const widths = (process.env.WIDTHS || "390,1440").split(",").map(Number);
+  try {
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      });
+      assert.equal(
+        new URL(page.url()).pathname,
+        path,
+        "unexpected redirect while checking " + path,
+      );
+      await page.locator(".s-root").first().waitFor();
+      const ties = await page.evaluate(findTies);
+      assert.deepEqual(ties, [], path + " at " + width + "px: " + JSON.stringify(ties));
     }
-    await page.close();
+    console.log(path + " · " + widths.join(" / ") + "px · 0 order-dependent rules");
+  } finally {
+    if (previous) await page.setViewportSize(previous);
   }
 }
-await browser.close();
-if (found.size) {
-  console.log(`${found.size} order-dependent pair(s):\n`);
-  for (const [pair, { properties, pages }] of found) {
-    console.log(`  ${pair}\n    sets ${[...properties].join(", ")}\n    on ${[...pages][0]}\n`);
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const [, , origin, ...paths] = process.argv;
+  assert.ok(origin && paths.length, "usage: node apps/web/test/cascade.mjs <origin> <path>...");
+  const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
+  const browser = await chromium.launch({ executablePath: process.env.CHROME || undefined });
+  try {
+    const page = await browser.newPage();
+    for (const path of paths) {
+      const url = new URL(path, origin);
+      const response = await page.goto(url.href, { waitUntil: "networkidle" });
+      assert.equal(response?.status(), 200);
+      await checkCascade(page, url.pathname);
+    }
+  } finally {
+    await browser.close();
   }
-  process.exit(1);
 }
-console.log("No order-dependent declarations in " + paths.length + " page(s).");

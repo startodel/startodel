@@ -1,12 +1,36 @@
 <script setup lang="ts">
 import { blockIcons, type BlockKind } from "./lesson";
 /** The parts list of a Lesson: every Block with its designator, linked to its place on the page. */
-defineProps<{
+const props = defineProps<{
   blocks: { id: string; kind: BlockKind; title: string; done?: boolean }[];
   /** The id of the Block in view. */
   current?: string;
   label?: string;
 }>();
+const visible = ref<string>();
+onMounted(() => {
+  if (props.current !== undefined) return;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const active = entries.find((entry) => entry.isIntersecting);
+      if (active) visible.value = active.target.id;
+    },
+    { rootMargin: "-20% 0px -65% 0px" },
+  );
+  watch(
+    () => props.blocks.map((b) => b.id),
+    (ids) => {
+      observer.disconnect();
+      for (const id of ids) {
+        const block = document.getElementById(id);
+        if (block) observer.observe(block);
+      }
+    },
+    { immediate: true, flush: "post" },
+  );
+  onBeforeUnmount(() => observer.disconnect());
+});
+const active = computed(() => props.current ?? visible.value ?? props.blocks[0]?.id);
 </script>
 <template>
   <nav class="s-index" :aria-label="label ?? $t('lesson.contents')">
@@ -15,9 +39,9 @@ defineProps<{
       <li v-for="(b, i) in blocks" :key="b.id">
         <a
           class="s-index__item"
-          :class="{ 'is-current': current === b.id, 'is-done': b.done }"
+          :class="{ 'is-current': active === b.id, 'is-done': b.done }"
           :href="'#' + b.id"
-          :aria-current="current === b.id ? 'location' : undefined"
+          :aria-current="active === b.id ? 'location' : undefined"
         >
           <span class="s-index__ref">{{ "B" + String(i + 1).padStart(2, "0") }}</span>
           <UiIcon :name="blockIcons[b.kind]" :size="12" class="s-index__icon" />

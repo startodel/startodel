@@ -31,5 +31,5 @@ export function useReviewSchedule(
       };
     });
   });
-  return { boxes, week };
+  return { boxes, week, today };
 }

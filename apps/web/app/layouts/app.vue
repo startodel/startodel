@@ -11,7 +11,13 @@ const [{ data: catalog }, { data: dashboard }] = await Promise.all([
   useFetch("/api/dashboard"),
 ]);
 const items = computed<NavItem[]>(() => [
-  { id: "index", label: t("nav.dashboard"), short: t("common.home"), icon: "dashboard", to: "/" },
+  {
+    id: "dashboard",
+    label: t("nav.dashboard"),
+    short: t("common.home"),
+    icon: "dashboard",
+    to: "/dashboard",
+  },
   {
     id: "reviews",
     label: t("nav.reviews"),

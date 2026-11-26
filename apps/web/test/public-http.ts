@@ -15,7 +15,7 @@ function expectPublicHtml(response: Response) {
 
 function expectSocialHead(html: string, path: string, lang: string, type = "website") {
   const origin = "https://startodel.example";
-  const localized = (prefix: string) => origin + prefix + path;
+  const localized = (prefix: string) => origin + (prefix && path === "/" ? prefix : prefix + path);
   const image = origin + "/og" + (path.startsWith("/u/") ? path : "/site") + ".png?lang=" + lang;
   const tags = html.match(/<meta\b(?:[^">]|"[^"]*")*>/g) ?? [];
   const meta = (attr: "name" | "property", key: string) =>
@@ -177,24 +177,27 @@ export function publicHttpTests(
       expect(await res.json()).toEqual({ message: "Not found" });
     }
   });
-  test("login advertises its localized site card", async () => {
+  test("the Landing advertises its localized site card", async () => {
     for (const lang of ["ru", "en"]) {
-      const res = await request(lang === "en" ? "/en/login" : "/login");
-      expectSocialHead(await res.text(), "/login", lang);
+      const res = await request(lang === "en" ? "/en" : "/");
+      expect(res.status).toBe(200);
+      expectPublicHtml(res);
+      expectSocialHead(await res.text(), "/", lang);
     }
   });
   test("public HTML varies on Session cookie presence and public files are shared", async () => {
     const session = await signIn("alice");
     for (const prefix of ["", "/en"]) {
-      for (const path of ["/login", "/terms", "/rules", "/u/alice"]) {
+      for (const path of ["", "/terms", "/rules", "/u/alice"]) {
         for (const cookie of ["", "startodel_language=en"]) {
-          const res = await request(prefix + path, cookie);
-          expect(res.status).toBe(200);
+          const res = await request(prefix + path || "/", cookie);
+          expect(res.status).toBe(!prefix && !path && cookie ? 302 : 200);
           expectPublicHtml(res);
         }
         for (const cookie of [session, "nuxt-auth-session=invalid", "nuxt-auth-session="]) {
           const res = await request(prefix + path, cookie);
           expect(res.headers.get("cache-control")).toBe("private, no-store");
+          if (!path) expect(await res.text()).not.toContain("Alice");
         }
       }
     }
@@ -619,6 +622,7 @@ export function publicHttpTests(
         expect(robots).toContain("Allow: " + prefix + path);
       for (const path of [
         "/api/",
+        "/dashboard",
         "/settings",
         "/onboarding",
         "/grills",
@@ -630,7 +634,10 @@ export function publicHttpTests(
       ]) {
         expect(robots).toContain("Disallow: " + prefix + path);
       }
-      for (const path of ["/login", "/terms", "/rules"]) {
+      expect(sitemap).toContain("<loc>https://startodel.example" + (prefix || "/") + "</loc>");
+      for (const path of ["/login", "/dashboard"])
+        expect(sitemap).not.toContain(prefix + path + "</loc>");
+      for (const path of ["/terms", "/rules"]) {
         expect(sitemap).toContain("<loc>https://startodel.example" + prefix + path + "</loc>");
       }
     }

@@ -14,7 +14,7 @@ withDefaults(
     /** Where a signed-in learner's dashboard is. */
     dashboard?: LinkTarget;
   }>(),
-  { home: "/", links: () => [], dashboard: "/" },
+  { home: "/", links: () => [], dashboard: "/dashboard" },
 );
 defineEmits<{ signIn: [] }>();
 </script>

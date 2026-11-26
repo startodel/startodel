@@ -1,5 +1,6 @@
 // Run from the workspace root after building the app. PLAYWRIGHT_MODULE may point to a local installation.
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
+import { checkCascade } from "./cascade.mjs";
 import { localGitHub } from "./github.ts";
 import { createDatabase, forUser } from "@startodel/db";
 import { spawn } from "node:child_process";
@@ -21,7 +22,21 @@ await once(socket, "listening");
 const port = socket.address().port;
 await new Promise((r) => socket.close(r));
 const origin = "http://127.0.0.1:" + port;
-const server = spawn(process.execPath, ["apps/web/.output/server/index.mjs"], {
+const cascade = process.argv.includes("--cascade");
+const command = cascade
+  ? [
+      "apps/web/node_modules/nuxt/bin/nuxt.mjs",
+      "dev",
+      "apps/web",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      String(port),
+      "--no-fork",
+      "--no-tui",
+    ]
+  : ["apps/web/.output/server/index.mjs"];
+const server = spawn(process.execPath, command, {
   env: {
     ...process.env,
     NITRO_HOST: "127.0.0.1",
@@ -41,7 +56,7 @@ const server = spawn(process.execPath, ["apps/web/.output/server/index.mjs"], {
 const directory = process.env.SCREENSHOT_DIR || "/home/coder/startodel-screens";
 let browser;
 try {
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < (cascade ? 900 : 100); i++) {
     try {
       if ((await fetch(origin + "/api/health")).ok) break;
     } catch {}
@@ -92,6 +107,7 @@ try {
   await mkdir(directory, { recursive: true });
   const pr12 = process.argv.includes("--pr12");
   const shot = async (name) => {
+    if (cascade) return;
     if (pr12 && !name.startsWith("pr12-")) return;
     if (process.argv.includes("--pr11") && !name.startsWith("pr11-")) return;
     if (
@@ -108,14 +124,20 @@ try {
     });
     console.log(name);
   };
-  await visit("/en");
+  if (cascade) {
+    await visit("/en/onboarding");
+    await checkCascade(page, "/en/onboarding");
+  }
+  await visit("/en/dashboard");
   await page.getByText("TypeScript", { exact: true }).click();
   await page.getByLabel("Other technologies").fill("SQL,");
   await page.getByLabel("Other technologies").press("Enter");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByText("Understand internals", { exact: true }).click();
+  await page.getByLabel("Notes for your agent").fill("Browser internals");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("radio", { name: "Senior", exact: true }).click();
+  await page.getByLabel("Years of experience").fill("8");
   await shot("onboarding");
   await page.getByRole("button", { name: "Continue to connect your agent" }).click();
   await page.waitForURL(origin + "/en/onboarding/connect");
@@ -123,7 +145,10 @@ try {
   assert.deepEqual(profile.stack, ["TypeScript", "SQL"]);
   assert.deepEqual(profile.goals, ["Understand internals"]);
   assert.equal(profile.experience, "senior");
-  await page.getByText("First prompt", { exact: true }).waitFor();
+  assert.equal(profile.yearsOfExperience, 8);
+  assert.equal(profile.notes, "Browser internals");
+  await page.getByRole("heading", { name: "First prompt", exact: true }).waitFor();
+  if (cascade) await checkCascade(page, "/en/onboarding/connect");
   assert((await page.locator("main").innerText()).includes(origin + "/mcp"));
   await shot("connect");
   await page.getByLabel("Token name").fill("Local demo");
@@ -304,7 +329,7 @@ try {
   await page.getByRole("button", { name: "Previous" }).click();
   await page.locator(".s-judgment__verdict").getByText("weak", { exact: true }).waitFor();
   await shot("pr9-grill-open");
-  await visit("/en");
+  await visit("/en/dashboard");
   await page.getByRole("link", { name: "Continue grill session" }).waitFor();
   await shot("pr9-dashboard-next-up");
   await visit("/en/grills");
@@ -326,8 +351,10 @@ try {
     .getByRole("radio", { name: /\bsync$/ })
     .check();
   await shot("pr9-review-practice");
+  if (cascade) await checkCascade(page, "/en/reviews/" + by.tasks.id + "/practice");
   await page.getByRole("button", { name: "Submit Practice Quiz" }).click();
-  await page.getByText("1 of 1 correct", { exact: true }).waitFor();
+  await page.locator(".outcome__title").filter({ hasText: "1 of 1 correct" }).waitFor();
+  if (cascade) await checkCascade(page, "/en/reviews/" + by.tasks.id + "/practice");
   await visit("/en/progress");
   await page.getByRole("combobox", { name: "Sort by" }).click();
   await page.getByRole("option", { name: "Mastery (lowest first)" }).click();
@@ -340,10 +367,90 @@ try {
   await page.getByRole("tab", { name: /Recent activity/ }).click();
   await page.locator(".s-timeline-item").first().waitFor();
   await shot("pr9-progress");
+  if (cascade) {
+    async function audit(path) {
+      await visit(path);
+      await checkCascade(page, path);
+    }
+    for (const path of [
+      "/dashboard",
+      "/en/dashboard",
+      "/settings",
+      "/progress",
+      "/reviews",
+      "/tracks/" + track.id,
+      "/topics/" + by.tasks.id,
+      "/lessons/" + lesson.id,
+      "/grills",
+      "/grills/" + grill.id,
+      "/grills/" + finished.id,
+    ])
+      await audit(path);
+    await owner.setTrackVisibility(track.id, true, true);
+    await visit("/en/u/bob/" + track.slug);
+    await page.getByRole("button", { name: "Change visibility" }).click();
+    await page.getByRole("dialog", { name: "Make this Track private?" }).waitFor();
+    await checkCascade(page, "/en/tracks/" + track.id);
+    await context.clearCookies();
+    const profile = "/u/bob";
+    const publicTrack = profile + "/" + track.slug;
+    for (const path of [
+      "/",
+      "/en",
+      "/terms",
+      "/rules",
+      profile,
+      publicTrack,
+      publicTrack + "/lessons/" + lesson.id,
+    ])
+      await audit(path);
+    // Compare the responsive Landing composition directly with its reference screen.
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const theme of ["light", "dark"]) {
+        await context.addCookies([{ name: "startodel-theme", value: theme, url: origin }]);
+        async function composition(path) {
+          await visit(path);
+          await page.evaluate(() => document.fonts.ready);
+          return page.evaluate(() => {
+            const get = (selector) => getComputedStyle(document.querySelector(selector));
+            return {
+              board: document.querySelectorAll(".hero__board .s-part").length,
+              steps: [...document.querySelectorAll(".steps__pad")].map((el) =>
+                el.textContent.trim(),
+              ),
+              columns: get(".steps").gridTemplateColumns,
+              band: get(".band").backgroundColor,
+              surface: get(".band--plain").backgroundColor,
+              levels: document.querySelectorAll(".signal__scale li").length,
+              facts: document.querySelectorAll(".fact").length,
+              rule: get(".fact").borderTopWidth,
+              cta: get(".cta__inner").justifyContent,
+            };
+          });
+        }
+        const reference = await composition("/en/design/screens/landing?chrome=0");
+        const product = await composition("/en");
+        assert.deepEqual(product, reference);
+        assert.equal(product.columns.split(" ").length, width === 390 ? 1 : 4);
+        assert.equal(product.rule, "2px");
+        assert.notEqual(product.band, product.surface);
+        if (process.env.SCREENSHOT_DIR)
+          await page.screenshot({
+            path: directory + "/landing-" + width + "-" + theme + ".png",
+            fullPage: true,
+            animations: "disabled",
+          });
+      }
+    }
+    await visit("/en/login?error=oauth#how");
+    await page.waitForURL(origin + "/en?error=oauth#how");
+    assert.ok(await page.locator(".hero .s-notice").isVisible());
+  }
   if (pr12) {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await visit("/");
-    await page.getByRole("heading", { name: "Главная", exact: true }).waitFor();
+    await visit("/dashboard");
+    await page.getByRole("heading", { name: "С возвращением, Bob", exact: true }).waitFor();
     await page.locator("main").getByRole("link", { name: track.title }).waitFor();
     await shot("pr12-ru-dashboard");
     await page.locator("main").getByRole("link", { name: track.title }).click();
@@ -351,7 +458,7 @@ try {
     await page.getByRole("button", { name: "Открыть доступ" }).waitFor();
     await shot("pr12-ru-track");
     await visit("/reviews");
-    await page.getByRole("heading", { name: by.tasks.title }).waitFor();
+    await page.getByRole("link", { name: by.tasks.title, exact: true }).waitFor();
     await page.getByText("Тренировочный тест: 1 из 1 верно", { exact: true }).waitFor();
     await shot("pr12-ru-grill-or-reviews");
 
@@ -385,19 +492,19 @@ try {
     await page.getByRole("banner").getByRole("button", { name: /Язык/ }).click();
     await page.getByRole("menuitem", { name: /English/ }).click();
     await page.waitForURL(origin + "/en" + publicPath);
-    await page.getByRole("heading", { name: "Track Graph" }).waitFor();
+    await page.getByRole("group", { name: "Track Graph" }).waitFor();
     await page.locator(".s-map .s-trace").first().waitFor();
     await shot("pr12-en-public-track");
     await visit("/");
-    await page.waitForURL(origin + "/en/login");
+    await page.waitForURL(origin + "/en");
     await page
       .locator("footer")
       .getByRole("button", { name: /language/i })
       .click();
     await page.getByRole("menuitem", { name: /Русский/ }).click();
-    await page.waitForURL(origin + "/login");
+    await page.waitForURL(origin + "/");
     await visit("/");
-    await page.waitForURL(origin + "/login");
+    await page.waitForURL(origin + "/");
   }
   if (process.argv.includes("--pr11")) {
     await page.setViewportSize({ width: 1440, height: 900 });

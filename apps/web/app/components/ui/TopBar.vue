@@ -6,7 +6,7 @@ withDefaults(
     user?: NavUser;
     home?: LinkTarget;
   }>(),
-  { home: "/" },
+  { home: "/dashboard" },
 );
 </script>
 <template>

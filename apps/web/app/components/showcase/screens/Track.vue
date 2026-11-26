@@ -162,16 +162,7 @@ const actions = [
               </div>
             </dl>
           </section>
-          <section class="s-stack" style="--s-gap: var(--s-3)">
-            <UiSectionHeading title="Track Sources" :level="3" />
-            <ul class="sources">
-              <li v-for="s in sampleTrack.sources" :key="s.href">
-                <a :href="s.href" class="s-link" rel="noopener noreferrer" target="_blank">{{
-                  s.label
-                }}</a>
-              </li>
-            </ul>
-          </section>
+          <UiTrackSources :sources="sampleTrack.sources" />
         </aside>
       </div>
     </div>
@@ -209,11 +200,5 @@ const actions = [
 }
 .path__topic:hover {
   border-color: var(--s-ink);
-}
-.sources {
-  display: grid;
-  gap: var(--s-2);
-  list-style: none;
-  font-size: var(--s-text-sm);
 }
 </style>

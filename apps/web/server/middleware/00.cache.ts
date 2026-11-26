@@ -22,8 +22,7 @@ export default defineHandler((event) => {
     );
   } else if (
     pathname.startsWith("/en/") ||
-    path === "/" ||
-    /^\/(settings|onboarding|tracks|lessons|topics|grills|reviews|progress|mcp|api)(\/|$)/i.test(
+    /^\/(dashboard|settings|onboarding|tracks|lessons|topics|grills|reviews|progress|mcp|api)(\/|$)/i.test(
       path,
     )
   ) {

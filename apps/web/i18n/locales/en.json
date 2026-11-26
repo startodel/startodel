@@ -79,7 +79,8 @@
     "start": "Connect your external agent, then tell it what you want to learn. Its Track and Lessons will appear here.",
     "completion": "{title} completion",
     "percent": "{percent} complete",
-    "atLevel": "{done} of {total} Topics at Mastery 2 or higher"
+    "atLevel": "{done} of {total} Topics at Mastery 2 or higher",
+    "greeting": "Welcome back, {name}"
   },
   "count": {
     "tracks": "{n} Track | {n} Tracks",
@@ -93,15 +94,15 @@
   },
   "login": {
     "signIn": "Sign in with GitHub",
-    "title": "Sign in",
-    "description": "Sign in to study your Tracks and Lessons with your agent.",
+    "title": "Personal learning Tracks",
+    "description": "Plan a Track with your own agent, study its Lessons and check your understanding with Grills and Reviews.",
     "how": "How it works",
     "source": "Source code",
     "audience": "For experienced developers",
     "heading": "Build a learning Track with your agent",
     "intro": "Your agent plans Lessons around your goals. Explore how Topics connect, put what you learn into practice and return to it when a Review is due.",
     "example": "Example Track · PostgreSQL query planning",
-    "map": "Indexes and statistics lead to query plans, then to join strategies.",
+    "map": "Example PostgreSQL Track Graph showing Topic prerequisites and Mastery.",
     "indexes": "Indexes",
     "statistics": "Statistics",
     "plans": "Query plans",
@@ -120,7 +121,21 @@
     "agentText": "Your agent writes the Lessons and gives feedback. Startodel keeps your Track and progress.",
     "open": "Open source",
     "openText": "Use the hosted platform or run it yourself under the MIT licence.",
-    "start": "Start your first Track"
+    "start": "Start your first Track",
+    "error": "Could not sign in with GitHub. Please try signing in again.",
+    "note": "Free and open source. Bring your own agent.",
+    "steps": "Four steps, one loop.",
+    "live": "{live} of {total} live",
+    "depth": "For working developers",
+    "depthText": "Lessons go into the mechanism, its trade-offs and the ways it can fail.",
+    "estimates": "Row estimates",
+    "hash": "Hash joins",
+    "memory": "Query memory",
+    "parallel": "Parallel plans",
+    "scans": "Index scans",
+    "cost": "Plan costs",
+    "parameters": "Parameterized plans",
+    "analysis": "Plan analysis"
   },
   "progress": {
     "load": "Could not load your progress.",
@@ -142,7 +157,8 @@
     "emptyHistory": "No learning activity yet.",
     "share": "{percent}% of Topics",
     "completedTopics": "Topics at Mastery 2 or higher",
-    "recentVerdicts": "Verdicts in recent activity"
+    "recentVerdicts": "Verdicts in recent activity",
+    "answers": "Grill answers"
   },
   "track": {
     "topics": "Topics",
@@ -171,7 +187,11 @@
     "openFork": "Open your Fork",
     "sourceGone": "The source is no longer public",
     "totalForks": "Forks of these Tracks",
-    "noForks": "No Public Forks yet."
+    "noForks": "No Public Forks yet.",
+    "inspect": "Select a Topic to read its Lessons",
+    "forkHint": "A Fork is your own private copy of this Track.",
+    "workspace": "Open in your workspace",
+    "visibility": "Change visibility"
   },
   "topic": {
     "lessons": "Topic Lessons",
@@ -180,7 +200,10 @@
     "empty": "No Lessons yet.",
     "prerequisites": "Prerequisites",
     "dependents": "Dependents",
-    "lessonsRead": "{read} of {total} read"
+    "lessonsRead": "{read} of {total} read",
+    "path": "Signal path",
+    "entry": "No prerequisites.",
+    "end": "No dependent Topics yet."
   },
   "lesson": {
     "empty": "This Lesson has no Blocks yet.",
@@ -201,7 +224,8 @@
     "minutes": "{n} min",
     "unread": "Not read",
     "videoLazy": "YouTube · loads when you press play",
-    "videoOff": "This video link cannot be embedded"
+    "videoOff": "This video link cannot be embedded",
+    "readHint": "Reading all the Lessons in a Topic raises its Mastery to at least 1."
   },
   "review": {
     "load": "Could not load your reviews.",
@@ -214,7 +238,6 @@
     "practice": "Practice quiz",
     "ask": "Ask your agent to review this topic",
     "prompt": "Review {title} ({id}) with me and record the result with record_review_result.",
-    "next": "Box {box} · Next review {date} · Mastery {level}",
     "return": "Return to reviews",
     "submit": "Submit Practice Quiz",
     "reload": "Load current questions",
@@ -229,7 +252,9 @@
     "days": "{n} d",
     "week": "Reviews in the next seven days",
     "dueOn": "{day}: {count} due",
-    "scheduledBoxes": "Review Boxes · due and upcoming"
+    "scheduledBoxes": "Review Boxes · due and upcoming",
+    "boxLabel": "Review Box",
+    "nextDate": "Next review"
   },
   "agent": {
     "connect": "Connect your agent",
@@ -246,7 +271,9 @@
     "paste": "Paste it into your agent",
     "json": "JSON configuration",
     "waiting": "Waiting for the first call from your agent",
-    "connected": "Agent connected"
+    "connected": "Agent connected",
+    "begin": "Create a token to begin",
+    "poll": "The status updates when your agent first uses the token."
   },
   "onboarding": {
     "title": "Onboarding",
@@ -269,7 +296,13 @@
     "goalsStep": "Goals",
     "gradeStep": "Grade",
     "back": "Back",
-    "forward": "Continue"
+    "forward": "Continue",
+    "summary": "Technologies: {stack} · Goals: {goals}",
+    "privacy": "Your answers are stored in your Profile and shared with your agent.",
+    "notes": "Notes for your agent",
+    "notesHint": "A project, a deadline or a constraint that should shape your Track.",
+    "years": "Years of experience",
+    "yearsRange": "Enter a whole number from 0 to 60."
   },
   "grill": {
     "finished": "Finished",
@@ -314,7 +347,9 @@
     "lineStrong": "Holds under load.",
     "linePartial": "Carries signal, with gaps.",
     "lineWeak": "Open circuit. Revisit this.",
-    "pad": "Question {index}, {state}"
+    "pad": "Question {index}, {state}",
+    "judged": "Judged",
+    "pending": "Awaiting verdict"
   },
   "quiz": {
     "right": "Correct",
@@ -370,7 +405,10 @@
     "terms": "Terms of Use",
     "publish": "Publish",
     "error": "Could not change visibility. Reload the Track and try again.",
-    "manual": "Select and copy the public URL."
+    "manual": "Select and copy the public URL.",
+    "shared": "Public: the Track Graph, Track Sources and Lessons.",
+    "personal": "Your Mastery, Reviews and Grill answers stay private.",
+    "copies": "Existing Forks remain available to their owners after you make the Track private."
   },
   "mastery": {
     "level0": "don't know",
@@ -457,6 +495,10 @@
     "appearance": "Interface",
     "session": "Session",
     "confirm": "Revoke this token?",
-    "revokeEffect": "The token “{name}” will stop working immediately. Its agent will need a new token."
+    "revokeEffect": "The token “{name}” will stop working immediately. Its agent will need a new token.",
+    "publicProfile": "Public Profile",
+    "intro": "Your Profile, connected agents and interface preferences.",
+    "browser": "Saved in this browser.",
+    "motion": "Animate current on the Track board"
   }
 }
