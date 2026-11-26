@@ -182,8 +182,8 @@ const replay = ref(0);
       <div class="voices">
         <article class="voice">
           <p class="s-label">System · Martian Mono, condensed</p>
-          <p class="voice__sample voice__sample--mono">T07 · Mastery 3 of 4</p>
-          <p class="voice__sample voice__sample--mono voice__sample--sm">Очередь микрозадач 0–4</p>
+          <p class="voice__sample s-title">T07 · Mastery 3 of 4</p>
+          <p class="voice__sample voice__sample--sm s-title">Очередь микрозадач 0–4</p>
           <p class="voice__note">
             Page titles, labels, designators, readouts and code. Width 75 for interface, 87.5 for
             code.
@@ -209,16 +209,13 @@ const replay = ref(0);
       <ShowcaseSpecimen label="Type scale" layout="block">
         <table class="ramp">
           <tbody>
-            <tr v-for="[name, size, use, voice] in typeScale" :key="name">
+            <tr v-for="[name, size, use, sampleClass] in typeScale" :key="name">
               <th class="s-mono">--s-text-{{ name }}</th>
               <td class="s-mono s-muted">{{ size }}</td>
               <td>
-                <span
-                  class="ramp__sample"
-                  :class="'ramp__sample--' + voice"
-                  :style="{ fontSize: `var(--s-text-${name})` }"
-                  >{{ use }}</span
-                >
+                <span :class="sampleClass" :style="{ fontSize: `var(--s-text-${name})` }">{{
+                  use
+                }}</span>
               </td>
             </tr>
           </tbody>
@@ -484,12 +481,6 @@ const replay = ref(0);
 .voice__sample--sm {
   font-size: var(--s-text-xl);
   color: var(--s-ink-2);
-}
-.voice__sample--mono {
-  font-family: var(--s-font-mono);
-  font-stretch: 75%;
-  font-weight: 600;
-  letter-spacing: -0.035em;
 }
 .voice__sample--ui {
   font-weight: 600;

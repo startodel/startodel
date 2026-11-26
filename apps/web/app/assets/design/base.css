@@ -80,6 +80,7 @@ html :where(.s-root) :focus-visible {
   font-weight: 600;
   line-height: 0.98;
   letter-spacing: -0.045em;
+  word-spacing: -0.22em;
   text-wrap: balance;
 }
 :where(.s-root) .s-title {
@@ -87,6 +88,7 @@ html :where(.s-root) :focus-visible {
   font-weight: 600;
   line-height: 1.08;
   letter-spacing: -0.035em;
+  word-spacing: -0.18em;
   text-wrap: balance;
 }
 :where(.s-root) .s-label {

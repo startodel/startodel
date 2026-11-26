@@ -59,16 +59,16 @@ export const colorGroups = [
 ] as const;
 
 export const typeScale = [
-  ["5xl", "4rem", "Landing display", "mono"],
-  ["4xl", "2.75rem", "Lesson and Track titles", "read"],
-  ["3xl", "2rem", "Page titles and readouts", "mono"],
-  ["2xl", "1.5rem", "Section titles", "mono"],
-  ["xl", "1.25rem", "Card titles and Grill Questions", "read"],
-  ["lg", "1.0625rem", "Lead text", "ui"],
-  ["md", "0.9375rem", "Interface text", "ui"],
-  ["sm", "0.8125rem", "Controls and tables", "ui"],
-  ["xs", "0.75rem", "Captions", "ui"],
-  ["2xs", "0.6875rem", "LABELS AND DESIGNATORS", "mono"],
+  ["5xl", "4rem", "Landing display", "s-display"],
+  ["4xl", "2.75rem", "Lesson and Track titles", "ramp__sample ramp__sample--read"],
+  ["3xl", "2rem", "Page titles and readouts", "s-title"],
+  ["2xl", "1.5rem", "Section titles", "s-title"],
+  ["xl", "1.25rem", "Card titles and Grill Questions", "ramp__sample ramp__sample--read"],
+  ["lg", "1.0625rem", "Lead text", "ramp__sample"],
+  ["md", "0.9375rem", "Interface text", "ramp__sample"],
+  ["sm", "0.8125rem", "Controls and tables", "ramp__sample"],
+  ["xs", "0.75rem", "Captions", "ramp__sample"],
+  ["2xs", "0.6875rem", "LABELS AND DESIGNATORS", "ramp__sample ramp__sample--mono"],
 ] as const;
 
 export const spaceScale = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24] as const;
