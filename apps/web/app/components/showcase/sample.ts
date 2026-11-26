@@ -692,19 +692,73 @@ export const sampleTokens = [
   },
 ];
 
+const publicPitch =
+  "From the call stack to production profiling: how Node.js schedules work, manages memory and where latency comes from.";
+
 export const samplePublicTrack = {
   sources: sampleTrack.sources,
   title: "Node.js runtime internals",
   slug: "node-runtime-internals",
-  description:
-    "From the call stack to production profiling: how Node.js schedules work, manages memory and where latency comes from.",
   owner: { login: "alice", name: "Alice Petrova" },
   forkedFrom: { login: "mkarpov", slug: "node-internals" },
   forkCount: 14,
-  topics: 12,
-  lessons: 27,
-  updated: "Updated 2 days ago",
+  description:
+    publicPitch +
+    "\n\nFollow a request from the first JavaScript frame to the runtime work that delays a response. Use a running service to connect each mechanism to a measurement.\n\n- Trace a delayed callback through the event loop.\n- Read a heap snapshot and identify what keeps an object alive.",
+  createdAt: "2026-11-02",
+  updatedAt: "2026-11-18",
 };
+
+/** Companion material for the Topics on the public outline, in the same order. */
+export const sampleSyllabus = [
+  {
+    summary: "Follow a function call from entry to return.",
+    lessons: ["Inside a stack frame", "Name lookup and scope", "Reading a stack trace"],
+  },
+  {
+    summary: "Track a callback through one turn of the loop.",
+    lessons: ["Polling for I/O", "The check phase", "Closing handles", "Tracing a loop iteration"],
+  },
+  {
+    summary: "Predict when queued callbacks run.",
+    lessons: ["Promise reactions", "Draining the microtask queue", "Recognising starvation"],
+  },
+  {
+    summary: "Measure the gap between a timer’s scheduled and actual execution.",
+    lessons: sampleTopicLessons.map((lesson) => lesson.title),
+  },
+  {
+    summary: "Trace how an async function suspends and resumes.",
+    lessons: ["Suspending at await", "Rejection and unwinding"],
+  },
+  {
+    summary: "Control the rate of data moving between streams.",
+    lessons: ["Reading in chunks", "Waiting for drain", "Building a pipeline"],
+  },
+  {
+    summary: "Move CPU-bound work off the event loop.",
+    lessons: ["Starting a worker", "Transferring a buffer"],
+  },
+  {
+    summary: "Connect allocation patterns to collection pauses.",
+    lessons: ["Young and old space", "Marking reachable objects", "Measuring a pause"],
+  },
+  {
+    summary: "Find the reference that keeps an object alive.",
+    lessons: ["Comparing snapshots", "Following a retaining path"],
+  },
+  {
+    summary: "Inspect how object shapes affect property access.",
+    lessons: ["Shape transitions", "Monomorphic call sites"],
+  },
+  { summary: "Follow a hot function through the compiler tiers.", lessons: [] },
+  { summary: "Use a CPU profile to explain a slow request.", lessons: [] },
+].map(({ summary, lessons }, i) => ({
+  slug: sampleTopics[i]!.id,
+  title: sampleTopics[i]!.title,
+  summary,
+  lessons: lessons.map((title, j) => ({ id: String(j + 1), title })),
+}));
 
 export const sampleForks = [
   {
@@ -745,7 +799,7 @@ export const samplePublicTracks = [
   {
     slug: "node-runtime-internals",
     title: "Node.js runtime internals",
-    description: samplePublicTrack.description,
+    description: publicPitch,
     topics: 12,
     lessons: 27,
     forks: 14,

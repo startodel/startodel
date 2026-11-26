@@ -319,7 +319,7 @@ try {
     "Trace the browser event loop from a timer callback through the microtask queue to the next paint. Use the performance timeline to explain why a busy page misses a frame.";
   await owner.updateTrack(track.id, { description: pitch, sources: { docs } });
   await visit("/tracks/" + track.slug);
-  async function checkTrackDisclosures() {
+  async function checkPrivateDescription() {
     await page.setViewportSize({ width: 390, height: 900 });
     const description = page.getByText(pitch, { exact: true });
     await more.waitFor();
@@ -338,7 +338,8 @@ try {
     await page.setViewportSize({ width: 1440, height: 900 });
     await less.waitFor({ state: "hidden" });
     assert.equal(await more.count(), 0);
-
+  }
+  async function checkTrackSources() {
     const links = sources.getByRole("link");
     assert.equal(await links.count(), 5);
     await sources.getByRole("button", { name: "Show all 6" }).click();
@@ -352,7 +353,8 @@ try {
     await sources.getByRole("button", { name: "Show less" }).click();
     assert.equal(await links.count(), 5);
   }
-  await checkTrackDisclosures();
+  await checkPrivateDescription();
+  await checkTrackSources();
   const node = page
     .locator(".vue-flow__node")
     .filter({ hasText: "Tasks and timers" })
@@ -531,6 +533,15 @@ try {
   await page.getByRole("tab", { name: /Recent activity/ }).click();
   await page.locator(".s-timeline-item").first().waitFor();
   await shot("pr9-progress");
+  const overview = "Read a browser trace alongside the HTML specification.";
+  const outcomes = ["Identify the next task.", "Explain when a frame can paint."];
+  await owner.updateTrack(track.id, {
+    description: [pitch, overview, outcomes.map((line) => "- " + line).join("\n")].join("\n\n"),
+  });
+  const paintLesson = await owner.createLesson({
+    topicId: by.rendering.id,
+    title: "Finding a paint in the timeline",
+  });
   if (cascade) {
     async function audit(path) {
       await visit(path);
@@ -605,6 +616,9 @@ try {
       "/rules",
       profile,
       publicTrack,
+      "/ru" + publicTrack,
+      "/design/screens/public-track",
+      "/ru/design/screens/public-track",
       publicTrack + "/lessons/" + lesson.id,
     ])
       await audit(path);
@@ -826,8 +840,115 @@ try {
     assert.deepEqual(await targets(), first);
   }
   await owner.setTrackVisibility(track.id, true, true);
-  await visit("/u/bob/" + track.slug);
-  await checkTrackDisclosures();
+  const publicPath = "/u/bob/" + track.slug;
+  await signIn("bob");
+  await visit(publicPath);
+  assert.equal(
+    await page.getByRole("link", { name: "Open in your workspace" }).getAttribute("href"),
+    "/tracks/" + track.slug,
+  );
+  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin });
+  async function checkCopy(label, path) {
+    await page.getByRole("button", { name: label }).click();
+    assert.equal(await page.evaluate(() => navigator.clipboard.readText()), origin + path);
+  }
+  await checkCopy("Copy public URL", publicPath);
+  await checkTrackSources();
+
+  await signIn("reader");
+  const { user: visitor } = await (await request.get(origin + "/api/me")).json();
+  await visit(publicPath);
+  await page.getByRole("button", { name: "Fork", exact: true }).click();
+  await page.waitForURL(origin + "/tracks/" + track.slug);
+  const recipient = forUser(db, visitor.id);
+  const copy = await recipient.getTrackBySlug(track.slug);
+  await recipient.setTrackVisibility(copy.id, true, true);
+  await context.clearCookies();
+  const noJs = await browser.newPage({ javaScriptEnabled: false });
+  for (const prefix of ["", "/ru"]) {
+    const path = prefix + publicPath;
+    await visit(path);
+    const syllabus = page.getByRole("region", {
+      name: prefix ? "Программа трека" : "Course syllabus",
+    });
+    const head = page.locator(".public__head");
+    assert.equal(await head.locator("h1").innerText(), track.title);
+    assert.equal(await head.locator(".public__lead").innerText(), pitch);
+    assert.doesNotMatch(await head.innerText(), /Read a browser trace/);
+    assert.match(await head.locator(".public__stats").innerText(), prefix ? /Обновлён/ : /Updated/);
+    assert.equal(
+      await head.getByRole("button", { name: prefix ? "Показать полностью" : "Show more" }).count(),
+      0,
+    );
+    assert.equal(
+      await head
+        .getByRole("link", { name: prefix ? "Войти и создать форк" : "Sign in to fork" })
+        .getAttribute("href"),
+      prefix || "/",
+    );
+    await checkCopy(prefix ? "Скопировать публичную ссылку" : "Copy public URL", path);
+    const about = page.locator("section").filter({
+      has: page.getByRole("heading", {
+        name: prefix ? "О треке" : "About this Track",
+        exact: true,
+      }),
+    });
+    assert.equal(await about.locator("p").innerText(), overview);
+    assert.deepEqual(await about.getByRole("listitem").allTextContents(), outcomes);
+
+    const graph = page.locator(".s-map");
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const bounds = await graph.boundingBox();
+      assert.ok(
+        bounds && bounds.y >= 0 && bounds.y + 60 < 900,
+        "Track Graph starts above the fold",
+      );
+    }
+    const rendering = graph.getByRole("button", { name: /Rendering opportunities/ });
+    await rendering.click();
+    assert.equal(await rendering.getAttribute("aria-pressed"), "true");
+    await page
+      .locator("figcaption")
+      .getByRole("link", { name: /T04.*Rendering opportunities/ })
+      .click();
+    assert.equal(new URL(page.url()).hash, "#topic-rendering");
+    assert.deepEqual(
+      await syllabus.locator("#topic-rendering .public__requires a").allTextContents(),
+      ["T02 · Tasks and timers", "T03 · Microtasks"],
+    );
+    assert.equal(await page.locator(".public__author").getAttribute("href"), prefix + "/u/bob");
+    await page
+      .locator("#forks")
+      .getByRole("link", { name: track.title, exact: true })
+      .first()
+      .waitFor();
+    await noJs.goto(origin + path);
+    const rendered = noJs.getByRole("region", {
+      name: prefix ? "Программа трека" : "Course syllabus",
+    });
+    assert.deepEqual(await rendered.getByRole("heading", { level: 3 }).allTextContents(), [
+      "T01 The runtime",
+      "T02 Tasks and timers",
+      "T03 Microtasks",
+      "T04 Rendering opportunities",
+    ]);
+    for (const item of [lesson, paintLesson]) {
+      const link = rendered.getByRole("link", { name: item.title });
+      assert.ok(await link.isVisible());
+      assert.equal(await link.getAttribute("href"), path + "/lessons/" + item.id);
+    }
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await shot("pr11-" + (prefix ? "ru" : "en") + "-public-syllabus");
+    await page.setViewportSize({ width: 390, height: 900 });
+    await shot("pr11-" + (prefix ? "ru" : "en") + "-public-syllabus-mobile");
+  }
+  await noJs.close();
+  await owner.updateTrack(track.id, { description: pitch });
+  await visit(publicPath);
+  assert.equal(await page.getByRole("heading", { name: "About this Track" }).count(), 0);
+  assert.equal(await page.getByText(pitch, { exact: true }).count(), 1);
   assert.deepEqual(errors, []);
 } finally {
   await browser?.close();
