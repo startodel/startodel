@@ -1,17 +1,17 @@
 <script setup lang="ts">
-const { verdictLabel } = useLearningLabels();
+definePageMeta({ layout: "app" });
 const { t } = useI18n();
 const displayDate = useDisplayDate();
 const id = String(useRoute().params.topicId);
 const url = `/api/reviews/${id}/practice` as const;
 const { data, error, refresh } = await useFetch(url);
-if (error.value)
+if (error.value?.statusCode === 404)
   throw createError({
     statusCode: error.value.statusCode,
     message: t("common.error"),
   });
 useHead({ title: t("review.practice") });
-const answers = ref<number[]>([]);
+const answers = ref<(number | undefined)[]>([]);
 const busy = ref(false);
 const message = ref("");
 const stale = ref(false);
@@ -30,7 +30,14 @@ async function send(quiz: NonNullable<typeof data.value>) {
 }
 const result = ref<Awaited<ReturnType<typeof send>>>();
 async function submit() {
-  if (!data.value || busy.value || result.value) return;
+  if (
+    !data.value ||
+    stale.value ||
+    busy.value ||
+    result.value ||
+    data.value.questions.some((_, i) => answers.value[i] === undefined)
+  )
+    return;
   busy.value = true;
   message.value = "";
   try {
@@ -48,65 +55,60 @@ async function submit() {
 }
 async function reload() {
   await refresh();
+  result.value = undefined;
   answers.value = [];
   message.value = "";
   stale.value = false;
 }
+
+const quiz = computed(() => practiceQuizProps(data.value?.questions ?? [], result.value?.results));
 </script>
 <template>
-  <main v-if="data" class="narrow">
-    <NuxtLinkLocale to="/reviews">← {{ $t("nav.reviews") }}</NuxtLinkLocale>
-    <h1>{{ $t("review.practice") }}</h1>
-    <h2>{{ data.title }}</h2>
-    <section v-if="result" class="panel" aria-live="polite">
-      <h2>
-        {{ $t("quiz.score", { correct: $n(result.correct), total: $n(result.total) }) }} ·
-        {{ verdictLabel(result.verdict) }}
-      </h2>
-      <p>
-        {{
-          $t("review.next", {
-            box: $n(result.box),
-            date: displayDate(result.dueAt),
-            level: $n(result.mastery),
-          })
-        }}
-      </p>
-      <NuxtLinkLocale to="/reviews">{{ $t("review.return") }}</NuxtLinkLocale>
-    </section>
-    <form @submit.prevent="submit">
-      <fieldset
-        class="panel"
-        v-for="(q, i) in data.questions"
-        :key="q.lessonId + q.blockId + q.index"
-        :disabled="!!result || busy || stale"
+  <div class="s-stack">
+    <div>
+      <UiButton to="/reviews" variant="ghost" icon="arrow-left">{{ $t("nav.reviews") }}</UiButton>
+    </div>
+    <UiPageHeader :title="data?.title ?? $t('review.practice')" :kicker="$t('review.practice')" />
+    <UiNotice v-if="error" tone="danger" :title="$t('common.error')"
+      ><template #actions
+        ><UiButton @click="reload">{{ $t("common.retry") }}</UiButton></template
+      ></UiNotice
+    >
+    <UiSkeletonList v-else-if="!data" variant="cards" />
+    <template v-else>
+      <UiCard v-if="result" aria-live="polite">
+        <div class="s-stack">
+          <UiVerdict :verdict="result.verdict" size="lg" />
+          <p>
+            {{
+              $t("review.next", {
+                box: $n(result.box),
+                date: displayDate(result.dueAt),
+                level: $n(result.mastery),
+              })
+            }}
+          </p>
+        </div>
+      </UiCard>
+      <UiQuiz
+        v-model="answers"
+        name="practice"
+        v-bind="quiz"
+        :busy="busy"
+        :disabled="stale"
+        :submit-label="$t('review.submit')"
+        @submit="submit"
+        @retry="reload"
       >
-        <legend>{{ $n(i + 1) }}. {{ q.prompt }}</legend>
-        <label v-for="(option, j) in q.options" :key="j"
-          ><input type="radio" required :name="'question-' + i" :value="j" v-model="answers[i]" />
-          {{ option }}</label
+        <template #result
+          ><UiButton to="/reviews" icon="arrow-left">{{ $t("review.return") }}</UiButton></template
         >
-        <strong v-if="result">{{
-          result.results.find((b) => b.lessonId === q.lessonId && b.blockId === q.blockId)
-            ?.perQuestion[q.index]
-            ? $t("quiz.right")
-            : $t("quiz.wrong")
-        }}</strong>
-      </fieldset>
-      <button v-if="!result && !stale" class="primary" :disabled="busy">
-        {{ $t("review.submit") }}
-      </button>
-    </form>
-    <p role="alert" v-if="message">{{ message }}</p>
-    <button v-if="stale" @click="reload">{{ $t("review.reload") }}</button>
-  </main>
+      </UiQuiz>
+      <UiNotice v-if="message" tone="danger" :title="message">
+        <template v-if="stale" #actions
+          ><UiButton @click="reload">{{ $t("review.reload") }}</UiButton></template
+        >
+      </UiNotice>
+    </template>
+  </div>
 </template>
-<style scoped>
-label {
-  display: block;
-  padding: 0.35rem 0;
-}
-legend {
-  padding: 0 0.5rem;
-}
-</style>

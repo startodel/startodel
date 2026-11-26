@@ -6,7 +6,7 @@ export interface QuizQuestion {
 export interface QuizResult {
   /** Whether each answer was correct, by question. */
   perQuestion: boolean[];
-  feedback: { correctIndex: number; explanation?: string }[];
+  feedback?: { correctIndex: number; explanation?: string }[];
 }
 /**
  * A Quiz. The learner picks one option per question and submits once. The correct option and
@@ -17,6 +17,7 @@ const props = withDefaults(
     questions: QuizQuestion[];
     /** Set after submission. While it is set the options are locked. */
     result?: QuizResult;
+    disabled?: boolean;
     busy?: boolean;
     /** Shown when the answers could not be recorded. */
     error?: string;
@@ -42,8 +43,9 @@ const pick = (question: number, option: number) => {
 const letter = (index: number) => String.fromCharCode(65 + index);
 function optionState(question: number, option: number) {
   if (!props.result) return answers.value[question] === option ? "picked" : "idle";
-  const right = props.result.feedback[question]?.correctIndex === option;
-  if (right) return "correct";
+  const right = props.result.feedback?.[question]?.correctIndex === option;
+  if (right || (props.result.perQuestion[question] && answers.value[question] === option))
+    return "correct";
   return answers.value[question] === option ? "wrong" : "idle";
 }
 </script>
@@ -54,7 +56,7 @@ function optionState(question: number, option: number) {
       :key="i"
       class="s-quiz__question"
       :class="result && (result.perQuestion[i] ? 'is-correct' : 'is-wrong')"
-      :disabled="busy || !!result"
+      :disabled="disabled || busy || !!result"
     >
       <legend class="s-quiz__prompt">
         <span class="s-quiz__number">{{ String(startAt + i).padStart(2, "0") }}</span>
@@ -92,7 +94,7 @@ function optionState(question: number, option: number) {
           {{ result.perQuestion[i] ? $t("quiz.right") : $t("quiz.wrong") }}
         </p>
         <UiProse
-          v-if="result.feedback[i]?.explanation"
+          v-if="result.feedback?.[i]?.explanation"
           :markdown="result.feedback[i]!.explanation!"
           size="sm"
         />
@@ -113,7 +115,7 @@ function optionState(question: number, option: number) {
           type="submit"
           variant="primary"
           :loading="busy"
-          :disabled="answered < questions.length"
+          :disabled="disabled || answered < questions.length"
         >
           {{ submitLabel ?? $t("quiz.submit") }}
         </UiButton>

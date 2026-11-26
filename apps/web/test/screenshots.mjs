@@ -47,7 +47,7 @@ try {
     } catch {}
     await delay(100);
   }
-  browser = await chromium.launch();
+  browser = await chromium.launch({ executablePath: process.env.CHROME || undefined });
   const context = await browser.newContext({
     viewport: { width: 1280, height: 900 },
     deviceScaleFactor: 1,
@@ -109,20 +109,26 @@ try {
     console.log(name);
   };
   await visit("/en");
-  await page.getByLabel("TypeScript", { exact: true }).check();
+  await page.getByText("TypeScript", { exact: true }).click();
   await page.getByLabel("Other technologies").fill("SQL,");
   await page.getByLabel("Other technologies").press("Enter");
-  await page.getByLabel("Understand internals").check();
-  await page.getByLabel("Senior", { exact: true }).check();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByText("Understand internals", { exact: true }).click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("radio", { name: "Senior", exact: true }).click();
   await shot("onboarding");
   await page.getByRole("button", { name: "Continue to connect your agent" }).click();
-  await page.waitForURL("**/onboarding/connect");
-  await page.getByRole("heading", { name: "First prompt" }).waitFor();
+  await page.waitForURL(origin + "/en/onboarding/connect");
+  const profile = await owner.getProfile();
+  assert.deepEqual(profile.stack, ["TypeScript", "SQL"]);
+  assert.deepEqual(profile.goals, ["Understand internals"]);
+  assert.equal(profile.experience, "senior");
+  await page.getByText("First prompt", { exact: true }).waitFor();
   assert((await page.locator("main").innerText()).includes(origin + "/mcp"));
   await shot("connect");
   await page.getByLabel("Token name").fill("Local demo");
   await page.getByRole("button", { name: "Create token" }).click();
-  await page.getByRole("button", { name: "Copy token" }).waitFor();
+  await page.getByRole("button", { name: "Copy MCP Token" }).waitFor();
   await page.getByRole("button", { name: "Dismiss" }).click();
   await page.getByRole("link", { name: "Skip for now" }).click();
   await page.getByRole("heading", { name: "Build your first Track" }).waitFor();
@@ -169,9 +175,9 @@ try {
   });
   await page.reload();
   await hydrated();
-  await page.getByRole("link", { name: track.title }).waitFor();
+  await page.locator("main").getByRole("link", { name: track.title }).waitFor();
   await shot("dashboard");
-  await page.getByRole("link", { name: track.title }).click();
+  await page.locator("main").getByRole("link", { name: track.title }).click();
   const node = page
     .locator(".vue-flow__node")
     .filter({ hasText: "Tasks and timers" })
@@ -268,20 +274,31 @@ try {
   await page.getByRole("link", { name: "Practice quiz" }).waitFor();
   await shot("pr9-reviews");
   await page.getByRole("link", { name: "Practice quiz" }).click();
-  await page.getByRole("radio", { name: "sync", exact: true }).check();
+  await page
+    .locator(".s-quiz")
+    .getByRole("radio", { name: /\bsync$/ })
+    .check();
   await shot("pr9-review-practice");
   await page.getByRole("button", { name: "Submit Practice Quiz" }).click();
-  await page.getByRole("heading", { name: "1 of 1 correct · strong" }).waitFor();
+  await page.getByText("1 of 1 correct", { exact: true }).waitFor();
   await visit("/en/progress");
-  await page.getByLabel("Sort by").selectOption("mastery");
-  await page.getByRole("heading", { name: "Recent activity" }).waitFor();
+  await page.getByRole("combobox", { name: "Sort by" }).click();
+  await page.getByRole("option", { name: "Mastery (lowest first)" }).click();
+  const levels = await page.locator("tbody .s-mastery__level").allTextContents();
+  assert.equal(levels.length, topics.length);
+  assert.deepEqual(
+    levels.map(Number),
+    levels.map(Number).sort((a, b) => a - b),
+  );
+  await page.getByRole("tab", { name: /Recent activity/ }).click();
+  await page.locator(".s-timeline-item").first().waitFor();
   await shot("pr9-progress");
   if (pr12) {
     await visit("/");
     await page.getByRole("heading", { name: "Главная", exact: true }).waitFor();
-    await page.getByRole("link", { name: track.title }).waitFor();
+    await page.locator("main").getByRole("link", { name: track.title }).waitFor();
     await shot("pr12-ru-dashboard");
-    await page.getByRole("link", { name: track.title }).click();
+    await page.locator("main").getByRole("link", { name: track.title }).click();
     await page.locator(".vue-flow__edge-path").first().waitFor();
     await page.getByRole("button", { name: "Открыть доступ" }).waitFor();
     await shot("pr12-ru-track");
@@ -292,7 +309,10 @@ try {
 
     // Exercise the real submission handler and check the message visible after each response.
     await page.getByRole("link", { name: "Тренировочный тест", exact: true }).click();
-    await page.getByRole("radio", { name: "sync", exact: true }).check();
+    await page
+      .locator(".s-quiz")
+      .getByRole("radio", { name: /\bsync$/ })
+      .check();
     await page.route("**/api/reviews/*/practice", (route) => route.continue({ postData: "{}" }), {
       times: 1,
     });

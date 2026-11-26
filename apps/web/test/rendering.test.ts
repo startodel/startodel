@@ -1,4 +1,5 @@
 import { expect, test } from "vite-plus/test";
+import { practiceQuizProps } from "../app/utils/practice-quiz";
 import { renderMarkdown } from "../app/utils/markdown";
 import { httpUrl, youtubeEmbed } from "../app/utils/links";
 
@@ -47,4 +48,50 @@ test("Markdown images show escaped alt text as a safe outbound link", () => {
   expect(html).toContain('rel="noopener noreferrer"');
   expect(html).toContain('target="_blank"');
   expect(html).not.toMatch(/<img|href="(?:javascript|data):/i);
+});
+
+test("Practice Quiz props expose only prompts and options, even for an enriched GET payload", () => {
+  const questions = [
+    {
+      lessonId: "b",
+      blockId: "quiz",
+      index: 0,
+      prompt: "Second Lesson",
+      options: ["x", "y"],
+      correctIndex: 0,
+      explanation: "private",
+    },
+    {
+      lessonId: "a",
+      blockId: "quiz",
+      index: 1,
+      prompt: "Second question",
+      options: ["x", "y"],
+      correctIndex: 1,
+      explanation: "private",
+    },
+    {
+      lessonId: "a",
+      blockId: "quiz",
+      index: 0,
+      prompt: "First question",
+      options: ["x", "y"],
+      correctIndex: 1,
+      explanation: "private",
+    },
+  ];
+  const before = practiceQuizProps(questions);
+  expect(before).toEqual({
+    questions: [
+      { prompt: "Second Lesson", options: ["x", "y"] },
+      { prompt: "Second question", options: ["x", "y"] },
+      { prompt: "First question", options: ["x", "y"] },
+    ],
+    result: undefined,
+  });
+  const submitted = practiceQuizProps(questions, [
+    { lessonId: "a", blockId: "quiz", perQuestion: [true, false] },
+    { lessonId: "b", blockId: "quiz", perQuestion: [true] },
+  ]);
+  expect(submitted.result?.perQuestion).toEqual([true, false, true]);
 });

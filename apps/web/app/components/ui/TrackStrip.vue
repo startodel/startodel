@@ -10,10 +10,14 @@ const props = defineProps<{
   title: string;
   /** The Mastery level of every Topic, in Track order. */
   levels: number[];
+  completed?: number;
+  total?: number;
   note?: string;
   to?: LinkTarget;
 }>();
-const complete = computed(() => props.levels.filter((l) => l >= COMPLETE_LEVEL).length);
+const complete = computed(
+  () => props.completed ?? props.levels.filter((l) => l >= COMPLETE_LEVEL).length,
+);
 </script>
 <template>
   <component
@@ -25,13 +29,14 @@ const complete = computed(() => props.levels.filter((l) => l >= COMPLETE_LEVEL).
     <div class="s-trackstrip__head">
       <h3 class="s-trackstrip__title">{{ title }}</h3>
       <p class="s-trackstrip__count">
-        <strong>{{ complete }}</strong> {{ $t("board.liveOf", { total: levels.length }) }}
+        <strong>{{ complete }}</strong> {{ $t("board.liveOf", { total: total ?? levels.length }) }}
       </p>
     </div>
     <div
+      v-if="levels.length"
       class="s-trackstrip__cells"
       role="img"
-      :aria-label="$t('progress.ofTopics', { done: complete, total: levels.length })"
+      :aria-label="$t('progress.ofTopics', { done: complete, total: total ?? levels.length })"
     >
       <i v-for="(level, i) in levels" :key="i" :class="'is-l' + Math.min(Math.max(level, 0), 4)" />
     </div>
