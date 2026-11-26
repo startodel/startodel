@@ -19,7 +19,7 @@ export default defineNuxtConfig({
   },
   // Resolve the deployment's secret when the server starts, including after a build.
   runtimeConfig: {
-    appSecret: "{{NUXT_SESSION_PASSWORD}}",
+    appSecret: "",
     // NUXT_PUBLIC_DESIGN_SHOWCASE=true serves /design outside development.
     public: { designShowcase: false },
   },
@@ -33,7 +33,6 @@ export default defineNuxtConfig({
     },
   },
   nitro: {
-    experimental: { envExpansion: true },
     externals: {
       traceInclude: [fileURLToPath(new URL("../../packages/db/migrate.mjs", import.meta.url))],
     },
