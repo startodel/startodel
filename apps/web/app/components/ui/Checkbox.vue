@@ -57,9 +57,9 @@ const model = defineModel<boolean>({ default: false });
   border-color: var(--s-ink);
 }
 .s-root .s-check__box[data-state="checked"] {
-  border-color: var(--s-inverse);
-  background: var(--s-inverse);
-  color: var(--s-copper-fill);
+  border-color: var(--s-copper-fill);
+  background: var(--s-copper-fill);
+  color: var(--s-on-copper);
 }
 .s-root .s-check.is-invalid .s-check__box {
   border-color: var(--s-oxide);
