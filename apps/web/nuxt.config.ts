@@ -1,5 +1,7 @@
 import { fileURLToPath } from "node:url";
 
+import { ogAssets } from "./build-og-assets.mjs";
+
 export default defineNuxtConfig({
   compatibilityDate: "2026-11-25",
   typescript: { strict: true },
@@ -31,7 +33,9 @@ export default defineNuxtConfig({
     },
   },
   nitro: {
+    rollupConfig: { plugins: [ogAssets] },
     externals: {
+      external: ["@resvg/resvg-js"],
       traceInclude: [fileURLToPath(new URL("../../packages/db/migrate.mjs", import.meta.url))],
     },
   },

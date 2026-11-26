@@ -29,7 +29,10 @@ export async function readGoals(event: RequestEvent) {
 }
 
 export function rowId(event: RequestEvent, param = "id") {
-  const id = getRouterParam(event, param);
+  return parseRowId(getRouterParam(event, param));
+}
+
+export function parseRowId(id: string | undefined) {
   if (!id || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id)) {
     throw createError({ status: 404, message: "Not found" });
   }

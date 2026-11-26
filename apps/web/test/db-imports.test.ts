@@ -14,12 +14,14 @@ test("HTTP handlers and MCP Tools access the database only through its public en
     const path = join(entry.parentPath, entry.name);
     const { importedFiles } = ts.preProcessFile(readFileSync(path, "utf8"), true, true);
     const route = relative(server, path);
-    const isPublic = route.startsWith("api/public/") || route === "routes/sitemap.xml.get.ts";
+    const og = route.startsWith("routes/og/");
+    const isPublic = og || route.startsWith("api/public/") || route === "routes/sitemap.xml.get.ts";
     for (const { fileName } of importedFiles) {
       if (
         isPublic &&
         !["nuxt/server", "@startodel/core"].includes(fileName) &&
-        !/^(?:\.\.\/)+(?:lib\/public-reader|utils\/input|shared\/locale)$/.test(fileName)
+        !/^(?:\.\.\/)+(?:lib\/(?:public-reader|xml)|utils\/input|shared\/locale)$/.test(fileName) &&
+        !(og && /^(?:\.\.\/)+(?:lib\/og-image|i18n\/locales\/(?:en|ru)\.json)$/.test(fileName))
       ) {
         violations.push(route + " imports " + fileName);
       }

@@ -11,15 +11,26 @@ const path = "/u/" + encodeURIComponent(login) + "/" + encodeURIComponent(slug);
 const { data, error } = await useFetch(
   `/api/public/${encodeURIComponent(login)}/${encodeURIComponent(slug)}`,
 );
-if (!data.value)
+const track = data.value;
+if (!track)
   throw createError({
     statusCode: error.value?.statusCode ?? 404,
     message: t("common.error"),
   });
 usePublicHead(
-  t("public.trackTitle", { title: data.value.title }),
-  data.value.description || t("public.by", { author: "@" + login }),
+  t("public.trackTitle", { title: track.title }),
+  track.description || t("public.by", { author: "@" + login }),
   path,
+  "website",
+  (pageUrl) => ({
+    "@type": "Course",
+    name: track.title,
+    author: {
+      "@type": "Person",
+      name: track.author.name || track.author.login,
+      url: pageUrl("/u/" + encodeURIComponent(track.author.login)),
+    },
+  }),
 );
 const { user } = useUserSession();
 const busy = ref(false);

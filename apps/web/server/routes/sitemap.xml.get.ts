@@ -2,14 +2,8 @@ import { defineHandler, useRuntimeConfig } from "nuxt/server";
 import { localizedPath } from "../../shared/locale";
 import { publicData } from "../lib/public-reader";
 
-function escapeXml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&apos;");
-}
+import { escapeXml } from "../lib/xml";
+
 export default defineHandler(async (event) => {
   const origin = new URL(useRuntimeConfig().oauth.github.redirectURL || event.req.url).origin;
   const paths = new Map<string, string | undefined>([
