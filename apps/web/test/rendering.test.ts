@@ -1,3 +1,4 @@
+import { publicBlock } from "@startodel/core";
 import { expect, test } from "vite-plus/test";
 import { practiceQuizProps } from "../app/utils/practice-quiz";
 import { renderMarkdown } from "../app/utils/markdown";
@@ -94,4 +95,30 @@ test("Practice Quiz props expose only prompts and options, even for an enriched 
     { lessonId: "b", blockId: "quiz", perQuestion: [true] },
   ]);
   expect(submitted.result?.perQuestion).toEqual([true, false, true]);
+});
+
+test("the Lesson Block projection drops keys, explanations and solutions from enriched Blocks", () => {
+  const quiz = {
+    id: "q",
+    type: "quiz" as const,
+    questions: [{ prompt: "Choose", options: ["a", "b"], correctIndex: 1, explanation: "private" }],
+  };
+  const exercise = {
+    id: "e",
+    type: "exercise" as const,
+    prompt: "Build",
+    hints: ["Start here"],
+    solution: "private",
+  };
+  expect(publicBlock(quiz)).toEqual({
+    id: "q",
+    type: "quiz",
+    questions: [{ prompt: "Choose", options: ["a", "b"] }],
+  });
+  expect(publicBlock(exercise)).toEqual({
+    id: "e",
+    type: "exercise",
+    prompt: "Build",
+    hints: ["Start here"],
+  });
 });

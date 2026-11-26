@@ -263,6 +263,11 @@ test.each([
   ["progress", "app"],
   ["reviews/index", "app"],
   ["reviews/[topicId]/practice", "app"],
+  ["lessons/[id]", "app"],
+  ["tracks/[id]", "app"],
+  ["topics/[id]", "app"],
+  ["grills/index", "app"],
+  ["grills/[id]", "app"],
 ])("%s selects the %s layout and participates in the migration checks", (page, layout) => {
   const file = "pages/" + page + ".vue";
   expect(migratedPages).toContain(file);
@@ -275,4 +280,27 @@ test("the practice page binds the projected questions and submission result to U
   expect(quiz).toContain('v-bind="quiz"');
   expect(quiz).not.toMatch(/:(?:questions|result)=/);
   expect(page).toContain("practiceQuizProps(data.value?.questions ?? [], result.value?.results)");
+});
+
+test("the Lesson page binds projected Blocks and supplies feedback only from submission or reveal", () => {
+  const page = sourceOf("pages/lessons/[id].vue");
+  expect(page).toContain("blocks: lesson.blocks.map(publicBlock)");
+  const quiz = page.match(/<UiQuiz\b[^>]+>/)?.[0];
+  expect(quiz).toContain(':questions="b.questions"');
+  expect(quiz).toContain(':result="results.get(b.id)"');
+  expect(quiz).toContain('@submit="submit(b.id)"');
+  const exercise = page.match(/<UiExercise\b[^>]+>/)?.[0];
+  expect(exercise).toContain(':solution="solutions.get(b.id)"');
+  expect(exercise).toContain('@reveal="reveal(b.id)"');
+  for (const binding of [quiz, exercise])
+    expect(binding).not.toMatch(/v-bind=|correctIndex|explanation|b\.solution/);
+});
+
+test("both Track board views use the shared layout and the narrow view uses the Topic list", () => {
+  for (const view of ["TrackBoard", "TrackMap"]) {
+    expect(sourceOf("components/ui/" + view + ".vue")).toContain(
+      "boardModel(props.topics, props.edges",
+    );
+  }
+  expect(sourceOf("components/ui/TrackBoard.vue")).toContain("<UiTrackList");
 });
