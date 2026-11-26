@@ -138,6 +138,16 @@ function sourceOf(file: string) {
   return readFileSync(new URL(file, appDir), "utf8");
 }
 
+test.each(["s-display", "s-title"])(
+  "%s tightens word spacing relative to its font size",
+  (name) => {
+    const base = sourceOf("assets/design/base.css");
+    const rule = base.match(new RegExp(`:where\\(\\.s-root\\) \\.${name}\\s*\\{([^}]*)\\}`));
+    const spacing = rule?.[1]?.match(/\bword-spacing:\s*(-?[\d.]+)em\s*;/);
+    expect(Number(spacing?.[1])).toBeLessThan(0);
+  },
+);
+
 test("every UI component is rendered by a showcase specimen", () => {
   const components = new Map(
     vueFiles("components/ui/").map((file) => ["Ui" + file.split("/").at(-1)!.split(".")[0], file]),
