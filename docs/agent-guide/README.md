@@ -12,4 +12,6 @@ Call `get_guide` on connection and after each learning step. Use the Next Step a
 2. **Plan a Track.** For a technology or comparison, [design and verify a Track](05-build-track-technology.md). For a codebase, [pin the repository revision](06-build-track-from-repo.md) first. Finish with a sourced Track Graph that leads to an agreed task or decision.
 3. **Teach and assess.** [Choose the next Topic](04-agent-workflow.md), [write a Lesson](07-lessons-and-blocks.md) when needed, and [work through it with the learner](03-user-workflow.md). For an oral or written assessment, [continue a GrillSession](08-grill-session.md). For due Topics, [conduct a Review](09-review-loop.md). Finish with the learner’s recorded evidence.
 
-The eleven top-level Markdown files supply the MCP guide sections. The five installable skills combine their workflow sections with the [shared rules](10-rules.md). Worked examples live under `references/` and open through a link in the relevant workflow. To install a skill, copy its whole folder recursively so its relative reference links resolve.
+Call `resources/list` to discover guide sections and worked examples. Fetch a linked resource with `resources/read` using its `startodel://guide/…` URI.
+
+Tool responses include JSON text and a `structuredContent` object. For a list, read `structuredContent.items`. Share the entity’s `url` with its learner. Read it from `topic.url` on `get_topic` and `session.url` on `start_grill`. On `get_track` and `list_tracks`, a Track published at the Owner’s login also has a `publicUrl` for sharing.

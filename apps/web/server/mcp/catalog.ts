@@ -1,6 +1,7 @@
 import { LessonBlocks, TopicSlug } from "@startodel/core";
 import { z } from "zod";
 import {
+  entityUrl,
   id,
   resolveTopic,
   summary,
@@ -10,14 +11,14 @@ import {
   type UserData,
 } from "./register";
 
-export function registerCatalog(register: Register, data: UserData) {
+export function registerCatalog(register: Register, data: UserData, origin: string) {
   const topicInput = z.strictObject({ slug: TopicSlug, title, summary });
   const edge = z
     .strictObject({ from: TopicSlug, to: TopicSlug })
     .refine((e) => e.from !== e.to, "Expected distinct endpoints");
   register(
     "upsert_topics",
-    "Create or revise up to 100 Topics, once per slug. Returns an object mapping each slug to its Topic ID. An omitted summary clears it.",
+    "Create or revise up to 100 Topics, once per slug. Returns an object mapping each slug to its Topic ID. Omit summary to keep it, or supply null or an empty string to clear it.",
     z.strictObject({
       topics: z
         .array(topicInput)
@@ -41,7 +42,11 @@ export function registerCatalog(register: Register, data: UserData) {
         .regex(/^[a-z0-9/-]*$/)
         .optional(),
     }),
-    ({ prefix }) => data.listTopicsWithMastery(prefix),
+    async ({ prefix }) =>
+      (await data.listTopicsWithMastery(prefix)).map((topic) => ({
+        ...topic,
+        url: entityUrl(origin, "topics", topic.id),
+      })),
   );
   register(
     "get_topic",
@@ -51,7 +56,12 @@ export function registerCatalog(register: Register, data: UserData) {
       .refine((r) => (r.slug !== undefined) !== (r.id !== undefined), "Supply a slug or an ID"),
     async ({ slug, id }) => {
       const topicId = id ?? (await data.getTopicBySlug(slug!))?.id;
-      if (topicId) return data.getTopicDetails(topicId);
+      const details = topicId && (await data.getTopicDetails(topicId));
+      if (details)
+        return {
+          ...details,
+          topic: { ...details.topic, url: entityUrl(origin, "topics", details.topic.id) },
+        };
     },
   );
   register(
@@ -71,7 +81,7 @@ export function registerCatalog(register: Register, data: UserData) {
   );
   register(
     "attach_topics_to_track",
-    "Put the ordered unique slugs first in the Track and retain other members in order. Returns memberships with zero-based positions. Safe to repeat.",
+    "Put the ordered unique slugs first in the Track and retain other members in order. Returns memberships with Topic id, slug, title and zero-based position. Safe to repeat.",
     z.strictObject({
       trackId: id,
       slugs: z
@@ -94,8 +104,27 @@ export function registerCatalog(register: Register, data: UserData) {
     "get_track_graph",
     "Read a Track with ordered Topics, Mastery, Lesson and read counts, internal edges and suggested Topics whose prerequisites all reached level 2.",
     z.strictObject({ trackId: id }),
-    ({ trackId }) => data.getTrackGraph(trackId),
+    async ({ trackId }) => {
+      const graph = await data.getTrackGraph(trackId);
+      if (!graph) return;
+      const topics = new Map(graph.topics.map((t) => [t.id, t]));
+      const edges = graph.edges.map((edge) => {
+        const from = topics.get(edge.fromTopicId)!;
+        const to = topics.get(edge.toTopicId)!;
+        return {
+          ...edge,
+          fromSlug: from.slug,
+          toSlug: to.slug,
+          fromTitle: from.title,
+          toTitle: to.title,
+        };
+      });
+      return { ...graph, edges };
+    },
   );
+  function lessonLink<T extends { id: string }>(row: T) {
+    return { ...row, url: entityUrl(origin, "lessons", row.id) };
+  }
   const lesson = z.strictObject({ title, summary, blocks: LessonBlocks });
   register(
     "create_lesson",
@@ -103,7 +132,9 @@ export function registerCatalog(register: Register, data: UserData) {
     lesson.extend({ topic: topicRef }),
     async ({ topic, ...input }) => {
       const parent = await resolveTopic(data, topic);
-      if (parent) return data.createLesson({ ...input, topicId: parent.id });
+      if (!parent) return;
+      const row = await data.createLesson({ ...input, topicId: parent.id });
+      if (row) return lessonLink(row);
     },
   );
   register(
@@ -116,7 +147,10 @@ export function registerCatalog(register: Register, data: UserData) {
     "get_lesson",
     "Read one full Lesson with ordered Blocks before teaching or editing it.",
     z.strictObject({ lessonId: id }),
-    ({ lessonId }) => data.getLesson(lessonId),
+    async ({ lessonId }) => {
+      const row = await data.getLesson(lessonId);
+      if (row) return lessonLink(row);
+    },
   );
   register(
     "list_lessons",
@@ -124,7 +158,7 @@ export function registerCatalog(register: Register, data: UserData) {
     z.strictObject({ topic: topicRef }),
     async ({ topic }) => {
       const parent = await resolveTopic(data, topic);
-      if (parent) return data.listLessonSummaries(parent.id);
+      if (parent) return (await data.listLessonSummaries(parent.id)).map(lessonLink);
     },
   );
 }

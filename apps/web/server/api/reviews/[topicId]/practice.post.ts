@@ -1,3 +1,4 @@
+import { QuizAnswers } from "@startodel/core";
 import { defineHandler, readBody, createError } from "nuxt/server";
 import { z } from "zod";
 import { userData } from "../../../lib/database";
@@ -9,7 +10,7 @@ const submission = z.strictObject({
       z.strictObject({
         lessonId: z.guid(),
         blockId: z.string().min(1).max(64),
-        answers: z.array(z.int().nonnegative()).min(1).max(3),
+        answers: QuizAnswers,
       }),
     )
     .min(1),

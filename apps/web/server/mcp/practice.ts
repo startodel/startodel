@@ -1,6 +1,7 @@
-import { DEFAULT_GRILL_SIZE, MasteryLevel, Verdict } from "@startodel/core";
+import { QuizAnswers, DEFAULT_GRILL_SIZE, MasteryLevel, Verdict } from "@startodel/core";
 import { z } from "zod";
 import {
+  entityUrl,
   empty,
   id,
   limit,
@@ -11,7 +12,7 @@ import {
   type UserData,
 } from "./register";
 
-export function registerPractice(register: Register, data: UserData) {
+export function registerPractice(register: Register, data: UserData, origin: string) {
   const questionId = z.strictObject({ questionId: id });
   const sessionId = z.strictObject({ sessionId: id });
   const lessonId = z.strictObject({ lessonId: id });
@@ -32,10 +33,10 @@ export function registerPractice(register: Register, data: UserData) {
   );
   register(
     "record_quiz_result",
-    "Submit one zero-based option index per Quiz question (1–3). Returns the stored scored Quiz Attempt with MCP Answer Source and the resulting Topic Mastery.",
+    "Submit one zero-based option index per Quiz question (1–10). Returns the stored scored Quiz Attempt with MCP Answer Source and the resulting Topic Mastery.",
     lessonId.extend({
       blockId: z.string().min(1).max(64),
-      answers: z.array(z.int().nonnegative()).min(1).max(3),
+      answers: QuizAnswers,
     }),
     ({ lessonId, blockId, answers }) => data.recordQuizAttempt(lessonId, blockId, answers, "mcp"),
   );
@@ -60,12 +61,18 @@ export function registerPractice(register: Register, data: UserData) {
       if (parent) return data.recordReviewResult(parent.id, verdict, reason);
     },
   );
+  function grillLink<T extends { id: string }>(session: T) {
+    return { ...session, url: entityUrl(origin, "grills", session.id) };
+  }
   const trackId = id.optional();
   register(
     "start_grill",
     "Open a GrillSession, optionally for one Track. Returns the session and ranked candidate Topics. Target defaults to 15 (up to 100).",
     z.strictObject({ trackId, title, targetSize: limit.default(DEFAULT_GRILL_SIZE) }),
-    (input) => data.startGrillWithCandidates(input),
+    async (input) => {
+      const grill = await data.startGrillWithCandidates(input);
+      if (grill) return { ...grill, session: grillLink(grill.session) };
+    },
   );
   register(
     "get_grill_candidates",
@@ -97,13 +104,16 @@ export function registerPractice(register: Register, data: UserData) {
     "get_grill",
     "Resume or inspect a GrillSession by ID. Returns its ordered questions, answers, sources, Verdicts and feedback.",
     sessionId,
-    ({ sessionId }) => data.getGrill(sessionId),
+    async ({ sessionId }) => {
+      const session = await data.getGrill(sessionId);
+      if (session) return grillLink(session);
+    },
   );
   register(
     "list_grills",
     "List your GrillSessions newest first, optionally filtered by open or finished status.",
     z.strictObject({ status: z.enum(["open", "finished"]).optional() }),
-    ({ status }) => data.listGrills(status),
+    async ({ status }) => (await data.listGrills(status)).map(grillLink),
   );
   register(
     "submit_grill_answer",

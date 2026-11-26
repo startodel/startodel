@@ -11,10 +11,27 @@ test("committed MCP resources match the guide source", async () => {
 test("the Lesson workflow discloses the complete Block example as a Markdown resource", () => {
   const lesson = guide.find((section) => section.id === "lessons-and-blocks")!;
   const uri = /\]\((startodel:\/\/guide\/references\/[^)]+)\)/.exec(lesson.body)?.[1];
-  expect(uri).toBeDefined();
+  expect(uri).toBe("startodel://guide/references/browser-tasks");
+  expect(lesson.body).toContain("resources/read");
+  for (const field of [
+    "markdown",
+    "language",
+    "variant",
+    "url",
+    "questions",
+    "correctIndex",
+    "solution",
+  ])
+    expect(lesson.body).toContain("`" + field + "`");
   expect(lesson.body).not.toContain("```json");
   const reference = guide.find((document) => document.uri === uri);
   expect(reference?.body).toContain("```json");
+});
+
+test("the MCP guide index explains how to read resources", () => {
+  const index = workflow("index");
+  expect(index).toContain("resources/read");
+  expect(index).not.toMatch(/installable skills|copy.*folder|recursively/i);
 });
 
 test("changing a guide section makes the generated resource stale until rebuilt", async () => {

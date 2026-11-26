@@ -39,13 +39,14 @@ const lessonSummary = {
   position: lessons.position,
 };
 
-function accountId(db: Connection, login: string) {
+export function accountId(db: Connection, login: string | typeof users.login) {
   // A GitHub login can be reassigned. Resolve one identity before reading its catalog.
+  const candidate = alias(users, "candidate");
   return db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.login, login))
-    .orderBy(desc(users.updatedAt), users.id)
+    .select({ id: candidate.id })
+    .from(candidate)
+    .where(eq(candidate.login, login))
+    .orderBy(desc(candidate.updatedAt), candidate.id)
     .limit(1);
 }
 function publicTrack(db: Connection, login: string, slug: string) {

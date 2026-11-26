@@ -8,6 +8,21 @@ import {
 } from "@startodel/core";
 
 const question = { prompt: "Which?", options: ["first", "second"], correctIndex: 1 };
+test("a Quiz accepts one to ten questions with zero-based indices into their own options", () => {
+  const accepts = (length: number, correctIndex: number) =>
+    Block.safeParse({
+      type: "quiz",
+      id: "practice",
+      questions: Array.from({ length }, () => ({ ...question, correctIndex })),
+    }).success;
+  for (let length = 1; length <= 10; length++) expect(accepts(length, 1)).toBe(true);
+  expect(accepts(1, 0)).toBe(true);
+  expect(accepts(0, 0)).toBe(false);
+  expect(accepts(11, 0)).toBe(false);
+  expect(accepts(1, -1)).toBe(false);
+  expect(accepts(1, 2)).toBe(false);
+});
+
 test.each([
   ["theory", { markdown: "Text" }, { markdown: "" }],
   [

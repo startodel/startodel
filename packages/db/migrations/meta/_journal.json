@@ -43,6 +43,13 @@
       "when": 1795630211341,
       "tag": "0005_review_practice_score",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795711744565,
+      "tag": "0006_profile_preferred_language",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,7 @@ import type {
   LessonBlocks,
   MasteryLevel,
   ProfileQuestionnaire,
+  PreferredLanguage,
   TrackSources,
   Verdict,
 } from "@startodel/core";
@@ -77,10 +78,12 @@ export const profiles = pgTable(
     experience: text("experience").$type<ProfileQuestionnaire["experience"]>(),
     yearsOfExperience: integer("years_of_experience"),
     notes: text("notes"),
+    preferredLanguage: text("preferred_language").$type<PreferredLanguage>(),
     onboardedAt: time("onboarded_at"),
   },
   (t) => [
     check("profiles_experience_check", sql`${t.experience} in ('junior','middle','senior','lead')`),
+    check("profiles_preferred_language_check", sql`${t.preferredLanguage} in ('ru','en')`),
     check("profiles_years_check", sql`${t.yearsOfExperience} between 0 and 60`),
   ],
 );

@@ -11,8 +11,28 @@ function section(id: string) {
 const introduction = (body: string) => body.split("\n\n")[1]!;
 export const instructions = introduction(section("platform").body);
 
+function russianReason(step: Awaited<ReturnType<typeof nextStep>>) {
+  if (step.suggestions)
+    return "Можно изучать: " + step.suggestions.map((t) => `${t.title} (${t.slug})`).join(", ");
+  switch (step.id) {
+    case "first-steps":
+      return "Анкета при настройке профиля ещё не заполнена.";
+    case "build-track-technology":
+      return "У вас пока нет треков.";
+    case "review-loop":
+      return `Пора повторить темы: ${step.state.dueReviews}.`;
+    case "grill-session":
+      return `Продолжите «${step.title}». Без ответа: ${step.unanswered}. Ожидают оценки: ${step.waiting}.`;
+    default:
+      return "Пока нет тем, готовых к изучению. Проверьте предварительные требования или спланируйте следующий трек.";
+  }
+}
+
 export async function guide(data: UserData) {
-  const { state, id, why } = await nextStep(data);
+  const profileRead = data.getProfile();
+  const [step, profile] = await Promise.all([nextStep(data, profileRead), profileRead]);
+  const { state, id } = step;
+  const why = profile?.preferredLanguage === "ru" ? russianReason(step) : step.why;
   const current = section(id);
   const related: Record<string, string[]> = {
     "first-steps": ["platform"],

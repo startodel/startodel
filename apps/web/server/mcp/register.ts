@@ -19,12 +19,45 @@ export async function resolveTopic(data: UserData, ref: string) {
   return data.getTopicBySlug(ref);
 }
 
+export function entityUrl(
+  origin: string,
+  collection: "tracks" | "topics" | "lessons" | "grills",
+  id: string,
+) {
+  return new URL(`/${collection}/${id}`, origin).href;
+}
+
+// These Profile and Track responses have existing clients that compare the Owner field.
+const retainsOwner = new Set([
+  "get_profile",
+  "update_profile",
+  "list_tracks",
+  "get_track",
+  "create_track",
+  "update_track",
+  "set_track_visibility",
+]);
+type ToolValue = Record<string, unknown> | unknown[];
+function toolResult(name: string, value: ToolValue, isError = false) {
+  const text = JSON.stringify(
+    value,
+    retainsOwner.has(name) ? undefined : (key, field) => (key === "userId" ? undefined : field),
+  );
+  // Normalize Dates and omitted fields exactly as the legacy JSON text does.
+  const json: ToolValue = JSON.parse(text);
+  return {
+    ...(isError && { isError }),
+    content: [{ type: "text" as const, text }],
+    structuredContent: Array.isArray(json) ? { items: json } : json,
+  };
+}
+
 export function registerTools(server: McpServer) {
   return function register<Shape extends z.ZodRawShape>(
     name: string,
     description: string,
     inputSchema: z.ZodObject<Shape, z.core.$strict>,
-    run: (args: z.output<typeof inputSchema>) => PromiseLike<unknown>,
+    run: (args: z.output<typeof inputSchema>) => PromiseLike<ToolValue | undefined>,
   ) {
     server.registerTool<never, typeof inputSchema>(
       name,
@@ -32,18 +65,11 @@ export function registerTools(server: McpServer) {
       async (args) => {
         try {
           const value = await run(args);
-          if (value !== undefined)
-            return { content: [{ type: "text", text: JSON.stringify(value) }] };
-          return {
-            isError: true,
-            content: [{ type: "text", text: JSON.stringify({ error: "Not found" }) }],
-          };
+          if (value !== undefined) return toolResult(name, value);
+          return toolResult(name, { error: "Not found" }, true);
         } catch (error) {
           const message = error instanceof RangeError ? error.message : "Tool operation failed";
-          return {
-            isError: true,
-            content: [{ type: "text", text: JSON.stringify({ error: message }) }],
-          };
+          return toolResult(name, { error: message }, true);
         }
       },
     );

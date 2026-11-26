@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ProfileQuestionnaire, TrackSlug, TrackSources } from "@startodel/core";
+import { ProfilePatch, TrackSlug, TrackSources } from "@startodel/core";
 import { z } from "zod";
-import { empty, id, registerTools, summary, title, type UserData } from "./register";
+import { empty, entityUrl, id, registerTools, summary, title, type UserData } from "./register";
 import { registerCatalog } from "./catalog";
 import { registerPractice } from "./practice";
 import { guide, instructions, sections } from "./guide";
@@ -11,30 +11,51 @@ export function createToolServer(data: UserData, origin: string) {
   const register = registerTools(server);
   register(
     "get_profile",
-    "Read your Profile and Onboarding Questionnaire before planning a Track.",
+    "Read your Profile and Onboarding Questionnaire before planning a Track. Includes your GitHub login and preferred learning language (ru, en or null).",
     empty,
-    () => data.getProfile(),
+    () => data.getProfileWithLogin(),
   );
   register(
     "update_profile",
-    "Save confirmed questionnaire answers. Supplied lists replace their contents. Set markOnboarded when complete. Returns the updated Profile.",
-    ProfileQuestionnaire.omit({ onboardedAt: true })
-      .partial()
-      .extend({ markOnboarded: z.boolean().optional() }),
+    "Save confirmed questionnaire answers. Set preferredLanguage to ru or en, or null to clear it. Supplied lists replace their contents. Set markOnboarded when complete. Returns the updated Profile.",
+    ProfilePatch.omit({ onboardedAt: true }).extend({ markOnboarded: z.boolean().optional() }),
     ({ markOnboarded, ...patch }) =>
       data.updateProfile({ ...patch, ...(markOnboarded ? { onboardedAt: new Date() } : {}) }),
   );
+  type Track = NonNullable<Awaited<ReturnType<UserData["getTrack"]>>>;
+  function trackLinks(track: Track, login?: string) {
+    return {
+      ...track,
+      url: entityUrl(origin, "tracks", track.id),
+      ...(track.public &&
+        login && {
+          publicUrl: new URL(`/u/${encodeURIComponent(login)}/${track.slug}`, origin).href,
+        }),
+    };
+  }
   register(
     "list_tracks",
     "List your Tracks, including IDs and sources, to choose what to study.",
     empty,
-    () => data.listTracks(),
+    async () => {
+      const tracks = await data.listTracks();
+      const login = tracks.some((t) => t.public) ? await data.getPublicLogin() : undefined;
+      return tracks.map((t) => trackLinks(t, login));
+    },
   );
   register(
     "get_track",
-    "Read the details and sources of one Track by ID.",
-    z.strictObject({ id }),
-    ({ id }) => data.getTrack(id),
+    "Read one of your Tracks by exactly one UUID id or Track slug. Returns its canonical url and, when published at your login, publicUrl.",
+    z
+      .strictObject({ id: id.optional(), slug: TrackSlug.optional() })
+      .refine(
+        (ref) => (ref.id !== undefined) !== (ref.slug !== undefined),
+        "Supply exactly one Track id or slug",
+      ),
+    async ({ id, slug }) => {
+      const track = id ? await data.getTrack(id) : await data.getTrackBySlug(slug!);
+      if (track) return trackLinks(track, track.public ? await data.getPublicLogin() : undefined);
+    },
   );
   const track = z.strictObject({
     title,
@@ -46,7 +67,7 @@ export function createToolServer(data: UserData, origin: string) {
     "create_track",
     "Create a Track for a learning goal. Optionally supply a description and sources (one GitHub repo and up to 20 documentation links). Returns the Track.",
     track,
-    (input) => data.createTrack(input),
+    async (input) => trackLinks(await data.createTrack(input)),
   );
   register(
     "update_track",
@@ -75,8 +96,8 @@ export function createToolServer(data: UserData, origin: string) {
       }
     },
   );
-  registerCatalog(register, data);
-  registerPractice(register, data);
+  registerCatalog(register, data, origin);
+  registerPractice(register, data, origin);
   register(
     "get_guide",
     "Call first and after completing a learning step. Returns your current counts, recommended next steps and relevant guide sections.",

@@ -26,6 +26,13 @@ export const ProfileQuestionnaire = z.strictObject({
 });
 export type ProfileQuestionnaire = z.infer<typeof ProfileQuestionnaire>;
 
+export const PreferredLanguage = z.enum(["ru", "en"]);
+export type PreferredLanguage = z.infer<typeof PreferredLanguage>;
+export const ProfilePatch = ProfileQuestionnaire.extend({
+  preferredLanguage: PreferredLanguage.nullable(),
+}).partial();
+export type ProfilePatch = z.infer<typeof ProfilePatch>;
+
 const id = z
   .string()
   .min(1)
@@ -42,6 +49,9 @@ const videoUrl = httpUrl.pipe(
     return /^\/shorts\/[\w-]+\/?$/.test(url.pathname);
   }, "Expected a YouTube video URL"),
 );
+
+const maxQuizQuestions = 10;
+export const QuizAnswers = z.array(z.int().nonnegative()).min(1).max(maxQuizQuestions);
 
 const question = z
   .strictObject({
@@ -72,7 +82,11 @@ export const Block = z.discriminatedUnion("type", [
   }),
   z.strictObject({ type: z.literal("link"), id, url: httpUrl, title, note: markdown.optional() }),
   z.strictObject({ type: z.literal("video"), id, url: videoUrl, title, note: markdown.optional() }),
-  z.strictObject({ type: z.literal("quiz"), id, questions: z.array(question).min(1).max(3) }),
+  z.strictObject({
+    type: z.literal("quiz"),
+    id,
+    questions: z.array(question).min(1).max(maxQuizQuestions),
+  }),
   z.strictObject({
     type: z.literal("exercise"),
     id,

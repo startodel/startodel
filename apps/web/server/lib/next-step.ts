@@ -1,7 +1,7 @@
 import type { forUser } from "@startodel/db";
 
-export async function nextStep(data: ReturnType<typeof forUser>) {
-  const [profile, progress] = await Promise.all([data.getProfile(), data.getProgress()]);
+export async function nextStep(data: ReturnType<typeof forUser>, profileRead = data.getProfile()) {
+  const [profile, progress] = await Promise.all([profileRead, data.getProgress()]);
   const { perTrack, openGrills, dueReviewsCount, masteryDistribution } = progress;
   const state = {
     onboarded: !!profile?.onboardedAt,
@@ -53,7 +53,7 @@ export async function nextStep(data: ReturnType<typeof forUser>) {
     return {
       state,
       id: "agent-workflow",
-      why: "Ready to study: " + suggestions.map((t) => t.slug).join(", "),
+      why: "Ready to study: " + suggestions.map((t) => `${t.title} (${t.slug})`).join(", "),
       suggestions,
     };
   return {
