@@ -14,7 +14,7 @@
  */
 
 /* Legacy: the previous header and footer. */
-html:has(.s-root) :is(.mast, #__nuxt > footer.bar) {
+html:has(.s-root) :is(.mast, #__nuxt > div > footer.bar) {
   display: none;
 }
 /* Legacy: page column and flex navigation. */

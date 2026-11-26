@@ -95,7 +95,33 @@
   "login": {
     "signIn": "Sign in with GitHub",
     "title": "Sign in",
-    "description": "Sign in to study your Tracks and Lessons with your agent."
+    "description": "Sign in to study your Tracks and Lessons with your agent.",
+    "how": "How it works",
+    "source": "Source code",
+    "audience": "For experienced developers",
+    "heading": "Build a learning Track with your agent",
+    "intro": "Your agent plans Lessons around your goals. Explore how Topics connect, put what you learn into practice and return to it when a Review is due.",
+    "example": "Example Track · PostgreSQL query planning",
+    "map": "Indexes and statistics lead to query plans, then to join strategies.",
+    "indexes": "Indexes",
+    "statistics": "Statistics",
+    "plans": "Query plans",
+    "joins": "Join strategies",
+    "questionnaire": "Set your goals",
+    "questionnaireText": "Fill in your stack, goals and experience in the Onboarding Questionnaire.",
+    "connect": "Connect your agent",
+    "connectText": "Create an MCP Token and use it to connect the agent you already work with.",
+    "study": "Follow your Track",
+    "studyText": "Open a Topic and study its Lessons through examples, Quizzes and Exercises.",
+    "practice": "Try a Grill",
+    "practiceText": "Answer in your own words. Your agent assesses the answers and schedules Reviews.",
+    "mastery": "Mastery by Topic",
+    "masteryText": "Reading, practice and your agent’s assessment record how well you know each Topic.",
+    "agent": "Your own agent",
+    "agentText": "Your agent writes the Lessons and gives feedback. Startodel keeps your Track and progress.",
+    "open": "Open source",
+    "openText": "Use the hosted platform or run it yourself under the MIT licence.",
+    "start": "Start your first Track"
   },
   "progress": {
     "load": "Could not load your progress.",
@@ -424,5 +450,18 @@
     "legend": "Legend",
     "signal": "signal",
     "noSignal": "no signal"
+  },
+  "settings": {
+    "tokenAccess": "Each token gives an agent access to your learning data. Create a separate token for each agent so you can revoke access individually.",
+    "token": "MCP Token",
+    "prefix": "Prefix",
+    "created": "Created",
+    "lastUsed": "Last used",
+    "never": "Never",
+    "edit": "Edit questionnaire",
+    "appearance": "Interface",
+    "session": "Session",
+    "confirm": "Revoke this token?",
+    "revokeEffect": "The token “{name}” will stop working immediately. Its agent will need a new token."
   }
 }

@@ -11,6 +11,7 @@ const props = withDefaults(
     label?: string;
     to?: LinkTarget;
     href?: string;
+    target?: "_self" | "_blank";
     type?: "button" | "submit" | "reset";
     loading?: boolean;
     disabled?: boolean;
@@ -31,9 +32,9 @@ const classes = computed(() => [
   <NuxtLinkLocale
     v-if="(to || href) && !inactive"
     :class="classes"
-    :to="to"
-    :href="href"
-    :target="href ? '_blank' : undefined"
+    :to="to ?? href"
+    :external="!!href"
+    :target="href ? (target ?? '_blank') : undefined"
     :rel="href ? 'noopener noreferrer' : undefined"
     :aria-label="label"
   >

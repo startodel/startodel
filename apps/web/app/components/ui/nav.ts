@@ -21,7 +21,7 @@ export interface NavTrack {
   percent: number;
 }
 export interface NavUser {
-  name: string;
+  name: string | null;
   login: string;
   avatarUrl?: string | null;
 }

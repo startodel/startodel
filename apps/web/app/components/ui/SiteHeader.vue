@@ -10,12 +10,13 @@ withDefaults(
     links?: { label: string; to?: LinkTarget; href?: string }[];
     user?: NavUser;
     /** Where sign-in starts. */
-    signIn?: LinkTarget | string;
+    signIn?: LinkTarget;
     /** Where a signed-in learner's dashboard is. */
     dashboard?: LinkTarget;
   }>(),
-  { home: "/", links: () => [], signIn: "/auth/github", dashboard: "/" },
+  { home: "/", links: () => [], dashboard: "/" },
 );
+defineEmits<{ signIn: [] }>();
 </script>
 <template>
   <header class="s-site">
@@ -41,8 +42,10 @@ withDefaults(
         }}</UiButton>
         <UiButton
           v-else
-          :href="typeof signIn === 'string' ? signIn : undefined"
-          :to="typeof signIn === 'string' ? undefined : signIn"
+          :to="signIn"
+          :href="signIn ? undefined : '/auth/github'"
+          target="_self"
+          @click="$emit('signIn')"
           size="sm"
           icon="github"
           >{{ $t("nav.signIn") }}</UiButton

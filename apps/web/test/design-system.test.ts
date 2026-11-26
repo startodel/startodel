@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
+import ts from "typescript";
 import { expect, test } from "vite-plus/test";
 import { designShowcaseEnabled, isDesignShowcasePath } from "../app/utils/design-showcase";
 
@@ -144,20 +145,113 @@ const legacyClasses = [
 ];
 
 test("design system files use no class name that app.vue styles globally", () => {
-  const app = new URL("../app/", import.meta.url);
-  const files = ["components/ui/", "components/showcase/", "pages/design/"].flatMap((dir) =>
-    readdirSync(new URL(dir, app), { recursive: true, encoding: "utf8" })
-      .filter((name) => name.endsWith(".vue"))
-      .map((name) => dir + name),
-  );
+  const files = [
+    ...vueFiles("components/ui/"),
+    ...vueFiles("components/showcase/"),
+    ...vueFiles("pages/design/"),
+    ...migratedPages,
+    ...vueFiles("layouts/").filter((file) => file !== "layouts/default.vue"),
+  ];
   expect(files.length).toBeGreaterThan(80);
   const name = `(?:${legacyClasses.join("|")})`;
   const inMarkup = new RegExp(`\\bclass="(?:[^"]*[\\s'])?${name}(?:[\\s'][^"]*)?"`);
   const inStyle = new RegExp(`\\.${name}(?![\\w-])`);
   const found = files.filter((file) => {
-    const source = readFileSync(new URL(file, app), "utf8");
+    const source = sourceOf(file);
     const style = source.slice(source.lastIndexOf("<style"));
     return inMarkup.test(source) || inStyle.test(style);
   });
   expect(found).toEqual([]);
+});
+
+const appDir = new URL("../app/", import.meta.url);
+
+function vueFiles(dir: string) {
+  return readdirSync(new URL(dir, appDir), { recursive: true, encoding: "utf8" })
+    .filter((name) => name.endsWith(".vue"))
+    .map((name) => dir + name);
+}
+
+function sourceOf(file: string) {
+  return readFileSync(new URL(file, appDir), "utf8");
+}
+
+test("every UI component is rendered by a showcase specimen", () => {
+  const components = new Map(
+    vueFiles("components/ui/").map((file) => ["Ui" + file.split("/").at(-1)!.split(".")[0], file]),
+  );
+  // A specimen also exercises its nested parts, e.g. the rail and tab bar in UiAppShell.
+  const pending = [...vueFiles("pages/design/"), ...vueFiles("components/showcase/")];
+  const visited = new Set<string>();
+  while (pending.length) {
+    const file = pending.pop()!;
+    if (visited.has(file)) continue;
+    visited.add(file);
+    for (const [, tag] of sourceOf(file).matchAll(/<(Ui\w+)\b/g)) {
+      const component = components.get(tag!);
+      if (component) pending.push(component);
+    }
+  }
+  expect([...components.values()].filter((file) => !visited.has(file))).toEqual([]);
+});
+
+function usesDesignLayout(source: string) {
+  const script = [...source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)]
+    .map(([, block]) => block)
+    .join("\n");
+  if (!script.includes("definePageMeta")) return false;
+  const { statements } = ts.createSourceFile(
+    "page.ts",
+    script,
+    ts.ScriptTarget.Latest,
+    false,
+    ts.ScriptKind.TS,
+  );
+  for (const statement of statements) {
+    if (!ts.isExpressionStatement(statement) || !ts.isCallExpression(statement.expression))
+      continue;
+    const {
+      expression,
+      arguments: [meta],
+    } = statement.expression;
+    if (
+      !ts.isIdentifier(expression) ||
+      expression.text !== "definePageMeta" ||
+      !meta ||
+      !ts.isObjectLiteralExpression(meta)
+    )
+      continue;
+    return meta.properties.some(
+      (prop) =>
+        ts.isPropertyAssignment(prop) &&
+        (ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)) &&
+        prop.name.text === "layout" &&
+        ts.isStringLiteral(prop.initializer) &&
+        ["app", "site", "focus"].includes(prop.initializer.text),
+    );
+  }
+  return false;
+}
+
+const migratedPages = vueFiles("pages/").filter((file) => usesDesignLayout(sourceOf(file)));
+
+test("only an explicit design layout opts a page into migration checks", () => {
+  const page = (meta: string) => `<script setup>definePageMeta(${meta})</script>`;
+  expect(usesDesignLayout("<template><input /></template>")).toBe(false);
+  expect(usesDesignLayout(page('{ layout: "default" }'))).toBe(false);
+  expect(usesDesignLayout(page('{ custom: { layout: "app" } }'))).toBe(false);
+  for (const layout of ["app", "site", "focus"])
+    expect(usesDesignLayout(page(`{ custom: {}, layout: "${layout}" }`))).toBe(true);
+});
+
+test("pages with a design layout use tokens and UI controls", () => {
+  for (const file of migratedPages) {
+    const source = sourceOf(file);
+    for (const [, style] of source.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)) {
+      expect(style, file).not.toMatch(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?)\(|\bfont-family\s*:/i);
+    }
+    const template = source.match(/<template\b[^>]*>([\s\S]*)<\/template>/)?.[1];
+    expect(template, file).toBeDefined();
+    expect(template, file).not.toMatch(/<(?:input|select|textarea|button)(?=[\s/>])/i);
+  }
 });

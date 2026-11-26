@@ -25,6 +25,8 @@ Add UI strings to both Russian and English message catalogs. Follow the [contrib
 
 ## Design system
 
+For new components and page migrations, follow [.cursor/rules/design-system.mdc](.cursor/rules/design-system.mdc). The automated checks in [design-system.test.ts](apps/web/test/design-system.test.ts) cover showcase specimens, migrated page markup and styles, and legacy class names.
+
 Build new interface from the `Ui*` components in `apps/web/app/components/ui/` and the `--s-*` tokens in `apps/web/app/assets/design/tokens.css`. Render it inside `.s-root`. Give every new component a specimen in the showcase at `/design`, which is served in development or with `NUXT_PUBLIC_DESIGN_SHOWCASE=true`. Carry each state with a shape and a word, never with colour alone. Take the text a component supplies itself from the message catalogs. Never let two style rules from different files tie: rank them by specificity as ADR 0017 describes, because production emits stylesheets in a different order than development. Move a real page onto the system as [the migration plan](docs/design/MIGRATION.md) describes. See [the design concept](docs/design/CONCEPT.md) and [ADR 0017](docs/adr/0017-design-system.md).
 
 ## Commands

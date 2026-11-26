@@ -26,16 +26,17 @@ const options = computed(() =>
 </script>
 <template>
   <nav v-if="variant === 'inline'" class="s-lang" :aria-label="$t('nav.language')">
-    <NuxtLink
+    <NuxtLinkLocale
       v-for="o in options"
       :key="o.code"
       :to="o.to"
+      :locale="o.code"
       class="s-lang__option"
       :lang="o.code"
       :hreflang="o.code"
       :aria-current="o.code === locale ? 'true' : undefined"
       @click="preference = o.code"
-      >{{ o.name }}</NuxtLink
+      >{{ o.name }}</NuxtLinkLocale
     >
   </nav>
   <UiMenu
