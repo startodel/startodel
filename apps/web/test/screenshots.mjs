@@ -165,7 +165,7 @@ try {
     { from: "microtasks", to: "rendering" },
   ]);
   await owner.setMastery(by.runtime.id, 3);
-  const guide = await readFile("docs/agent-guide/07-lessons-and-blocks.md", "utf8");
+  const guide = await readFile("docs/agent-guide/references/browser-tasks.md", "utf8");
   const blocks = JSON.parse(guide.split("```json\n")[1].split("\n```")[0]);
   const lesson = await owner.createLesson({
     topicId: by.tasks.id,

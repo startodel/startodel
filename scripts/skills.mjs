@@ -1,20 +1,23 @@
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
-import { readGuideSections } from "./guide.mjs";
+import { readGuide, renderLinks } from "./guide.mjs";
 
 const workflows = {
   "startodel-onboarding": ["first-steps"],
   "startodel-build-track": ["build-track-technology", "lessons-and-blocks"],
-  "startodel-build-track-from-repo": ["build-track-from-repo", "lessons-and-blocks"],
+  "startodel-build-track-from-repo": [
+    "build-track-from-repo",
+    "build-track-technology",
+    "lessons-and-blocks",
+  ],
   "startodel-grill": ["grill-session"],
   "startodel-review-loop": ["review-loop"],
 };
 
 async function renderSkills(source) {
-  const sections = new Map(
-    (await readGuideSections(source)).map((section) => [section.id, section]),
-  );
+  const guide = await readGuide(source);
+  const sections = new Map(Array.from(guide.values(), (section) => [section.id, section]));
   const files = new Map();
   for (const [name, ids] of Object.entries(workflows)) {
     const parts = [...ids, "rules"].map((id) => {
@@ -25,7 +28,15 @@ async function renderSkills(source) {
     const description = parts[0].skillDescription?.trim();
     if (!description || description.length >= 1024)
       throw new Error(`Invalid skillDescription in ${ids[0]}`);
-    const body = parts.map((section) => section.body.trimEnd()).join("\n\n");
+    const body = parts
+      .map((section) =>
+        renderLinks(section, guide, (target) => {
+          if (!target.file.startsWith("references/")) return target.uri;
+          files.set(join(name, target.file), target.body);
+          return target.file;
+        }).trimEnd(),
+      )
+      .join("\n\n");
     files.set(
       join(name, "SKILL.md"),
       [

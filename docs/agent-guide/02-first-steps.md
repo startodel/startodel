@@ -2,13 +2,13 @@
 id: first-steps
 title: Complete the Onboarding Questionnaire
 order: 2
-skillDescription: Use when connecting a learner to Startodel or completing their first Profile. Ask about stack, goals and grade.
+skillDescription: Connect a learner to Startodel or complete an unfinished Onboarding Questionnaire.
 ---
 
 # Complete the Onboarding Questionnaire
 
-Once connected, call `get_guide` first, then `get_profile` to see which questionnaire answers are missing. Ask about the learner’s stack, goals and grade, and save their answers with `update_profile`.
+On connection, call `get_guide`, then `get_profile`. Use `update_profile` to save the learner’s confirmed Onboarding Questionnaire answers.
 
-To connect, have the learner sign in, issue a personal MCP Token in Settings and configure a Streamable HTTP client for the installation’s `/mcp` URL. Store the token in the client’s secret input and send it as a Bearer credential on each request.
-
-Save partial answers as they arrive. Stack and goals are lists of strings. Save grade in `experience` as junior, middle, senior or lead. After the learner confirms the questionnaire is complete, send `markOnboarded: true` and call `get_guide` again.
+1. **Connect.** If the learner needs access, have them issue an MCP Token in Settings and configure their client for Streamable HTTP at the installation’s `/mcp` URL with the Bearer credential in its secret input. Continue when `get_profile` returns the learner’s Profile.
+2. **Fill the gaps.** Compare the saved stack, goals and grade with what you already know about the learner. Ask about a current project when it would clarify the goal. Save partial answers as they arrive. Finish when the learner recognizes the stack, goal and grade in your readback.
+3. **Agree on a starting point.** Offer a first Topic and an example from their work in their preferred language. Confirm anything uncertain. Mark onboarding complete after the learner confirms the questionnaire, then read `get_guide` for the new Next Step.

@@ -6,6 +6,8 @@ order: 3
 
 # Working with the learner
 
-The learner signs in to the web app to manage MCP Tokens and see their Profile and Tracks. They describe a goal to their external agent, agree on a Track outline and choose a Topic to study. Ask whether they want an explanation, an Exercise or a GrillSession.
+Use `get_lesson` to teach in chat. After the learner acts, use `mark_lesson_read` for confirmed reading, `record_quiz_result` for their Quiz choices or `set_mastery` for demonstrated depth.
 
-Present a Lesson in chat when needed. Mark it read with `mark_lesson_read` after the learner confirms reading it. Record their chosen Quiz options with `record_quiz_result`. For a spoken or typed Grill answer in chat, use `submit_grill_answer`. If a UI client has already submitted an answer, read it with `get_grill` and judge that stored answer directly. Both paths use the same history.
+1. **Frame the Lesson.** Name something the learner wants to do in their project. Ask them to predict what a small example will do. Begin the explanation from the first point where their prediction and the trace diverge, or move to a harder case if they agree.
+2. **Hear the reasoning.** Present Quiz prompts and options, then submit the learner’s own choices and discuss the returned feedback. For an Exercise, offer a hint and reveal the solution on explicit request. Finish with the learner’s explanation of what changed in their example.
+3. **Record the result.** Capture confirmed reading or actual Quiz choices through the corresponding Tool. Mastery starts at 0. Reading all Lessons in a Topic with at least one Lesson raises it to 1. Fully correct latest Quiz Attempts on all Quizzes in a Topic with at least one Quiz raise it to 2. These automatic rules only raise Mastery. For free-text work, cite the learner’s words or trace. Finish with a saved result and a next Topic or practice task the learner can name.

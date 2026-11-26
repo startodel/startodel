@@ -1,19 +1,17 @@
 # Startodel agent skills
 
-These five skills teach a connected agent how to onboard a learner, build a technology Track, build a repository-based Track, run a grill session and review due Topics. Each folder in [skills](skills/) contains a complete workflow in the [Agent Skills format](https://agentskills.io/specification).
+The five installable skills cover onboarding, technology Tracks, repository Tracks, GrillSessions and Reviews. Both Track skills teach comparison and deep-dive modes, then guide the agent through writing a Lesson. The repository workflow adds a trace through source and tests at a real revision.
 
-The workflows and their descriptions are generated from the [agent guide](../../docs/agent-guide/README.md). To change one, edit the guide and run `pnpm guide:build && pnpm skills:build` at the repository root.
+Each folder under [skills](skills/) contains a generated `SKILL.md` with workflow steps and shared rules. The Track skills also include the worked seven-Block Lesson under `references/`. Edit the [agent guide](../../docs/agent-guide/README.md) and run `pnpm guide:build && pnpm skills:build` at the repository root to update the MCP resources and installable skills together.
 
 ## Install
 
-Connect your agent client to `https://<host>/mcp` using Streamable HTTP and a Bearer token from **Settings → MCP tokens**. The [connection instructions](../../README.md#connect-your-agent) cover token creation and client configuration.
+1. Connect the client to your installation’s `/mcp` endpoint with Streamable HTTP and a Bearer credential from **Settings → MCP tokens**. [Connection instructions](../../README.md#connect-your-agent)
+2. From the root of a Startodel checkout, copy the **whole skill folders** to your client’s user or project skills directory. For a client that reads user skills from `~/.agents/skills/`, run the following command.
 
-From the root of a Startodel checkout, run the command for your client to install the skills for your user account.
+   ```sh
+   mkdir -p ~/.agents/skills
+   cp -R packages/skills/skills/startodel-* ~/.agents/skills/
+   ```
 
-| Client                                                                         | User install command                                                                      | Project folder    |
-| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | ----------------- |
-| [Cursor](https://cursor.com/docs/skills#skill-directories)                     | `mkdir -p ~/.cursor/skills && cp -R packages/skills/skills/startodel-* ~/.cursor/skills/` | `.cursor/skills/` |
-| [Claude Code](https://code.claude.com/docs/en/skills#choose-where-skills-load) | `mkdir -p ~/.claude/skills && cp -R packages/skills/skills/startodel-* ~/.claude/skills/` | `.claude/skills/` |
-| [Codex](https://developers.openai.com/codex/skills/)                           | `mkdir -p ~/.agents/skills && cp -R packages/skills/skills/startodel-* ~/.agents/skills/` | `.agents/skills/` |
-
-For a project install, replace the destination in both parts of the command with the project folder under the target repository. Each installed folder should contain its own `SKILL.md`. Ask the connected agent to call `get_guide` to see the next step for your Profile.
+3. Check that each installed folder contains `SKILL.md` and that the browser tasks link inside each Track skill opens its local reference. Ask the connected agent to call `get_guide` for the Next Step.

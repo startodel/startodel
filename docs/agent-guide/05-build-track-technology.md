@@ -1,14 +1,18 @@
 ---
 id: build-track-technology
-title: Build a Track around a technology
+title: Design and verify a Track
 order: 5
-skillDescription: Use when a learner wants a Track for a technology. Build its prerequisite graph and write Lessons for the selected Topics.
+skillDescription: Compare technologies for a decision or learn one technology for a concrete task.
 ---
 
-# Build a Track around a technology
+# Design and verify a Track
 
-Agree on a concrete outcome, then use `create_track`, `upsert_topics`, `add_edges` and `attach_topics_to_track` to build a small first Track Graph.
+Start with `get_profile` and `list_topics` to personalize the plan and find reusable Topics. After research and agreement on the outline, use `create_track`, `upsert_topics`, `add_edges` and `attach_topics_to_track`.
 
-For a goal like diagnosing slow queries, work backward from a query plan to scans, indexes and cardinality estimates. Search `list_topics` by slug prefix for reusable Topics. Batch up to 100 Topics and keep the returned IDs by slug. Add up to 200 directed prerequisite edges per call. Put the selected slugs in teaching order. Attaching puts these Topics first and keeps the remaining members in their previous order. Repeating the same order preserves membership and positions.
-
-Read the graph back with `get_track_graph`. Use `remove_edge` to correct a prerequisite, `detach_topic_from_track` to remove a membership and `update_track` to revise the description or sources. Confirm large changes with the learner. Detaching a Topic preserves its Lessons.
+1. **Personalize the outcome.** Combine the Onboarding Questionnaire with what you know of the learner’s work. Name the task they want to perform, the starting Topic and a familiar example. Confirm the choice if their background or goal is uncertain.
+2. **Verify the sources.** Before designing the Track, use your own web and repository tools to verify the current release and read a primary source for each technology. Check official documentation against recent release notes, a maintainer article or the primary repository. Proceed only when each design decision has a supporting source URL and its version or date.
+3. **Choose a mode from the goal.** Agree on an outline that ends in an observable decision or working result.
+   - **Comparison mode** for “How do X and Y differ?” Build a mental model of each, including its core problem and architecture. Apply both to the same case. Derive tradeoffs and decision criteria, then vary a constraint. End with a scenario-based Quiz asking which fits the new case, followed by “Why?” in chat.
+   - **Deep-dive mode** for “Teach me X.” Connect a mental model to the learner’s concrete goal. Start with a working setup or configuration, trace the internals that explain its behavior, then diagnose a production failure. End with an Exercise where the learner changes the setup and verifies the result independently.
+4. **Build and read back.** Reuse matching Topic Slugs. Create the private Track with verified citations in Track Sources and identify their versions or dates in the description. Save the missing Topics, connect prerequisites to dependents and attach members in teaching order. Check `get_track` for the citations and `get_track_graph` for the agreed first Topic and path to the outcome. The Track is ready when both match the plan.
+5. **Revise an existing Track.** For a changed source or goal use `update_track`. For an incorrect prerequisite use `remove_edge`. For a Topic that no longer belongs use `detach_topic_from_track`, which preserves its Lessons. Verify the affected sources, edges or memberships on readback.
