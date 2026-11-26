@@ -5,12 +5,13 @@ import { progressForUser } from "./progress.ts";
 import { grillsForUser } from "./grills.ts";
 import { lessonsForUser } from "./lessons.ts";
 import { masteryForUser } from "./mastery.ts";
-import { ProfileQuestionnaire } from "@startodel/core";
+import { accountId } from "./public.ts";
+import { ProfilePatch } from "@startodel/core";
 import { catalogForUser } from "./catalog.ts";
 import { tokensForUser } from "./mcp-tokens.ts";
-import { and, eq } from "drizzle-orm";
+import { and, eq, getTableColumns } from "drizzle-orm";
 import type { Connection } from "./index.ts";
-import { grillSessions, profiles, tracks } from "./schema.ts";
+import { grillSessions, profiles, tracks, users } from "./schema.ts";
 
 export function forUser(db: Connection, userId: string) {
   const ownProfile = eq(profiles.userId, userId);
@@ -45,15 +46,30 @@ export function forUser(db: Connection, userId: string) {
     ...lessons,
     ...mastery,
     mcpTokens: tokensForUser(db, userId),
+    async getPublicLogin() {
+      const [owner] = await db
+        .select({ login: users.login })
+        .from(users)
+        .where(and(eq(users.id, userId), eq(users.id, accountId(db, users.login))));
+      return owner?.login;
+    },
+    async getProfileWithLogin() {
+      const [profile] = await db
+        .select({ ...getTableColumns(profiles), login: users.login })
+        .from(profiles)
+        .innerJoin(users, eq(users.id, profiles.userId))
+        .where(ownProfile);
+      return profile;
+    },
     async getProfile() {
       const [profile] = await db.select().from(profiles).where(ownProfile);
       return profile;
     },
-    async updateProfile(input: string[] | Partial<ProfileQuestionnaire>) {
+    async updateProfile(input: string[] | ProfilePatch) {
       const [profile] = await db
         .update(profiles)
         .set({
-          ...ProfileQuestionnaire.partial().parse(Array.isArray(input) ? { goals: input } : input),
+          ...ProfilePatch.parse(Array.isArray(input) ? { goals: input } : input),
           updatedAt: new Date(),
         })
         .where(ownProfile)
@@ -62,6 +78,13 @@ export function forUser(db: Connection, userId: string) {
     },
     listTracks() {
       return db.select().from(tracks).where(ownTracks).orderBy(tracks.createdAt, tracks.id);
+    },
+    async getTrackBySlug(slug: string) {
+      const [track] = await db
+        .select()
+        .from(tracks)
+        .where(and(ownTracks, eq(tracks.slug, slug)));
+      return track;
     },
     async getTrack(id: string) {
       const [track] = await db.select().from(tracks).where(ownTrack(id));

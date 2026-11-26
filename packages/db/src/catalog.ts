@@ -56,13 +56,13 @@ function blockedTopics(db: Connection | Transaction, userId: string, memberIds?:
     );
 }
 
-async function idsBySlug(tx: Transaction, userId: string, slugs: string[]) {
+async function topicsBySlug(tx: Transaction, userId: string, slugs: string[]) {
   const rows = await tx
-    .select({ slug: topics.slug, id: topics.id })
+    .select({ slug: topics.slug, id: topics.id, title: topics.title })
     .from(topics)
     .where(and(eq(topics.userId, userId), inArray(topics.slug, slugs)))
     .for("key share");
-  return new Map(rows.map((row) => [row.slug, row.id]));
+  return new Map(rows.map((row) => [row.slug, row]));
 }
 
 type TopicInput = { slug: string; title: string; summary?: string | null };
@@ -85,6 +85,10 @@ export function catalogForUser(db: Connection, userId: string) {
     const values = inputs
       .map(({ slug, title, summary }) => ({ slug: TopicSlug.parse(slug), title, summary, userId }))
       .sort((a, b) => a.slug.localeCompare(b.slug));
+    const preserveSummary = inArray(
+      topics.slug,
+      values.filter((t) => t.summary === undefined).map((t) => t.slug),
+    );
     return db
       .insert(topics)
       .values(values)
@@ -93,7 +97,7 @@ export function catalogForUser(db: Connection, userId: string) {
         setWhere: owned,
         set: {
           title: sql`excluded.title`,
-          summary: sql`excluded.summary`,
+          summary: sql`case when ${preserveSummary} then ${topics.summary} else excluded.summary end`,
           updatedAt: new Date(),
         },
       })
@@ -188,18 +192,15 @@ export function catalogForUser(db: Connection, userId: string) {
     },
     addEdges(edges: { from: string; to: string }[]) {
       return db.transaction(async (tx) => {
-        const ids = await idsBySlug(
-          tx,
+        const slugs = [...new Set(edges.flatMap(({ from, to }) => [from, to]))];
+        const matches = await topicsBySlug(tx, userId, slugs);
+        const missing = slugs.filter((slug) => !matches.has(slug));
+        if (missing.length) throw new RangeError("Missing Topic slugs: " + missing.join(", "));
+        const values = edges.map(({ from, to }) => ({
           userId,
-          edges.flatMap((e) => [e.from, e.to]),
-        );
-        const values = [];
-        for (const edge of edges) {
-          const fromTopicId = ids.get(edge.from);
-          const toTopicId = ids.get(edge.to);
-          if (!fromTopicId || !toTopicId) return undefined;
-          values.push({ userId, fromTopicId, toTopicId });
-        }
+          fromTopicId: matches.get(from)!.id,
+          toTopicId: matches.get(to)!.id,
+        }));
         await tx.insert(topicEdges).values(values).onConflictDoNothing();
         return { count: values.length };
       });
@@ -212,19 +213,20 @@ export function catalogForUser(db: Connection, userId: string) {
           .where(ownedId(tracks, userId, trackId))
           .for("update");
         if (!track) return undefined;
-        const ids = await idsBySlug(tx, userId, slugs);
-        if (ids.size !== slugs.length) return undefined;
+        const requested = await topicsBySlug(tx, userId, slugs);
+        if (requested.size !== slugs.length) return undefined;
         const existing = await tx
-          .select({ id: trackTopics.topicId })
+          .select({ id: topics.id, slug: topics.slug, title: topics.title })
           .from(trackTopics)
+          .innerJoin(topics, and(owned, eq(topics.id, trackTopics.topicId)))
           .where(and(eq(trackTopics.userId, userId), eq(trackTopics.trackId, trackId)))
           .orderBy(trackTopics.position, trackTopics.topicId)
-          .for("update");
-        const order = new Set([
-          ...slugs.map((slug) => ids.get(slug)!),
-          ...existing.map((row) => row.id),
-        ]);
-        const values = Array.from(order, (topicId, position) => ({
+          .for("update", { of: trackTopics });
+        const ordered = [
+          ...slugs.map((slug) => requested.get(slug)!),
+          ...existing.filter((topic) => !requested.has(topic.slug)),
+        ];
+        const values = ordered.map(({ id: topicId }, position) => ({
           userId,
           trackId,
           topicId,
@@ -241,7 +243,12 @@ export function catalogForUser(db: Connection, userId: string) {
               sql`${trackTopics.position} <> excluded.position`,
             ),
           });
-        return values;
+        return ordered.map((topic, position) => ({
+          ...topic,
+          trackId,
+          topicId: topic.id,
+          position,
+        }));
       });
     },
     async getTopic(id: string) {

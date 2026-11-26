@@ -22,7 +22,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
   let github: Awaited<ReturnType<typeof localGitHub>>;
   let db: ReturnType<typeof createDatabase>;
 
-  learningMcpTests(() => ({ db, origin }));
+  learningMcpTests(() => ({ db, origin, publicOrigin }));
 
   function request(path: string, cookie = "", method = "GET", body?: unknown) {
     return fetch(origin + path, {
@@ -626,7 +626,11 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
         expect(tool.inputSchema).toMatchObject({ type: "object", additionalProperties: false });
         expect(JSON.stringify(tool.inputSchema)).not.toMatch(/"(userId|ownerId|user_id)"\s*:/);
       }
-      expect(await call("get_profile")).toEqual(profileA);
+      expect(await call("get_profile")).toEqual({
+        ...profileA,
+        login: "alice",
+        preferredLanguage: null,
+      });
       const updated = await call("update_profile", { goals: ["Transactions"] });
       expect(updated).toMatchObject({ id: profileA.id, goals: ["Transactions"] });
       expect(await (await request("/api/profile", a)).json()).toEqual(updated);
@@ -635,7 +639,10 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       const own = await call("create_track", { title: "Databases", slug: "db-foundations" });
       expect(own).toMatchObject({ title: "Databases", userId: profileA.userId });
       expect(await call("get_track", { id: own.id })).toEqual(own);
-      expect(await call("list_tracks")).toEqual([...before, own]);
+      expect(await call("list_tracks")).toEqual([
+        ...before.map((t: { id: string }) => ({ ...t, url: publicOrigin + "/tracks/" + t.id })),
+        own,
+      ]);
       const renamed = await call("update_track", { id: own.id, title: "Database design" });
       expect(renamed).toMatchObject({
         id: own.id,
@@ -658,10 +665,18 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
           })
         ).status,
       ).toBe(200);
+      const published = await call("get_track", { slug: "database-design" });
+      expect(published).toMatchObject({
+        id: own.id,
+        url: publicOrigin + "/tracks/" + own.id,
+        publicUrl: publicOrigin + "/u/alice/database-design",
+      });
+      expect(await call("list_tracks")).toContainEqual(published);
       for (const visible of [false, true, false])
         expect(
           await call("set_track_visibility", { ...visibility, public: visible }),
         ).toMatchObject({ public: visible });
+      expect(await call("get_track", { id: own.id })).not.toHaveProperty("publicUrl");
       for (const id of [foreign.id, crypto.randomUUID()]) {
         expect(await call("set_track_visibility", { trackId: id, public: true }, true)).toEqual({
           error: "Not found",

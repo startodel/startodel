@@ -1,4 +1,10 @@
-import type { LessonBlocks, ProfileQuestionnaire, TopicSlug, TrackSources } from "./content.ts";
+import type {
+  LessonBlocks,
+  PreferredLanguage,
+  ProfileQuestionnaire,
+  TopicSlug,
+  TrackSources,
+} from "./content.ts";
 import type { ReviewSchedule, Verdict } from "./review.ts";
 export * from "./content.ts";
 export * from "./review.ts";
@@ -7,7 +13,9 @@ interface OwnedRecord {
   id: string;
   userId: string;
 }
-export interface Profile extends OwnedRecord, ProfileQuestionnaire {}
+export interface Profile extends OwnedRecord, ProfileQuestionnaire {
+  preferredLanguage: PreferredLanguage | null;
+}
 export interface Topic extends OwnedRecord {
   slug: TopicSlug;
   title: string;

@@ -1,8 +1,9 @@
+import { QuizAnswers } from "@startodel/core";
 import { defineHandler, readBody, getRouterParam, createError } from "nuxt/server";
 import { z } from "zod";
 import { userData } from "../../../../lib/database";
 import { found, rowId } from "../../../../utils/input";
-const submission = z.strictObject({ answers: z.array(z.int().nonnegative()).min(1).max(3) });
+const submission = z.strictObject({ answers: QuizAnswers });
 export default defineHandler(async (event) => {
   const data = await userData(event);
   const input = submission.safeParse(await readBody(event));
