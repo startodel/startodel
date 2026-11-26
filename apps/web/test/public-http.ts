@@ -120,7 +120,7 @@ export function publicHttpTests(
         },
       ],
     }))!;
-    await owner.createLesson({ topicId: kept.id, title: "Source lesson" });
+    const sourceLesson = (await owner.createLesson({ topicId: kept.id, title: "Source lesson" }))!;
     const privateLesson = (await owner.createLesson({
       topicId: unrelated.id,
       title: "Hidden-lesson-sentinel",
@@ -146,6 +146,7 @@ export function publicHttpTests(
       kept,
       lesson,
       privateLesson,
+      sourceLesson,
       path,
       api,
       page,
@@ -284,6 +285,7 @@ export function publicHttpTests(
       topic,
       hidden,
       privateLesson,
+      sourceLesson,
       lesson,
       path,
       api,
@@ -393,7 +395,35 @@ export function publicHttpTests(
             expect(schema).toMatchObject({
               "@type": "Course",
               name: track.title,
-              author: { "@type": "Person", name: "publisher" },
+              author: {
+                "@type": "Person",
+                name: "publisher",
+                url: "https://startodel.example" + prefix + "/u/publisher",
+              },
+              syllabusSections: [
+                {
+                  "@type": "Syllabus",
+                  name: "Public topic",
+                  hasPart: [
+                    {
+                      "@type": "LearningResource",
+                      name: lesson.title,
+                      url: url + "/lessons/" + lesson.id,
+                    },
+                  ],
+                },
+                {
+                  "@type": "Syllabus",
+                  name: "Source topic",
+                  hasPart: [
+                    {
+                      "@type": "LearningResource",
+                      name: sourceLesson.title,
+                      url: url + "/lessons/" + sourceLesson.id,
+                    },
+                  ],
+                },
+              ],
             });
           } else {
             expect(schema).toMatchObject({
@@ -414,7 +444,8 @@ export function publicHttpTests(
             expect(main).toMatch(/<h1\b[^>]*>Public curriculum<\/h1>/);
             expect(main).toContain("s-part is-outline");
             expect(main).not.toMatch(/s-part__mastery|s-part__lock/);
-            expect(html).toContain('href="' + prefix + "/u" + path + "/lessons/" + lesson.id + '"');
+            for (const item of [lesson, sourceLesson])
+              expect(main).toContain('href="' + prefix + "/u" + path + "/lessons/" + item.id + '"');
             expect(html).toContain(
               "<title>Public curriculum · " +
                 (prefix ? "Публичный трек · Стартодел" : "Public Track · Startodel") +
