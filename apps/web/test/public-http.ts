@@ -1,3 +1,4 @@
+import legal from "../app/utils/legal.generated.json";
 import { LEGAL_TERMS_VERSION } from "@startodel/core";
 import { forUser, type Database } from "@startodel/db";
 import { expect, onTestFinished, test } from "vite-plus/test";
@@ -421,8 +422,8 @@ export function publicHttpTests(
   });
   test("legal language follows the URL, including permanent redirects for legacy links", async () => {
     const { origin } = env();
-    for (const name of ["terms", "rules"]) {
-      for (const lang of ["ru", "en"]) {
+    for (const name of ["terms", "rules"] as const) {
+      for (const lang of ["ru", "en"] as const) {
         const prefix = lang === "en" ? "/en" : "";
         const path = prefix + "/" + name;
         const redirect = await request("/" + name + "?lang=" + lang);
@@ -433,14 +434,12 @@ export function publicHttpTests(
         });
         expect(res.status).toBe(200);
         const html = await res.text();
-        const title =
-          name === "terms"
-            ? lang === "en"
-              ? "Terms of Use"
-              : "Условия использования"
-            : lang === "en"
-              ? "Publishing rules"
-              : "Правила публикации";
+        const { title, version, body } = legal[name][lang];
+        expect(html.match(/id="s-layer"/g)).toHaveLength(1);
+        expect(html).toContain(version);
+        for (const [, heading] of body.matchAll(/^## (.+)$/gm)) {
+          expect(html).toContain(heading + "</h2>");
+        }
         expect(html).toContain("<title>" + title + " · Startodel</title>");
         expect(html).toContain('name="description"');
         expect(html).toContain('lang="' + lang + '"');
