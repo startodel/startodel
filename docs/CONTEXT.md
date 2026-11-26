@@ -45,6 +45,8 @@
 | Terms Acceptance         | The version of the Publishing rules and Terms of Use a User accepted and the time of acceptance.                                                                                                                                            |
 | Public Fork              | A Fork its Owner has published. It appears in its source Track’s public list of Forks.                                                                                                                                                      |
 
+On the dashboard, when a different Topic is ready to study alongside due Reviews, the Next Step names the study Topic and offers a secondary action to review the due Topics first.
+
 ## Mastery
 
 Reading every Lesson in a Topic with at least one Lesson raises Mastery from 0 to 1. When every Quiz in the Topic has a fully correct latest Quiz Attempt, Mastery rises to 2. This requires at least one Quiz. Neither rule lowers Mastery. The external agent assesses levels 3 and 4 with evidence. [ADR 0013](adr/0013-mastery-auto-raise.md)

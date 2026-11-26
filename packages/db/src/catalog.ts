@@ -8,6 +8,7 @@ import {
   inArray,
   like,
   lt,
+  lte,
   notInArray,
   or,
   sql,
@@ -16,6 +17,7 @@ import type { Connection } from "./index.ts";
 import { ownedId, referencedRow, type Transaction } from "./owned.ts";
 import {
   lessonProgress,
+  reviewItems,
   lessons,
   topicEdges,
   topicMastery,
@@ -54,6 +56,60 @@ function blockedTopics(db: Connection | Transaction, userId: string, memberIds?:
         memberIds && inArray(topicEdges.toTopicId, memberIds),
       ),
     );
+}
+
+function eligibleTopics(db: Connection, userId: string, excludeDueAt?: Date) {
+  return db
+    .selectDistinct({
+      id: topics.id,
+      slug: topics.slug,
+      title: topics.title,
+      level: level.as("level"),
+    })
+    .from(topics)
+    .innerJoin(trackTopics, and(eq(trackTopics.userId, userId), eq(trackTopics.topicId, topics.id)))
+    .leftJoin(
+      topicMastery,
+      and(eq(topicMastery.userId, userId), eq(topicMastery.topicId, topics.id)),
+    )
+    .where(
+      and(
+        eq(topics.userId, userId),
+        lt(level, 2),
+        notInArray(topics.id, blockedTopics(db, userId)),
+        excludeDueAt &&
+          notInArray(
+            topics.id,
+            db
+              .select({ id: reviewItems.topicId })
+              .from(reviewItems)
+              .where(and(eq(reviewItems.userId, userId), lte(reviewItems.dueAt, excludeDueAt))),
+          ),
+      ),
+    );
+}
+
+export async function nextStudyTopic(db: Connection, userId: string, excludeDueAt?: Date) {
+  const ready = eligibleTopics(db, userId, excludeDueAt).orderBy(topics.slug).limit(1).as("ready");
+  const [topic] = await db
+    .select({ id: ready.id, slug: ready.slug, title: ready.title, trackId: tracks.id })
+    .from(ready)
+    .innerJoin(trackTopics, and(eq(trackTopics.userId, userId), eq(trackTopics.topicId, ready.id)))
+    .innerJoin(tracks, and(eq(tracks.userId, userId), eq(tracks.id, trackTopics.trackId)))
+    .orderBy(tracks.createdAt, tracks.id)
+    .limit(1);
+  if (!topic) return;
+  const [lesson] = await db
+    .select({ id: lessons.id, readAt: lessonProgress.readAt })
+    .from(lessons)
+    .leftJoin(
+      lessonProgress,
+      and(eq(lessonProgress.userId, userId), eq(lessonProgress.lessonId, lessons.id)),
+    )
+    .where(and(eq(lessons.userId, userId), eq(lessons.topicId, topic.id)))
+    .orderBy(sql`${lessonProgress.readAt} is not null`, lessons.position, lessons.id)
+    .limit(1);
+  return { ...topic, firstLessonId: lesson?.id ?? null, allLessonsRead: !!lesson?.readAt };
 }
 
 async function topicsBySlug(tx: Transaction, userId: string, slugs: string[]) {
@@ -166,29 +222,7 @@ export function catalogForUser(db: Connection, userId: string) {
       };
     },
     suggestedTopics(limit: number) {
-      return db
-        .select({ id: topics.id, slug: topics.slug, title: topics.title, level })
-        .from(topics)
-        .leftJoin(
-          topicMastery,
-          and(eq(topicMastery.userId, userId), eq(topicMastery.topicId, topics.id)),
-        )
-        .where(
-          and(
-            owned,
-            lt(level, 2),
-            notInArray(topics.id, blockedTopics(db, userId)),
-            inArray(
-              topics.id,
-              db
-                .select({ id: trackTopics.topicId })
-                .from(trackTopics)
-                .where(eq(trackTopics.userId, userId)),
-            ),
-          ),
-        )
-        .orderBy(topics.slug)
-        .limit(limit);
+      return eligibleTopics(db, userId).orderBy(topics.slug).limit(limit);
     },
     addEdges(edges: { from: string; to: string }[]) {
       return db.transaction(async (tx) => {

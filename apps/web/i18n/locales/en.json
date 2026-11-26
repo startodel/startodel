@@ -382,9 +382,7 @@
     "placeholder": "your-token"
   },
   "next": {
-    "title": "Next up",
-    "load": "Could not load your next step.",
-    "ready": "These Topics are ready to study.",
+    "title": "Next step",
     "onboarding": "The Onboarding Questionnaire is unfinished.",
     "complete": "Complete onboarding",
     "continue": "Continue grill session",
@@ -392,7 +390,17 @@
     "plan": "No Track Topics are ready. Check for missing prerequisites or plan the next Track.",
     "planPrompt": "Call get_guide and help me plan my next Track.",
     "buildPrompt": "Call get_guide, then build me a Track for {goals}.",
-    "goals": "my learning goals"
+    "goals": "my learning goals",
+    "study": "Study",
+    "grill": "Grill",
+    "reviewKind": "Review",
+    "lessonReady": "Your Lesson is ready to study.",
+    "reread": "You’ve read every Lesson in this Topic. Revisit the first one to practise.",
+    "noLessons": "The prerequisites are complete. Ask your agent to write the first Lesson for this Topic.",
+    "openLesson": "Open lesson",
+    "openTrack": "Open track",
+    "lessonPrompt": "Use the Startodel MCP server. Call get_guide, then use create_lesson to write the first Lesson for the Topic {slug}. Include a Quiz and one Exercise.",
+    "reviewFirst": "Review {n} Topic first | Review {n} Topics first"
   },
   "visibility": {
     "public": "Visibility · Public",

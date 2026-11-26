@@ -19,6 +19,8 @@ export async function localGitHub() {
       "forker",
       "learning-pages",
       "dashboard",
+      "hero",
+      "hero-schedule",
     ].map((login, i) => ({
       id: id - 2 - i,
       login,

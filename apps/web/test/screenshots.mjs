@@ -266,6 +266,31 @@ try {
   await page.locator("main").getByRole("link", { name: track.title }).waitFor();
   await page.locator(".s-rail__item--track").filter({ hasText: track.title }).waitFor();
   if (cascade) {
+    async function heroStyles(path) {
+      await visit(path);
+      return page.locator(".s-next").evaluate((card) => {
+        const style = (selector) => getComputedStyle(card.querySelector(selector));
+        return {
+          border: getComputedStyle(card).border,
+          background: getComputedStyle(card).backgroundColor,
+          padding: style(".s-next__main").padding,
+          kicker: style(".s-next__kicker").color,
+          title: style(".s-next__title").fontSize,
+          status: style(".s-next__why").color,
+          button: style(".s-button--primary").backgroundColor,
+          arrow: !!card.querySelector(".s-button--primary > svg:last-child"),
+          footer: style(".s-next__prompt").backgroundColor,
+        };
+      });
+    }
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const theme of ["light", "dark"]) {
+        await context.addCookies([{ name: "startodel-theme", value: theme, url: origin }]);
+        const reference = await heroStyles("/en/design/screens/dashboard?chrome=0");
+        assert.deepEqual(await heroStyles("/en/dashboard"), reference);
+      }
+    }
     await Promise.all([
       expectQuiet(),
       page.evaluate(() => window.dispatchEvent(new Event("focus"))),
