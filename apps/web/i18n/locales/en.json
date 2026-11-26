@@ -142,6 +142,7 @@
     "history": "Recent activity",
     "emptyHistory": "No learning activity yet.",
     "share": "{percent}% of Topics",
+    "completedTopics": "Topics at Mastery 2 or higher",
     "recentVerdicts": "Verdicts in recent activity"
   },
   "track": {

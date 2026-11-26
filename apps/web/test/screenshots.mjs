@@ -362,9 +362,9 @@ try {
     await shot("pr11-terms");
     await context.clearCookies();
     await visit("/en/u/bob");
-    await page.locator("main").getByRole("link", { name: track.title }).waitFor();
+    await page.getByRole("link", { name: track.title }).waitFor();
     await shot("pr11-public-profile");
-    await page.locator("main").getByRole("link", { name: track.title }).click();
+    await page.getByRole("link", { name: track.title }).click();
     await page.locator(".vue-flow__edge-path").first().waitFor();
     await shot("pr11-public-track");
     await page.getByRole("link", { name: lesson.title }).click();
