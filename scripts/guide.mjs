@@ -30,7 +30,11 @@ export async function readGuide(source) {
   }
   sections.sort((a, b) => a.order - b.order);
   const documents = new Map(sections.map((section) => [section.file, section]));
-  for (const name of await markdownFiles(join(source, "references"))) {
+  const references = await markdownFiles(join(source, "references")).catch((error) => {
+    if (error.code === "ENOENT") return [];
+    throw error;
+  });
+  for (const name of references) {
     const file = "references/" + name;
     const body = await readMarkdown(join(source, file));
     const title = /^# ([^\n]+)/.exec(body)?.[1];

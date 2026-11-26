@@ -38,6 +38,22 @@ test("changing a guide section makes the generated resource stale until rebuilt"
   }
 });
 
+test("a guide can omit references until a workflow links to one", async () => {
+  const source = await mkdtemp(join(process.cwd(), ".guide-test-"));
+  try {
+    const section = join(source, "01-platform.md");
+    const output = join(source, "guide.json");
+    await cp("docs/agent-guide/01-platform.md", section);
+    await buildGuide(source, output);
+    await appendFile(section, "\n[Example](references/example.md)\n");
+    await expect(buildGuide(source, output)).rejects.toThrow(
+      "Unknown guide link references/example.md",
+    );
+  } finally {
+    await rm(source, { recursive: true, force: true });
+  }
+});
+
 function workflow(id: string) {
   const section = guide.find((entry) => entry.id === id);
   if (!section) throw new Error("Missing workflow " + id);
