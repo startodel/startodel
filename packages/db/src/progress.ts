@@ -78,6 +78,7 @@ export function progressForUser(db: Connection, userId: string) {
     const perTrack = await tx
       .select({
         trackId: tracks.id,
+        trackSlug: tracks.slug,
         title: tracks.title,
         total: count(trackTopics.topicId),
         completed: sql<number>`count(*) filter (where ${topicMastery.level} >= 2)`.mapWith(Number),

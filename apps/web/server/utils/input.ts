@@ -1,3 +1,4 @@
+import { isUuid, TrackSlug } from "@startodel/core";
 import { createError, getRouterParam, readBody, type RequestEvent } from "nuxt/server";
 
 async function readOnlyField(event: RequestEvent, key: string): Promise<unknown> {
@@ -33,10 +34,24 @@ export function rowId(event: RequestEvent, param = "id") {
 }
 
 export function parseRowId(id: string | undefined) {
-  if (!id || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id)) {
+  if (!id || !isUuid(id)) {
     throw createError({ status: 404, message: "Not found" });
   }
   return id;
+}
+
+export async function readTrackRef<T>(
+  event: RequestEvent,
+  byId: (id: string) => Promise<T | undefined>,
+  bySlug: (slug: string) => Promise<T | undefined>,
+) {
+  const ref = getRouterParam(event, "id") ?? "";
+  if (isUuid(ref)) {
+    const track = await byId(ref);
+    if (track) return track;
+  }
+  if (!TrackSlug.safeParse(ref).success) throw createError({ status: 404, message: "Not found" });
+  return found(await bySlug(ref));
 }
 
 export function found<T>(row: T | undefined): T {

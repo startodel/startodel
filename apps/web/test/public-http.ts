@@ -541,7 +541,7 @@ export function publicHttpTests(
       forkedFromLogin: "publisher",
     });
     expect((await request("/api/tracks/" + copy.id, a)).status).toBe(404);
-    expect((await request("/tracks/" + copy.id, b)).status).toBe(200);
+    expect((await request("/tracks/" + copy.slug, b)).status).toBe(200);
     expect((await recipient.getTrackGraph(copy.id))?.edges).toHaveLength(1);
     expect(await recipient.getTopicBySlug(kept.slug)).toEqual(retained);
     expect(await recipient.getMastery(retained.id)).toMatchObject({

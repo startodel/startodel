@@ -19,11 +19,7 @@ export async function resolveTopic(data: UserData, ref: string) {
   return data.getTopicBySlug(ref);
 }
 
-export function entityUrl(
-  origin: string,
-  collection: "tracks" | "topics" | "lessons" | "grills",
-  id: string,
-) {
+export function entityUrl(origin: string, collection: "topics" | "lessons" | "grills", id: string) {
   return new URL(`/${collection}/${id}`, origin).href;
 }
 

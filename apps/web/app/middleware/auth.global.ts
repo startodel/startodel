@@ -1,6 +1,12 @@
-import type { Track } from "@startodel/core";
+import { isUuid, TrackSlug, type Track } from "@startodel/core";
 import { isPublicPage } from "../../shared/public-pages";
-import { basePath, localizedPath, pageLocale, languageCookie } from "../../shared/locale";
+import {
+  basePath,
+  localizedPath,
+  pageLocale,
+  languageCookie,
+  privateTrackPath,
+} from "../../shared/locale";
 export default defineNuxtRouteMiddleware(async (to) => {
   const path = basePath(to.path);
   const locale =
@@ -33,18 +39,37 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
   const account = await fetchMe();
   me.value = account;
+  const ref = to.params.slug;
+  if (
+    /^\/tracks\/[^/]+\/?$/.test(path) &&
+    typeof ref === "string" &&
+    (isUuid(ref) || (!account.onboarded && TrackSlug.safeParse(ref).success))
+  ) {
+    const owned = await useRequestFetch()<Pick<Track, "id" | "slug" | "forkedFromLogin">>(
+      `/api/tracks/${encodeURIComponent(ref)}`,
+    ).catch((error) => {
+      if (error.statusCode !== 404) throw error;
+    });
+    // A learner can start with a Fork before completing the questionnaire.
+    if (owned && (account.onboarded || owned.forkedFromLogin)) {
+      if (owned.id === ref.toLowerCase() && owned.slug !== ref) {
+        // A document redirect preserves the bookmark's original query encoding and repeated keys.
+        const tail = import.meta.server
+          ? useRequestURL().search
+          : to.fullPath.slice(to.path.length);
+        return navigateTo(privateTrackPath(owned.slug, locale) + tail, {
+          external: true,
+          redirectCode: 301,
+          replace: true,
+        });
+      }
+      return;
+    }
+  }
   if (
     !account.onboarded &&
     !["/onboarding", "/onboarding/connect"].includes(path.replace(/\/$/, ""))
-  ) {
-    // A learner can start with a Fork before completing the questionnaire.
-    if (/^\/tracks\/[^/]+\/?$/.test(path)) {
-      const owned = await useRequestFetch()<Pick<Track, "forkedFromLogin">>(
-        `/api/tracks/${encodeURIComponent(String(to.params.id))}`,
-      ).catch(() => undefined);
-      if (owned?.forkedFromLogin) return;
-    }
+  )
     return navigateTo(target("/onboarding"));
-  }
   if (/^\/login\/?$/.test(path)) return redirectEntry("/dashboard");
 });

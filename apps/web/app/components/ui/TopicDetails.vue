@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { privateTrackPath } from "../../../shared/locale";
 import type { BoardTopic, TopicState } from "./board";
 const props = defineProps<{
   details: {
@@ -57,7 +58,7 @@ const lessons = computed(() =>
                 class="path__topic"
                 :to="
                   track && parts.has(topic.id)
-                    ? { path: '/tracks/' + track, query: { topic: topic.id } }
+                    ? { path: privateTrackPath(track), query: { topic: topic.id } }
                     : '/topics/' + topic.id
                 "
               >

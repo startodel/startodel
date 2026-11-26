@@ -676,7 +676,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       expect(own).toMatchObject({ title: "Databases", userId: profileA.userId });
       expect(await call("get_track", { id: own.id })).toEqual(own);
       expect(await call("list_tracks")).toEqual([
-        ...before.map((t: { id: string }) => ({ ...t, url: publicOrigin + "/tracks/" + t.id })),
+        ...before.map((t: { slug: string }) => ({ ...t, url: publicOrigin + "/tracks/" + t.slug })),
         own,
       ]);
       const renamed = await call("update_track", { id: own.id, title: "Database design" });
@@ -685,13 +685,16 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
         title: "Database design",
         slug: "db-foundations",
       });
-      expect(await (await request("/api/tracks/" + own.id, a)).json()).toEqual(renamed);
+      expect(renamed).toEqual({
+        ...(await (await request("/api/tracks/" + own.id, a)).json()),
+        url: publicOrigin + "/tracks/db-foundations",
+      });
       expect(await call("update_track", { id: own.id, slug: "database-design" })).toMatchObject({
         slug: "database-design",
       });
       const visibility = { trackId: own.id, public: true };
       expect(await call("set_track_visibility", visibility, true)).toEqual({
-        error: `The user must accept the current Publishing rules and Terms of Use in the Startodel app before publishing. Ask them to open ${publicOrigin}/tracks/${own.id} and publish there once.`,
+        error: `The user must accept the current Publishing rules and Terms of Use in the Startodel app before publishing. Ask them to open ${publicOrigin}/tracks/database-design and publish there once.`,
       });
       expect(
         (
@@ -704,7 +707,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       const published = await call("get_track", { slug: "database-design" });
       expect(published).toMatchObject({
         id: own.id,
-        url: publicOrigin + "/tracks/" + own.id,
+        url: publicOrigin + "/tracks/database-design",
         publicUrl: publicOrigin + "/u/alice/database-design",
       });
       expect(await call("list_tracks")).toContainEqual(published);

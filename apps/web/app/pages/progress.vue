@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { privateTrackPath } from "../../shared/locale";
 definePageMeta({ layout: "app" });
 const { t, locale } = useI18n();
 const { activityLabel, verdictLabel } = useLearningLabels();
@@ -93,7 +94,7 @@ const columns = computed(() => [
                 :key="track.trackId"
                 :title="track.title"
                 :levels="levels.get(track.trackId) ?? []"
-                :to="'/tracks/' + track.trackId"
+                :to="privateTrackPath(track.trackSlug)"
               />
             </div>
           </section>

@@ -92,7 +92,13 @@ function eligibleTopics(db: Connection, userId: string, excludeDueAt?: Date) {
 export async function nextStudyTopic(db: Connection, userId: string, excludeDueAt?: Date) {
   const ready = eligibleTopics(db, userId, excludeDueAt).orderBy(topics.slug).limit(1).as("ready");
   const [topic] = await db
-    .select({ id: ready.id, slug: ready.slug, title: ready.title, trackId: tracks.id })
+    .select({
+      id: ready.id,
+      slug: ready.slug,
+      title: ready.title,
+      trackId: tracks.id,
+      trackSlug: tracks.slug,
+    })
     .from(ready)
     .innerJoin(trackTopics, and(eq(trackTopics.userId, userId), eq(trackTopics.topicId, ready.id)))
     .innerJoin(tracks, and(eq(tracks.userId, userId), eq(tracks.id, trackTopics.trackId)))
@@ -370,13 +376,17 @@ export function catalogForUser(db: Connection, userId: string) {
           .returning()
       )[0];
     },
-    getTrackGraph(id: string) {
+    getTrackGraph(ref: string | { slug: string }) {
       return db.transaction(
         async (tx) => {
           const [track] = await tx
             .select({ ...getTableColumns(tracks), forkCount, forkedFrom })
             .from(tracks)
-            .where(ownedId(tracks, userId, id));
+            .where(
+              typeof ref === "string"
+                ? ownedId(tracks, userId, ref)
+                : and(eq(tracks.userId, userId), eq(tracks.slug, ref.slug)),
+            );
           if (!track) return undefined;
           const members = await tx
             .select({
@@ -397,7 +407,7 @@ export function catalogForUser(db: Connection, userId: string) {
               lessonProgress,
               and(eq(lessonProgress.userId, userId), eq(lessonProgress.lessonId, lessons.id)),
             )
-            .where(and(eq(trackTopics.userId, userId), eq(trackTopics.trackId, id)))
+            .where(and(eq(trackTopics.userId, userId), eq(trackTopics.trackId, track.id)))
             .groupBy(topics.id, trackTopics.position, topicMastery.level)
             .orderBy(trackTopics.position, topics.slug);
           const memberIds = members.map((m) => m.topic.id);

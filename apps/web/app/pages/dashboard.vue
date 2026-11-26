@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { privateTrackPath } from "../../shared/locale";
 definePageMeta({ layout: "app" });
 const { t, n } = useI18n();
 const countArgs = useCountArgs();
@@ -34,7 +35,7 @@ const hero = computed(() => {
   const s = board.nextStep;
   switch (s.kind) {
     case "study": {
-      const { title, slug, trackId, firstLessonId, allLessonsRead } = s.topic;
+      const { title, slug, trackSlug, firstLessonId, allLessonsRead } = s.topic;
       const kind = t("next.study");
       if (firstLessonId)
         return {
@@ -48,7 +49,7 @@ const hero = computed(() => {
         title,
         kind,
         why: t("next.noLessons"),
-        to: "/tracks/" + trackId,
+        to: privateTrackPath(trackSlug),
         action: t("next.openTrack"),
         prompt: t("next.lessonPrompt", { slug }),
         tool: "create_lesson",
@@ -156,7 +157,7 @@ const firstPrompt = computed(() => {
               v-for="track in data.tracks"
               :key="track.trackId"
               :title="track.title"
-              :to="'/tracks/' + track.trackId"
+              :to="privateTrackPath(track.trackSlug)"
               :levels="levels.get(track.trackId) ?? []"
               :completed="track.completed"
               :total="track.total"

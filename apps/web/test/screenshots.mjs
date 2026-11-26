@@ -368,7 +368,7 @@ try {
     "https://www.youtube-nocookie.com/embed/8aGhZQkoFbQ?autoplay=1",
   );
   await page.setViewportSize({ width: 375, height: 812 });
-  await visit("/tracks/" + track.id);
+  await visit("/tracks/" + track.slug);
   await page.locator(".s-tracklist__row").filter({ hasText: "Tasks and timers" }).click();
   await page.getByRole("link", { name: lesson.title }).waitFor();
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
@@ -516,7 +516,7 @@ try {
       "/ru/dashboard",
       "/dashboard",
       "/settings",
-      "/tracks/" + track.id,
+      "/tracks/" + track.slug,
       "/topics/" + by.tasks.id,
       "/lessons/" + lesson.id,
       "/grills",
@@ -526,9 +526,9 @@ try {
       await audit(path);
     await owner.setTrackVisibility(track.id, true, true);
     await visit("/u/bob/" + track.slug);
-    await page.getByRole("button", { name: "Change visibility" }).click();
+    await page.getByRole("link", { name: "Change visibility" }).click();
     await page.getByRole("dialog", { name: "Make this Track private?" }).waitFor();
-    await checkCascade(page, "/tracks/" + track.id);
+    await checkCascade(page, "/tracks/" + track.slug);
     await context.clearCookies();
     const profile = "/u/bob";
     const publicTrack = profile + "/" + track.slug;
@@ -589,9 +589,11 @@ try {
     await page.setViewportSize({ width: 1440, height: 900 });
     await visit("/ru/dashboard");
     await page.getByRole("heading", { name: "С возвращением, Bob", exact: true }).waitFor();
-    await page.locator("main").getByRole("link", { name: track.title }).waitFor();
+    const trackLink = page.locator("main").getByRole("link", { name: track.title });
+    await trackLink.waitFor();
+    assert.equal(await trackLink.getAttribute("href"), "/ru/tracks/" + track.slug);
     await shot("pr12-ru-dashboard");
-    await page.locator("main").getByRole("link", { name: track.title }).click();
+    await trackLink.click();
     await page.locator(".s-canvas .s-trace").first().waitFor();
     await page.getByRole("button", { name: "Открыть доступ" }).waitFor();
     await shot("pr12-ru-track");
@@ -646,7 +648,7 @@ try {
   }
   if (process.argv.includes("--pr11")) {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await visit("/tracks/" + track.id);
+    await visit("/tracks/" + track.slug);
     await page.getByRole("button", { name: "Make public" }).click();
     await page.getByRole("dialog").waitFor();
     await shot("pr11-publish-dialog");
@@ -730,12 +732,12 @@ try {
     const { user: reader } = await (await request.get(origin + "/api/me")).json();
     await visit(publicPath);
     await page.getByRole("button", { name: "Fork", exact: true }).click();
-    await page.waitForURL("**/tracks/*");
+    await page.waitForURL(origin + "/tracks/" + track.slug);
     await page.getByText("Forked from", { exact: false }).waitFor();
     await page.locator(".s-canvas .s-trace").first().waitFor();
     await shot("pr11-fork-result");
     await signIn("bob");
-    await visit("/tracks/" + track.id);
+    await visit("/tracks/" + track.slug);
     await page.getByText("1 fork", { exact: true }).waitFor();
     await page.locator(".s-canvas .s-trace").first().waitFor();
     await shot("pr11-track-visibility");

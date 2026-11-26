@@ -12,6 +12,10 @@ export function localizedPath(path: string, locale: UiLocale) {
   return base === "/" ? "/ru" : "/ru" + base;
 }
 
+export function privateTrackPath(slug: string, locale: UiLocale = "en") {
+  return localizedPath("/tracks/" + encodeURIComponent(slug), locale);
+}
+
 export function alternateUrls(origin: string, path: string) {
   const en = origin + localizedPath(path, "en");
   return { en, ru: origin + localizedPath(path, "ru"), "x-default": en };
