@@ -170,7 +170,9 @@
     "profileTitle": "{name} · Public Profile",
     "lessonTitle": "{title} · Lesson",
     "openFork": "Open your Fork",
-    "sourceGone": "The source is no longer public"
+    "sourceGone": "The source is no longer public",
+    "totalForks": "Forks of these Tracks",
+    "noForks": "No Public Forks yet."
   },
   "topic": {
     "lessons": "Topic Lessons",

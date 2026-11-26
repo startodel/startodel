@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const countArgs = useCountArgs();
+definePageMeta({ layout: "site" });
+const displayDate = useDisplayDate();
 const { t } = useI18n();
 const login = encodeURIComponent(String(useRoute().params.login));
 const { data, error } = await useFetch(`/api/public/${login}`);
@@ -14,24 +15,42 @@ usePublicHead(
   "/u/" + login,
   "profile",
 );
+const forkTotal = computed(() => data.value?.tracks.reduce((sum, t) => sum + t.forkCount, 0) ?? 0);
 </script>
 <template>
-  <main v-if="data" class="narrow">
-    <div class="actions">
-      <img v-if="data.avatarUrl" :src="data.avatarUrl" alt="" width="64" height="64" />
+  <div v-if="data" class="s-page s-stack">
+    <header class="s-cluster">
+      <UiAvatar :name="data.name || data.login" :src="data.avatarUrl" :size="72" />
       <div>
-        <h1>{{ data.name || data.login }}</h1>
-        <span>@{{ data.login }}</span>
+        <h1 class="s-title">{{ data.name || data.login }}</h1>
+        <p class="s-mono s-muted">@{{ data.login }}</p>
       </div>
-    </div>
-    <h2>{{ $t("public.tracks") }}</h2>
-    <p v-if="!data.tracks.length">{{ $t("public.noTracks") }}</p>
-    <article v-for="track in data.tracks" :key="track.slug" class="panel">
-      <h3>
-        <NuxtLinkLocale :to="'/u/' + login + '/' + track.slug">{{ track.title }}</NuxtLinkLocale>
-      </h3>
-      <p v-if="track.description">{{ track.description }}</p>
-      <small>{{ $t("count.forks", countArgs(track.forkCount)) }}</small>
-    </article>
-  </main>
+      <dl class="s-cluster profile-stats">
+        <UiStat :label="$t('public.tracks')" :value="$n(data.tracks.length)" />
+        <UiStat :label="$t('public.totalForks')" :value="$n(forkTotal)" />
+      </dl>
+    </header>
+    <section class="s-stack">
+      <UiSectionHeading :title="$t('public.tracks')" :count="$n(data.tracks.length)" />
+      <div v-if="data.tracks.length" class="s-columns">
+        <UiTrackCard
+          v-for="track in data.tracks"
+          :key="track.slug"
+          :to="'/u/' + login + '/' + encodeURIComponent(track.slug)"
+          :title="track.title"
+          :description="track.description"
+          :forks="track.forkCount"
+          :updated="$t('ui.updated', { date: displayDate(track.updatedAt) })"
+        />
+      </div>
+      <UiEmptyState v-else icon="globe" :title="$t('public.noTracks')" compact />
+    </section>
+  </div>
+  <UiSkeletonList v-else />
 </template>
+<style scoped>
+.profile-stats {
+  margin-inline-start: auto;
+  gap: var(--s-8);
+}
+</style>

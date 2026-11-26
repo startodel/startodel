@@ -220,6 +220,10 @@ export function publicHttpTests(
           ]) {
             expect((html + json).includes(value), "private value in " + suffix).toBe(false);
           }
+          const main = html.match(/<main\b[^>]*>([\s\S]*?)<\/main>/)?.[1] ?? "";
+          expect(html.match(/id="s-layer"/g)).toHaveLength(1);
+          expect(html).toContain('class="s-site"');
+          if (suffix === "/publisher") expect(main).toContain('class="s-trackcard"');
           const ru = "https://startodel.example/u" + suffix;
           const en = "https://startodel.example/en/u" + suffix;
           expect(html).toMatch(new RegExp('<html[^>]* lang="' + (prefix ? "en" : "ru") + '"'));
@@ -236,7 +240,10 @@ export function publicHttpTests(
           );
           expect(html).toContain(prefix ? 'content="en_US"' : 'content="ru_RU"');
           if (suffix === path) {
-            expect(html).toContain("<h1>Public curriculum</h1>");
+            expect(main).toMatch(/<h1\b[^>]*>Public curriculum<\/h1>/);
+            expect(main).toContain("s-part is-outline");
+            expect(main).not.toMatch(/s-part__mastery|s-part__lock/);
+            expect(html).toContain('href="' + prefix + "/u" + path + "/lessons/" + lesson.id + '"');
             expect(html).toContain(
               "<title>Public curriculum · " +
                 (prefix ? "Public Track" : "Публичный трек") +
@@ -249,6 +256,13 @@ export function publicHttpTests(
           for (const key of ["title", "description", "url", "type"])
             expect(html).toContain('property="og:' + key + '"');
           if (suffix.includes("/lessons/")) {
+            expect(main).toContain('class="s-block"');
+            expect(main).toContain("Pick one");
+            expect(main).toContain("Second");
+            expect(main).toContain("Implement it");
+            expect(main).not.toMatch(
+              /s-quiz__feedback|s-exercise__solution|type="radio"|type="submit"/,
+            );
             expect(html).toContain(
               prefix
                 ? "Fork this track to practice"
@@ -419,6 +433,28 @@ export function publicHttpTests(
       forkedFromLogin: "publisher",
       forkedFromSlug: track.slug,
     });
+  });
+  test("the first page contains four Public Forks and excludes private Forks from pagination", async () => {
+    const { owner, recipient, track, fork, b, api, page } = await curriculum();
+    await owner.setTrackVisibility(track.id, true, true);
+    const html = () => request(page).then((r) => r.text());
+    for (let i = 0; i < 6; i++) {
+      const copy = await (await fork(b)).json();
+      if (i >= 4) continue;
+      await recipient.setTrackVisibility(copy.id, true, true);
+    }
+    expect(await html()).not.toContain('class="s-pagination"');
+    const next = await (await fork(b)).json();
+    await recipient.setTrackVisibility(next.id, true, true);
+    const trackData = await (await request(api)).json();
+    expect(trackData.forkCount).toBe(7);
+    expect(trackData.forks).toHaveLength(5);
+    const rendered = await html();
+    expect(rendered).toContain('class="s-pagination"');
+    expect(rendered.match(/class="s-trackcard"/g)).toHaveLength(4);
+    for (const [i, f] of trackData.forks.entries()) {
+      expect(rendered.includes('href="/u/forker/' + f.slug + '"')).toBe(i < 4);
+    }
   });
   test("legal language follows the URL, including permanent redirects for legacy links", async () => {
     const { origin } = env();

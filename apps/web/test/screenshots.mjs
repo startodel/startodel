@@ -380,12 +380,13 @@ try {
     await context.clearCookies();
     const publicPath = "/u/bob/" + track.slug;
     await visit(publicPath);
-    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await page.locator(".s-map .s-trace").first().waitFor();
     await shot("pr12-ru-public-track");
-    await page.locator("header").getByRole("link", { name: "EN", exact: true }).click();
+    await page.getByRole("banner").getByRole("button", { name: /Язык/ }).click();
+    await page.getByRole("menuitem", { name: /English/ }).click();
     await page.waitForURL(origin + "/en" + publicPath);
     await page.getByRole("heading", { name: "Track Graph" }).waitFor();
-    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await page.locator(".s-map .s-trace").first().waitFor();
     await shot("pr12-en-public-track");
     await visit("/");
     await page.waitForURL(origin + "/en/login");
@@ -419,11 +420,43 @@ try {
     await page.getByRole("link", { name: track.title }).waitFor();
     await shot("pr11-public-profile");
     await page.getByRole("link", { name: track.title }).click();
-    await page.locator(".vue-flow__edge-path").first().waitFor();
+    await page.locator(".s-map .s-trace").first().waitFor();
+    await page.getByRole("link", { name: "Sign in to fork" }).waitFor();
     await shot("pr11-public-track");
+    await page
+      .locator(".s-map")
+      .getByRole("button", { name: /Tasks and timers/ })
+      .click();
+    let enrichedPreview = false;
+    await page.route("**/api/public/bob/*/lessons/*", async (route) => {
+      const response = await route.fetch();
+      const json = await response.json();
+      for (const block of json.blocks) {
+        if (block.type === "quiz") {
+          for (const q of block.questions)
+            Object.assign(q, { correctIndex: 1, explanation: "Hidden explanation" });
+        }
+        if (block.type === "exercise") block.solution = "Hidden solution";
+      }
+      enrichedPreview = true;
+      await route.fulfill({ response, json });
+    });
     await page.getByRole("link", { name: lesson.title }).click();
     await page.getByText("Fork this track to practice").waitFor();
     assert.equal(await page.getByText("Show solution", { exact: true }).count(), 0);
+    const preview = await page.evaluate(() =>
+      Object.values(window.useNuxtApp().payload.data).find((entry) => entry?.blocks),
+    );
+    assert.ok(enrichedPreview);
+    assert.ok(preview.blocks.some((block) => block.type === "quiz"));
+    for (const block of preview.blocks) {
+      if (block.type === "quiz") {
+        for (const q of block.questions)
+          assert.deepEqual(Object.keys(q).sort(), ["options", "prompt"]);
+      }
+      if (block.type === "exercise") assert.ok(!("solution" in block));
+    }
+    assert.equal(await page.locator(".s-quiz input, .s-exercise__solution").count(), 0);
     await shot("pr11-public-lesson");
     await signIn("forker");
     await visit("/en" + publicPath);

@@ -2,11 +2,16 @@
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from "reka-ui";
 import type { IconName } from "./icons";
 /** Content the learner opens on request, such as a hint or a solution. */
-defineProps<{ title: string; icon?: IconName; disabled?: boolean }>();
+defineProps<{ title: string; icon?: IconName; disabled?: boolean; keepMounted?: boolean }>();
 const open = defineModel<boolean>("open", { default: false });
 </script>
 <template>
-  <CollapsibleRoot v-model:open="open" class="s-collapsible" :disabled="disabled">
+  <CollapsibleRoot
+    v-model:open="open"
+    class="s-collapsible"
+    :disabled="disabled"
+    :unmount-on-hide="!keepMounted"
+  >
     <CollapsibleTrigger class="s-collapsible__trigger">
       <UiIcon name="chevron-right" :size="14" class="s-collapsible__caret" />
       <UiIcon v-if="icon" :name="icon" :size="14" />
