@@ -1,7 +1,8 @@
-import legal from "../app/utils/legal.generated.json";
+import { readFile } from "node:fs/promises";
 import { LEGAL_TERMS_VERSION } from "@startodel/core";
 import { forUser, type Database } from "@startodel/db";
 import { expect, onTestFinished, test } from "vite-plus/test";
+import legal from "../app/utils/legal.generated.json";
 
 const publicHtmlCache = "public, max-age=60, s-maxage=300, stale-while-revalidate=600";
 const publicAssetCache = "public, max-age=300, stale-while-revalidate=3600";
@@ -27,7 +28,7 @@ function expectSocialHead(html: string, path: string, lang: string, type = "webs
   expect(meta("property", "og:type")).toBe(type);
   expect(meta("property", "og:locale")).toBe(lang === "en" ? "en_US" : "ru_RU");
   expect(meta("property", "og:description")).toBe(description);
-  expect(meta("property", "og:site_name")).toBe("Startodel");
+  expect(meta("property", "og:site_name")).toBe(lang === "ru" ? "Стартодел" : "Startodel");
   expect(meta("property", "og:image")).toBe(image);
   expect(meta("property", "og:image:width")).toBe("1200");
   expect(meta("property", "og:image:height")).toBe("630");
@@ -41,6 +42,19 @@ function expectSocialHead(html: string, path: string, lang: string, type = "webs
   for (const alternate of ["ru", "en", "x-default"]) {
     const tag = html.match(new RegExp('<link[^>]*hreflang="' + alternate + '"[^>]*>'))?.[0];
     expect(tag).toContain('href="' + localized(alternate === "en" ? "/en" : "") + '"');
+  }
+}
+
+function expectIconLinks(html: string) {
+  const head = html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/)?.[1] ?? "";
+  const links = head.match(/<link\b[^>]*>/g) ?? [];
+  for (const attributes of [
+    ['rel="icon"', 'href="/favicon.ico"', 'sizes="any"'],
+    ['rel="icon"', 'href="/brand/favicon.svg"', 'type="image/svg+xml"'],
+    ['rel="apple-touch-icon"', 'href="/brand/apple-touch-icon.png"'],
+  ]) {
+    const matching = links.filter((link) => attributes.every((attr) => link.includes(" " + attr)));
+    expect(matching, attributes.join(" ")).toHaveLength(1);
   }
 }
 
@@ -177,13 +191,33 @@ export function publicHttpTests(
       expect(await res.json()).toEqual({ message: "Not found" });
     }
   });
-  test("the Landing advertises its localized site card", async () => {
+  test("the Landing has a localized title, site card and app icons", async () => {
     for (const lang of ["ru", "en"]) {
       const res = await request(lang === "en" ? "/en" : "/");
       expect(res.status).toBe(200);
       expectPublicHtml(res);
-      expectSocialHead(await res.text(), "/", lang);
+      const html = await res.text();
+      expect(html.match(/<title>([^<]*)<\/title>/)?.[1]).toMatch(
+        lang === "ru" ? / · Стартодел$/ : / · Startodel$/,
+      );
+      expectSocialHead(html, "/", lang);
+      expectIconLinks(html);
     }
+  });
+  test("the favicon is served in ICO and SVG formats", async () => {
+    const ico = await request("/favicon.ico");
+    expect(ico.status).toBe(200);
+    expect(ico.headers.get("content-type")).toMatch(/^image\/(?:x-icon|vnd\.microsoft\.icon)\b/);
+    const bytes = Buffer.from(await ico.arrayBuffer());
+    expect(bytes.subarray(0, 4).toString("hex")).toBe("00000100");
+    expect(bytes.length).toBeGreaterThan(22);
+
+    const svg = await request("/brand/favicon.svg");
+    expect(svg.status).toBe(200);
+    expect(svg.headers.get("content-type")).toMatch(/^image\/svg\+xml\b/);
+    expect(await svg.text()).toBe(
+      await readFile(new URL("../public/brand/favicon.svg", import.meta.url), "utf8"),
+    );
   });
   test("public HTML varies on Session cookie presence and public files are shared", async () => {
     const session = await signIn("alice");
@@ -378,8 +412,8 @@ export function publicHttpTests(
             expect(html).toContain('href="' + prefix + "/u" + path + "/lessons/" + lesson.id + '"');
             expect(html).toContain(
               "<title>Public curriculum · " +
-                (prefix ? "Public Track" : "Публичный трек") +
-                " · Startodel</title>",
+                (prefix ? "Public Track · Startodel" : "Публичный трек · Стартодел") +
+                "</title>",
             );
             expect(html).toContain(prefix ? "Track Graph" : "Граф тем");
           }
@@ -437,9 +471,13 @@ export function publicHttpTests(
       const body = await missing.text();
       expect(await inaccessible.text()).toBe(body);
       if (prefix !== "/api/public") {
-        expect(body).toContain(
-          prefix === "/en/u" ? "<h1>Page not found</h1>" : "<h1>Страница не найдена</h1>",
-        );
+        const english = prefix === "/en/u";
+        const title = english ? "Page not found" : "Страница не найдена";
+        const brand = english ? "Startodel" : "Стартодел";
+        expect(body).toContain(`<h1>${title}</h1>`);
+        expect(body).toContain(`<title>${title} · ${brand}</title>`);
+        expect(body).toContain(`<a href="${english ? "/en" : "/"}">${brand}</a>`);
+        expectIconLinks(body);
       }
     }
   });
@@ -605,7 +643,9 @@ export function publicHttpTests(
         for (const [, heading] of body.matchAll(/^## (.+)$/gm)) {
           expect(html).toContain(heading + "</h2>");
         }
-        expect(html).toContain("<title>" + title + " · Startodel</title>");
+        expect(html).toContain(
+          `<title>${title} · ${lang === "ru" ? "Стартодел" : "Startodel"}</title>`,
+        );
         expect(html).toContain('name="description"');
         expect(html).toContain('lang="' + lang + '"');
         for (const legal of ["terms", "rules"])

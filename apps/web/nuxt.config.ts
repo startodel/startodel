@@ -4,6 +4,15 @@ import { ogAssets } from "./build-og-assets.mjs";
 
 export default defineNuxtConfig({
   compatibilityDate: "2026-11-25",
+  app: {
+    head: {
+      link: [
+        { rel: "icon", href: "/favicon.ico", sizes: "any" },
+        { rel: "icon", type: "image/svg+xml", href: "/brand/favicon.svg" },
+        { rel: "apple-touch-icon", href: "/brand/apple-touch-icon.png" },
+      ],
+    },
+  },
   typescript: { strict: true },
   // Render providers and their slots with the same Vue instance during SSR.
   build: { transpile: ["reka-ui"] },
