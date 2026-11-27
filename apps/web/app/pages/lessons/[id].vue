@@ -50,13 +50,15 @@ const lessonLink = (id: string) => ({
 const marking = ref(false);
 const readError = ref(false);
 async function read() {
-  if (!data.value || marking.value || data.value.readAt) return;
+  const details = data.value;
+  if (!details || marking.value || details.readAt) return;
   marking.value = true;
   readError.value = false;
   try {
     const progress = await $fetch(`${url}/read`, { method: "POST" });
-    data.value.readAt = progress.readAt;
-    data.value.mastery = Math.max(data.value.mastery, progress.mastery);
+    details.readAt = progress.readAt;
+    details.mastery = Math.max(details.mastery, progress.mastery);
+    await refreshDashboard();
   } catch {
     readError.value = true;
   } finally {
@@ -70,7 +72,8 @@ const solutions = reactive(new Map<string, string>());
 const pending = reactive(new Set<string>());
 const failed = reactive(new Set<string>());
 async function submit(id: string) {
-  if (!data.value || pending.has(id) || results.has(id)) return;
+  const details = data.value;
+  if (!details || pending.has(id) || results.has(id)) return;
   pending.add(id);
   failed.delete(id);
   try {
@@ -79,7 +82,8 @@ async function submit(id: string) {
       body: { answers: answers[id] },
     });
     results.set(id, scored);
-    data.value.mastery = Math.max(data.value.mastery, scored.mastery);
+    details.mastery = Math.max(details.mastery, scored.mastery);
+    await refreshDashboard();
   } catch {
     failed.add(id);
   } finally {

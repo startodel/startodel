@@ -1,4 +1,18 @@
 import assert from "node:assert/strict";
+import { sidebarProgressFixture } from "./sidebar-progress.ts";
+
+export async function checkSidebarProgress(page, owner, origin) {
+  const { track, last } = await sidebarProgressFixture(owner);
+  await page.goto(origin + "/ru/lessons/" + last.id);
+  await page.waitForFunction(() => window.useNuxtApp?.().isHydrating === false);
+  const railTrack = page.locator(".s-rail").getByRole("link", { name: new RegExp(track.title) });
+  await railTrack.getByText("0%", { exact: true }).waitFor();
+  const documentStart = await page.evaluate(() => performance.timeOrigin);
+  await page.getByRole("button", { name: "Отметить как прочитанный" }).click();
+  await page.getByRole("status").getByText("Урок прочитан", { exact: true }).waitFor();
+  await railTrack.getByText("11%", { exact: true }).waitFor({ timeout: 5000 });
+  assert.equal(await page.evaluate(() => performance.timeOrigin), documentStart);
+}
 
 const starter = "function Counter() {\n  const count = 0;\n  return <b>{count}</b>;\n}";
 

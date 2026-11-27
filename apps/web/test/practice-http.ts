@@ -5,6 +5,8 @@ import { forUser, type Database } from "@startodel/db";
 import { expect, test } from "vite-plus/test";
 
 import { practiceFailure } from "../app/utils/practice-failure";
+import { sidebarProgressFixture } from "./sidebar-progress";
+import { checkSidebarProgress } from "./lesson-screenshots.mjs";
 import en from "../i18n/locales/en.json";
 import ru from "../i18n/locales/ru.json";
 
@@ -171,6 +173,45 @@ export function practiceHttpTests(
     expect(summary).toContain('href="/topics/' + topic.id + '"');
     expect(summary).toContain("Trace the delivery");
   });
+
+  test("the final Lesson read moves one of nine Topics into the sidebar's mastered count", async () => {
+    const { cookie, data } = await owner("sidebar");
+    const { track, last } = await sidebarProgressFixture(data);
+    const tracks = async () => (await (await request("/api/dashboard", cookie)).json()).tracks;
+    expect(await tracks()).toEqual([
+      expect.objectContaining({ trackId: track.id, completed: 0, total: 9, percent: 0 }),
+    ]);
+    const read = await request("/api/lessons/" + last.id + "/read", cookie, "POST");
+    expect(read.status).toBe(200);
+    expect(await read.json()).toMatchObject({ mastery: 2 });
+    expect(await tracks()).toEqual([
+      expect.objectContaining({ trackId: track.id, completed: 1, total: 9, percent: 11 }),
+    ]);
+  });
+
+  test.runIf(process.env.PLAYWRIGHT_MODULE)(
+    "the mounted sidebar refreshes on the final Lesson read",
+    async () => {
+      const { cookie, data } = await owner("sidebar-browser");
+      await data.updateProfile({ onboardedAt: new Date() });
+      const { chromium } = await import(process.env.PLAYWRIGHT_MODULE!);
+      const browser = await chromium.launch({ executablePath: process.env.CHROME });
+      try {
+        const { origin } = env();
+        const page = await browser.newPage();
+        const separator = cookie.indexOf("=");
+        await page
+          .context()
+          .addCookies([
+            { url: origin, name: cookie.slice(0, separator), value: cookie.slice(separator + 1) },
+          ]);
+        await checkSidebarProgress(page, data, origin);
+      } finally {
+        await browser.close();
+      }
+    },
+    30_000,
+  );
 
   const dashboardLocales = [
     ["/ru", ru],

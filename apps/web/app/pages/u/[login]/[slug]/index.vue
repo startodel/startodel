@@ -69,6 +69,7 @@ async function fork() {
   forkFailed.value = false;
   try {
     const track = await $fetch("/api/tracks/fork", { method: "POST", body: { login, slug } });
+    await refreshDashboard();
     await navigateTo(localePath(privateTrackPath(track.slug)));
   } catch {
     forkFailed.value = true;

@@ -13,17 +13,13 @@ const [
   { data, error, refresh },
   { data: progress, error: progressError, refresh: retryProgress },
   { data: reviews, error: reviewsError, refresh: retryReviews },
-] = await Promise.all([
-  useFetch("/api/dashboard", { key: "dashboard" }),
-  useFetch("/api/progress"),
-  useFetch("/api/reviews"),
-]);
+] = await Promise.all([useDashboard(), useFetch("/api/progress"), useFetch("/api/reviews")]);
 useEmptyDashboardRefresh(
   () => data.value?.tracks.length,
   async () => {
     // Read the board first so the other requests see at least the first Track it saw.
     await refresh();
-    await Promise.all([refreshNuxtData("rail-tracks"), retryProgress(), retryReviews()]);
+    await Promise.all([retryProgress(), retryReviews()]);
   },
 );
 const levels = computed(() => trackLevels(progress.value?.perTopic ?? []));

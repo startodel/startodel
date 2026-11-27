@@ -51,7 +51,7 @@ async function submit() {
   message.value = "";
   try {
     result.value = await send(data.value);
-    await refreshSchedule();
+    await Promise.all([refreshSchedule(), refreshDashboard()]);
   } catch (error) {
     const failure = practiceFailure(
       error && typeof error === "object" && "statusCode" in error ? error.statusCode : undefined,
