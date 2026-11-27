@@ -1,3 +1,4 @@
+import type { IndexTag } from "../../composables/useIndexTag";
 import type { BoardEdge, BoardTopic } from "../ui/board";
 import type { NavItem, NavTrack, NavUser } from "../ui/nav";
 import type { VerdictState } from "../ui/grill";
@@ -39,7 +40,7 @@ export const sampleNavTracks: NavTrack[] = [
   { id: "go", title: "Go concurrency", language: "ru", to: screenPath("track"), percent: 0 },
 ];
 
-export interface SampleTopic extends BoardTopic {
+interface SampleTopic extends Omit<BoardTopic, "tag"> {
   slug: string;
   lessons: number;
   read: number;
@@ -59,10 +60,9 @@ export const sampleTrack = {
   },
 };
 
-export const sampleTopics: SampleTopic[] = [
+const sampleTopics: SampleTopic[] = [
   {
     id: "t01",
-    tag: "T01",
     slug: "js/execution-contexts",
     title: "Call stack and execution contexts",
     level: 4,
@@ -73,7 +73,6 @@ export const sampleTopics: SampleTopic[] = [
   },
   {
     id: "t02",
-    tag: "T02",
     slug: "node/event-loop-phases",
     title: "Event loop phases",
     level: 3,
@@ -84,7 +83,6 @@ export const sampleTopics: SampleTopic[] = [
   },
   {
     id: "t03",
-    tag: "T03",
     slug: "js/microtasks",
     title: "Microtasks and promise jobs",
     level: 3,
@@ -95,7 +93,6 @@ export const sampleTopics: SampleTopic[] = [
   },
   {
     id: "t04",
-    tag: "T04",
     slug: "node/timers",
     title: "Timers and scheduling",
     level: 2,
@@ -106,7 +103,6 @@ export const sampleTopics: SampleTopic[] = [
   },
   {
     id: "t05",
-    tag: "T05",
     slug: "js/async-functions",
     title: "Async functions under the hood",
     level: 2,
@@ -117,7 +113,6 @@ export const sampleTopics: SampleTopic[] = [
   },
   {
     id: "t06",
-    tag: "T06",
     slug: "node/streams-backpressure",
     title: "Streams and backpressure",
     level: 1,
@@ -128,7 +123,6 @@ export const sampleTopics: SampleTopic[] = [
   },
   {
     id: "t07",
-    tag: "T07",
     slug: "node/worker-threads",
     title: "Worker threads",
     level: 0,
@@ -139,7 +133,6 @@ export const sampleTopics: SampleTopic[] = [
   },
   {
     id: "t08",
-    tag: "T08",
     slug: "v8/garbage-collection",
     title: "Garbage collection in V8",
     level: 2,
@@ -150,7 +143,6 @@ export const sampleTopics: SampleTopic[] = [
   },
   {
     id: "t09",
-    tag: "T09",
     slug: "v8/heap-snapshots",
     title: "Memory leaks and heap snapshots",
     level: 0,
@@ -161,7 +153,6 @@ export const sampleTopics: SampleTopic[] = [
   },
   {
     id: "t10",
-    tag: "T10",
     slug: "v8/hidden-classes",
     title: "Hidden classes and inline caches",
     level: 1,
@@ -172,7 +163,6 @@ export const sampleTopics: SampleTopic[] = [
   },
   {
     id: "t11",
-    tag: "T11",
     slug: "v8/jit-tiers",
     title: "JIT tiers: Ignition to TurboFan",
     level: 0,
@@ -183,7 +173,6 @@ export const sampleTopics: SampleTopic[] = [
   },
   {
     id: "t12",
-    tag: "T12",
     slug: "node/profiling-production",
     title: "Profiling in production",
     level: 0,
@@ -193,6 +182,10 @@ export const sampleTopics: SampleTopic[] = [
     due: null,
   },
 ];
+
+export function sampleBoardTopics(indexTag: IndexTag) {
+  return sampleTopics.map((topic, i) => ({ ...topic, tag: indexTag("topic", i + 1) }));
+}
 
 export const sampleEdges: BoardEdge[] = [
   { from: "t01", to: "t02" },
@@ -211,10 +204,10 @@ export const sampleEdges: BoardEdge[] = [
 ];
 
 export const sampleTopicLessons = [
-  { tag: "L01", title: "The timers phase and the min-heap", blocks: 6, minutes: 9, read: true },
-  { tag: "L02", title: "When does a timer actually run?", blocks: 7, minutes: 12, read: true },
+  { id: "l01", title: "The timers phase and the min-heap", blocks: 6, minutes: 9, read: true },
+  { id: "l02", title: "When does a timer actually run?", blocks: 7, minutes: 12, read: true },
   {
-    tag: "L03",
+    id: "l03",
     title: "setImmediate, nextTick and where each belongs",
     blocks: 5,
     minutes: 8,
@@ -237,7 +230,8 @@ export type SampleBlock =
 
 export const sampleLesson = {
   id: "design-timers",
-  tag: "L02",
+  ordinal: 2,
+  topicOrdinal: 4,
   topic: sampleTopics[3]!,
   title: "When does a timer actually run?",
   minutes: 12,
@@ -359,40 +353,40 @@ export interface SampleQuestion {
 export const sampleQuestions: SampleQuestion[] = [
   {
     tag: "Q01",
-    topic: "T01",
+    topic: "t01",
     verdict: "strong",
     prompt:
       "What is an execution context? What does the engine push onto the call stack when a function is called?",
   },
   {
     tag: "Q02",
-    topic: "T02",
+    topic: "t02",
     verdict: "strong",
     prompt: "Name the phases of the Node.js event loop in order. What runs in each?",
   },
   {
     tag: "Q03",
-    topic: "T02",
+    topic: "t02",
     verdict: "partial",
     prompt:
       "Why does `setImmediate` always run before `setTimeout(fn, 0)` inside an I/O callback, but not at the top level?",
   },
   {
     tag: "Q04",
-    topic: "T03",
+    topic: "t03",
     verdict: "strong",
     prompt:
       "When exactly does the microtask queue drain? Compare `process.nextTick` with a promise job.",
   },
   {
     tag: "Q05",
-    topic: "T03",
+    topic: "t03",
     verdict: "partial",
     prompt: "How can a chain of promise jobs starve I/O? How would you detect it?",
   },
   {
     tag: "Q06",
-    topic: "T04",
+    topic: "t04",
     verdict: "strong",
     prompt: "A timer set for 100 ms fires at 340 ms. List the possible causes, most likely first.",
     answer:
@@ -402,60 +396,60 @@ export const sampleQuestions: SampleQuestion[] = [
   },
   {
     tag: "Q07",
-    topic: "T04",
+    topic: "t04",
     verdict: "strong",
     prompt: "How does Node.js store timers, and why does that structure fit the job?",
   },
   {
     tag: "Q08",
-    topic: "T05",
+    topic: "t05",
     verdict: "partial",
     prompt:
       "What does `await` compile down to? How many ticks does awaiting a native promise take?",
   },
   {
     tag: "Q09",
-    topic: "T05",
+    topic: "t05",
     verdict: "strong",
     prompt: "Why does an unhandled rejection in an async function not crash at the throw site?",
   },
   {
     tag: "Q10",
-    topic: "T06",
+    topic: "t06",
     verdict: "weak",
     prompt: "Explain backpressure in a `pipeline` of streams. What does `highWaterMark` control?",
     answer:
       "highWaterMark is the maximum size of a chunk. Backpressure is when the stream is slow.",
     comment:
-      "`highWaterMark` is a buffer threshold, not a chunk size. Backpressure is the signal, `write()` returning `false`, that tells the source to pause until `drain`. Read L02 in Streams and backpressure again.",
+      "`highWaterMark` is a buffer threshold, not a chunk size. Backpressure is the signal, `write()` returning `false`, that tells the source to pause until `drain`. Read the second Lesson in Streams and backpressure again.",
   },
   {
     tag: "Q11",
-    topic: "T08",
+    topic: "t08",
     verdict: "strong",
     prompt: "Describe the generational heap in V8. What is promoted, and when?",
   },
   {
     tag: "Q12",
-    topic: "T08",
+    topic: "t08",
     verdict: "strong",
     prompt: "What makes a scavenge cheap and a mark-compact expensive?",
   },
   {
     tag: "Q13",
-    topic: "T10",
+    topic: "t10",
     verdict: "partial",
     prompt: "What is a hidden class? Write code that makes a call site megamorphic.",
   },
   {
     tag: "Q14",
-    topic: "T06",
+    topic: "t06",
     verdict: "weak",
     prompt: "What happens when you ignore the return value of `writable.write()`?",
   },
   {
     tag: "Q15",
-    topic: "T01",
+    topic: "t01",
     verdict: "strong",
     prompt: "How does a closure keep a variable alive after its function returns?",
   },
@@ -466,7 +460,7 @@ export const sampleGrillPrompt =
 
 export const sampleReviews = [
   {
-    tag: "T05",
+    ordinal: 5,
     title: "Async functions under the hood",
     track: "Node.js runtime internals",
     level: 2,
@@ -476,7 +470,7 @@ export const sampleReviews = [
     questions: 5,
   },
   {
-    tag: "T14",
+    ordinal: 14,
     title: "MVCC and snapshots",
     track: "PostgreSQL for backend engineers",
     level: 2,
@@ -486,7 +480,7 @@ export const sampleReviews = [
     questions: 4,
   },
   {
-    tag: "T03",
+    ordinal: 3,
     title: "Microtasks and promise jobs",
     track: "Node.js runtime internals",
     level: 3,
@@ -496,7 +490,7 @@ export const sampleReviews = [
     questions: 6,
   },
   {
-    tag: "T08",
+    ordinal: 8,
     title: "Garbage collection in V8",
     track: "Node.js runtime internals",
     level: 2,
@@ -508,10 +502,10 @@ export const sampleReviews = [
 ];
 
 export const sampleUpcoming = [
-  { tag: "T04", title: "Timers and scheduling", box: 1, due: "in 2 days" },
-  { tag: "T02", title: "Event loop phases", box: 3, due: "in 3 days" },
-  { tag: "T16", title: "B-tree indexes", box: 2, due: "in 6 days" },
-  { tag: "T01", title: "Call stack and execution contexts", box: 4, due: "in 21 days" },
+  { ordinal: 4, title: "Timers and scheduling", box: 1, due: "in 2 days" },
+  { ordinal: 2, title: "Event loop phases", box: 3, due: "in 3 days" },
+  { ordinal: 16, title: "B-tree indexes", box: 2, due: "in 6 days" },
+  { ordinal: 1, title: "Call stack and execution contexts", box: 4, due: "in 21 days" },
 ];
 
 /** ReviewItems in each Review Box, 0 to 4. */

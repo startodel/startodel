@@ -1,22 +1,23 @@
 <script setup lang="ts">
+const indexTag = useIndexTag();
 definePageMeta({ layout: "site" });
 const { t } = useI18n();
 const rememberLanguage = useSignInLanguage();
 usePublicHead(t("login.title"), t("login.description"), "/");
 
 const topics = computed(() => [
-  { id: "plans", tag: "T01", title: t("login.plans"), level: 4 },
-  { id: "statistics", tag: "T02", title: t("login.statistics"), level: 3 },
-  { id: "estimates", tag: "T03", title: t("login.estimates"), level: 3 },
-  { id: "joins", tag: "T04", title: t("login.joins"), level: 2 },
-  { id: "hash", tag: "T05", title: t("login.hash"), level: 2 },
-  { id: "memory", tag: "T06", title: t("login.memory"), level: 1 },
-  { id: "parallel", tag: "T07", title: t("login.parallel"), level: 0 },
-  { id: "indexes", tag: "T08", title: t("login.indexes"), level: 2 },
-  { id: "scans", tag: "T09", title: t("login.scans"), level: 0 },
-  { id: "cost", tag: "T10", title: t("login.cost"), level: 1 },
-  { id: "parameters", tag: "T11", title: t("login.parameters"), level: 0 },
-  { id: "analysis", tag: "T12", title: t("login.analysis"), level: 0 },
+  { id: "plans", tag: indexTag("topic", 1), title: t("login.plans"), level: 4 },
+  { id: "statistics", tag: indexTag("topic", 2), title: t("login.statistics"), level: 3 },
+  { id: "estimates", tag: indexTag("topic", 3), title: t("login.estimates"), level: 3 },
+  { id: "joins", tag: indexTag("topic", 4), title: t("login.joins"), level: 2 },
+  { id: "hash", tag: indexTag("topic", 5), title: t("login.hash"), level: 2 },
+  { id: "memory", tag: indexTag("topic", 6), title: t("login.memory"), level: 1 },
+  { id: "parallel", tag: indexTag("topic", 7), title: t("login.parallel"), level: 0 },
+  { id: "indexes", tag: indexTag("topic", 8), title: t("login.indexes"), level: 2 },
+  { id: "scans", tag: indexTag("topic", 9), title: t("login.scans"), level: 0 },
+  { id: "cost", tag: indexTag("topic", 10), title: t("login.cost"), level: 1 },
+  { id: "parameters", tag: indexTag("topic", 11), title: t("login.parameters"), level: 0 },
+  { id: "analysis", tag: indexTag("topic", 12), title: t("login.analysis"), level: 0 },
 ]);
 const edges = [
   { from: "plans", to: "statistics" },

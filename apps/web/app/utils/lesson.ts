@@ -1,3 +1,4 @@
+import type { IndexTag } from "../composables/useIndexTag";
 import type { PublicBlock } from "@startodel/core";
 import type { LinkTarget } from "../components/ui/nav";
 import { markdownOutlinePhrase } from "./markdown";
@@ -77,15 +78,14 @@ export function blockOutlineTitle(
   return block.type === "exercise" ? t("lesson.exerciseOutline", { title }) : title;
 }
 
-export const lessonTag = (ordinal: number) => "L" + String(ordinal).padStart(2, "0");
-
 export function lessonTrail(
+  indexTag: IndexTag,
   ordinal: number,
   topic: { title: string; to: LinkTarget },
   track?: { title: string; to: LinkTarget; topicOrdinal: number },
 ) {
-  const tag = lessonTag(ordinal);
-  const topicTag = track && "T" + String(track.topicOrdinal).padStart(2, "0");
+  const tag = indexTag("lesson", ordinal);
+  const topicTag = track && indexTag("topic", track.topicOrdinal);
   return {
     tag,
     topicTag,

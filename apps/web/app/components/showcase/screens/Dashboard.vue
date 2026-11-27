@@ -8,6 +8,7 @@ import {
   sampleWeek,
   screenPath,
 } from "../sample";
+const indexTag = useIndexTag();
 const props = defineProps<{ state?: string }>();
 const empty = computed(() => props.state === "empty" || props.state === "waiting");
 const week = sampleWeek.map((d) => ({
@@ -80,7 +81,6 @@ const { language, options, filtered } = useTrackLanguageFilter(() => sampleTrack
               <div class="rows">
                 <UiTrackStrip
                   v-for="t in filtered"
-                  :language="t.language"
                   :key="t.id"
                   :title="t.title"
                   :levels="t.levels"
@@ -118,9 +118,9 @@ const { language, options, filtered } = useTrackLanguageFilter(() => sampleTrack
             <section class="s-stack" style="--s-gap: var(--s-3)">
               <UiSectionHeading title="Due for review" :count="sampleReviews.length" :level="3" />
               <ul class="due">
-                <li v-for="r in sampleReviews" :key="r.tag">
+                <li v-for="r in sampleReviews" :key="r.ordinal">
                   <NuxtLinkLocale :to="screenPath('reviews')" class="due__row">
-                    <span class="s-label">{{ r.tag }}</span>
+                    <span class="s-label">{{ indexTag("topic", r.ordinal) }}</span>
                     <span class="due__title">{{ r.title }}</span>
                     <span class="due__when" :class="{ 'is-late': r.overdue }">{{ r.due }}</span>
                   </NuxtLinkLocale>

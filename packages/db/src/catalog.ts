@@ -1,3 +1,4 @@
+import { trackTopicOrder } from "./track-order.ts";
 import { forkCount, forkedFrom } from "./public.ts";
 import { TopicSlug, type MasteryLevel } from "@startodel/core";
 import {
@@ -291,7 +292,7 @@ export function catalogForUser(db: Connection, userId: string) {
             notExists(topicLessons(db, userId)),
           ),
         )
-        .orderBy(trackTopics.position, topics.slug)
+        .orderBy(trackTopicOrder)
         .limit(2);
     },
     addEdges(edges: { from: string; to: string }[]) {
@@ -470,7 +471,7 @@ export function catalogForUser(db: Connection, userId: string) {
             )
             .where(and(eq(trackTopics.userId, userId), eq(trackTopics.trackId, track.id)))
             .groupBy(topics.id, trackTopics.position, topicMastery.level)
-            .orderBy(trackTopics.position, topics.slug);
+            .orderBy(trackTopicOrder);
           const memberIds = members.map((m) => m.topic.id);
           const edges = await edgesFor(tx, userId, memberIds);
           const blocked = new Set(

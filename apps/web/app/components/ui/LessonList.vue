@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LinkTarget } from "./nav";
 import { NuxtLinkLocale } from "#components";
+const indexTag = useIndexTag();
 /** The Lessons of a Topic in order. A read Lesson carries a tick. */
 defineProps<{
   lessons: {
@@ -25,7 +26,7 @@ const countArgs = useCountArgs();
         class="s-lessons__row"
         :class="{ 'is-read': l.read }"
       >
-        <span class="s-lessons__tag">{{ "L" + String(i + 1).padStart(2, "0") }}</span>
+        <span class="s-lessons__tag">{{ indexTag("lesson", i + 1) }}</span>
         <span class="s-lessons__title">{{ l.title }}</span>
         <span class="s-lessons__facts">
           <span v-if="l.blocks">{{ $t("count.blocks", countArgs(l.blocks)) }}</span>

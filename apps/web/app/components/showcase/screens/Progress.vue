@@ -3,16 +3,17 @@ import type { TableColumn } from "../../ui/Table.vue";
 import {
   sampleActivity,
   sampleMasteryCounts,
-  sampleTopics,
+  sampleBoardTopics,
   sampleTracks,
   screenPath,
-  type SampleTopic,
 } from "../sample";
+const indexTag = useIndexTag();
+const sampleTopics = sampleBoardTopics(indexTag);
 const total = sampleMasteryCounts.reduce((sum, n) => sum + n, 0);
 const complete = sampleMasteryCounts.slice(2).reduce((sum, n) => sum + n, 0);
 const sort = ref<{ key: string; dir: "asc" | "desc" } | undefined>({ key: "level", dir: "desc" });
 const page = ref(1);
-const columns: TableColumn<SampleTopic>[] = [
+const columns: TableColumn<(typeof sampleTopics)[number]>[] = [
   { key: "tag", label: "Ref", width: "4rem" },
   { key: "title", label: "Topic", sortable: true },
   { key: "level", label: "Mastery", sortable: true },
@@ -51,7 +52,6 @@ const { language, options, filtered } = useTrackLanguageFilter(() => sampleTrack
             <div class="rows">
               <UiTrackStrip
                 v-for="t in filtered"
-                :language="t.language"
                 :key="t.id"
                 :title="t.title"
                 :levels="t.levels"

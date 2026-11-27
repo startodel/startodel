@@ -8,8 +8,8 @@ export async function checkSidebarProgress(page, owner, origin) {
   const railTrack = page.locator(".s-rail").getByRole("link", { name: new RegExp(track.title) });
   await railTrack.getByText("0%", { exact: true }).waitFor();
   const documentStart = await page.evaluate(() => performance.timeOrigin);
-  await page.getByRole("button", { name: "Отметить как прочитанный" }).click();
-  await page.getByRole("status").getByText("Урок прочитан", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "Отметить как пройденный" }).click();
+  await page.getByRole("status").getByText("Урок пройден", { exact: true }).waitFor();
   await railTrack.getByText("11%", { exact: true }).waitFor({ timeout: 5000 });
   assert.equal(await page.evaluate(() => performance.timeOrigin), documentStart);
 }
@@ -71,11 +71,11 @@ export async function checkLessonInteractions({ page, owner, visit, shot }) {
     const quiz = page.locator(".s-quiz");
     const footer = page.locator(".lesson__end");
     const mark = footer.getByRole("button", {
-      name: ru ? "Отметить как прочитанный" : "Mark as read",
+      name: ru ? "Отметить как пройденный" : "Mark as read",
     });
     const status = footer.getByRole("status");
-    const readLabel = ru ? "Урок прочитан" : "Marked as read";
-    const forward = footer.getByRole("link", { name: "L02 " + next.title });
+    const readLabel = ru ? "Урок пройден" : "Marked as read";
+    const forward = footer.getByRole("link", { name: (ru ? "У02 " : "L02 ") + next.title });
 
     // Inspect the server response before hydration, including its escaping of JSX.
     const html = await (await page.request.get(new URL(path, page.url()).href)).text();

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { IconName } from "./icons";
+const indexTag = useIndexTag();
 /** The parts list of a Lesson: every Block with its designator, linked to its place on the page. */
 const props = defineProps<{
-  blocks: { id: string; icon: IconName; title: string; done?: boolean }[];
+  blocks: { id: string; title: string; done?: boolean }[];
   /** The id of the Block in view. */
   current?: string;
   label?: string;
@@ -43,8 +43,7 @@ const active = computed(() => props.current ?? visible.value ?? props.blocks[0]?
           :href="'#' + b.id"
           :aria-current="active === b.id ? 'location' : undefined"
         >
-          <span class="s-index__ref">{{ "B" + String(i + 1).padStart(2, "0") }}</span>
-          <UiIcon :name="b.icon" :size="12" class="s-index__icon" />
+          <span class="s-index__ref">{{ indexTag("block", i + 1) }}</span>
           <span class="s-index__title">{{ b.title }}</span>
           <UiIcon v-if="b.done" name="check" :size="12" class="s-index__done" />
         </a>
@@ -72,7 +71,7 @@ const active = computed(() => props.current ?? visible.value ?? props.blocks[0]?
 }
 .s-index__item {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--s-2);
   margin-left: -1px;
@@ -96,12 +95,6 @@ const active = computed(() => props.current ?? visible.value ?? props.blocks[0]?
   font-stretch: 75%;
   letter-spacing: 0.06em;
   color: var(--s-ink-3);
-}
-.s-index__icon {
-  color: var(--s-ink-3);
-}
-.is-current .s-index__icon {
-  color: var(--s-copper);
 }
 .s-index__title {
   overflow: hidden;

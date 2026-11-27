@@ -4,9 +4,11 @@ import {
   sampleGrillPrompt,
   sampleGrills,
   sampleQuestions,
-  sampleTopics,
+  sampleBoardTopics,
   screenPath,
 } from "../sample";
+const indexTag = useIndexTag();
+const sampleTopics = sampleBoardTopics(indexTag);
 const props = defineProps<{ state?: string }>();
 
 /** How far the sample session has got in each state: answered and judged counts. */
@@ -29,7 +31,7 @@ const pads = computed(() =>
 );
 const current = ref(stage.value.at);
 const question = computed(() => sampleQuestions[current.value]!);
-const topic = computed(() => sampleTopics.find((t) => t.tag === question.value.topic));
+const topic = computed(() => sampleTopics.find((t) => t.id === question.value.topic));
 const stateNow = computed(() => states.value[current.value]!);
 const draft = ref(
   props.state === "answer"
@@ -50,19 +52,19 @@ const fallbackAnswer =
 const count = (v: VerdictState) => states.value.filter((s) => s === v).length;
 const reinforce = [
   {
-    tag: "T06",
+    tag: indexTag("topic", 6),
     title: "Streams and backpressure",
     verdict: "weak" as const,
     due: "Review tomorrow",
   },
   {
-    tag: "T05",
+    tag: indexTag("topic", 5),
     title: "Async functions under the hood",
     verdict: "partial" as const,
     due: "Review in 3 days",
   },
   {
-    tag: "T03",
+    tag: indexTag("topic", 3),
     title: "Microtasks and promise jobs",
     verdict: "partial" as const,
     due: "Review in 3 days",

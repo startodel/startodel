@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { privateTrackPath } from "../../../../../shared/locale";
 import { publicTrackTopics } from "../../../../utils/public-track";
+const indexTag = useIndexTag();
 definePageMeta({ layout: "site" });
 const localePath = useLocalePath();
 const { t } = useI18n();
@@ -21,6 +22,7 @@ if (!track)
 const profilePath = "/u/" + encodeURIComponent(track.author.login);
 const description = splitTrackDescription(track.description);
 const topics = publicTrackTopics(
+  indexTag,
   track.topics,
   track.edges,
   (id) => path + "/lessons/" + encodeURIComponent(id),
@@ -91,7 +93,6 @@ const forks = computed(() =>
   <UiPublicTrack
     :title="track.title"
     :slug="slug"
-    :language="track.language"
     :description="description"
     :author="track.author"
     :profile-to="track.author.profileEnabled ? profilePath : undefined"
@@ -164,7 +165,6 @@ const forks = computed(() =>
         v-for="f in forks"
         :key="f.login + '/' + f.slug"
         :title="f.title"
-        :language="f.language"
         :to="'/u/' + encodeURIComponent(f.login) + '/' + encodeURIComponent(f.slug)"
         :owner="{
           login: f.login,

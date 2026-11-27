@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { sampleEdges, sampleForks, samplePublicTrack, sampleSyllabus, screenPath } from "../sample";
 import { publicTrackTopics } from "../../../utils/public-track";
+const indexTag = useIndexTag();
 const props = defineProps<{ state?: string }>();
 const track = samplePublicTrack;
 const { language, options, filtered } = useTrackLanguageFilter(() => sampleForks);
@@ -10,7 +11,7 @@ const agree = ref(false);
 const busy = ref(false);
 const forking = ref(false);
 const forked = ref(false);
-const topics = publicTrackTopics(sampleSyllabus, sampleEdges, () => screenPath("lesson"));
+const topics = publicTrackTopics(indexTag, sampleSyllabus, sampleEdges, () => screenPath("lesson"));
 const description = splitTrackDescription(track.description);
 const displayDate = useDisplayDate();
 const publicUrl = useRequestURL().origin + useLocalePath()(screenPath("public-track"));
@@ -41,7 +42,6 @@ function publish() {
     <UiPublicTrack
       :title="track.title"
       :slug="track.slug"
-      :language="track.language"
       :description="description"
       :author="{ ...track.owner, avatarUrl: null }"
       :profile-to="screenPath('public-profile')"
@@ -97,7 +97,6 @@ function publish() {
         />
         <UiTrackCard
           v-for="f in filtered"
-          :language="f.language"
           :key="f.login"
           :title="f.title"
           :to="screenPath('public-track')"

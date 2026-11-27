@@ -47,9 +47,7 @@ const label = computed(() =>
     <span class="s-part__head" aria-hidden="true">
       <span class="s-part__tag">{{ topic.tag }}</span>
       <UiIcon v-if="state === 'blocked'" name="lock" :size="11" />
-      <span v-if="state === 'blocked' || state === 'ready'" class="s-part__state">{{
-        topicWord(state)
-      }}</span>
+      <span v-if="state === 'ready'" class="s-part__state">{{ topicWord(state) }}</span>
       <UiMastery
         v-if="state !== 'outline'"
         :level="topic.level"

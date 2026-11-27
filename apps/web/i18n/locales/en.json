@@ -112,8 +112,8 @@
     "topics": "{n} Topic | {n} Topics",
     "blocks": "{n} Block | {n} Blocks",
     "words": "{n} word | {n} words",
-    "ready": "{n} ready",
-    "blocked": "{n} blocked"
+    "ready": "{n} available",
+    "blocked": "{n} locked"
   },
   "login": {
     "signIn": "Sign in with GitHub",
@@ -189,7 +189,7 @@
     "actions": "Track actions",
     "topics": "Topics",
     "sources": "Track Sources",
-    "graph": "Track Graph",
+    "graph": "Topic map",
     "empty": "This Track has no Topics yet.",
     "order": "Topics in Track order",
     "details": "Topic details",
@@ -527,8 +527,10 @@
     "overview": "Board overview",
     "liveOf": "of {total} live",
     "legend": "Legend",
-    "signal": "signal",
-    "noSignal": "no signal"
+    "masteredOf": "Topics: {n} of {total} mastered",
+    "mastered": "Mastered",
+    "available": "Available",
+    "locked": "Locked"
   },
   "settings": {
     "tokenAccess": "Each token gives an agent access to your learning data. Create a separate token for each agent so you can revoke access individually.",
@@ -584,5 +586,10 @@
     "invalidLinks": "Enter up to six HTTPS links with a domain and without credentials.",
     "taken": "This handle is already in use.",
     "pinMissing": "A selected Track is no longer public. Reload the list to update your pins."
+  },
+  "indexPrefix": {
+    "topic": "T",
+    "lesson": "L",
+    "block": "B"
   }
 }

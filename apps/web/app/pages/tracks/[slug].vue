@@ -2,6 +2,7 @@
 import { LEGAL_TERMS_VERSION, type TrackLanguage } from "@startodel/core";
 import { COMPLETE_LEVEL, topicStates } from "../../components/ui/board";
 import type { MenuItem } from "../../components/ui/Menu.vue";
+const indexTag = useIndexTag();
 
 definePageMeta({ layout: "app" });
 const { t } = useI18n();
@@ -20,7 +21,7 @@ const topics = computed(
       id,
       title,
       level,
-      tag: "T" + String(i + 1).padStart(2, "0"),
+      tag: indexTag("topic", i + 1),
     })) ?? [],
 );
 const edges = computed(
@@ -219,12 +220,7 @@ async function save() {
           :edges="edges"
           :flow="animate"
           :label="$t('track.graph')"
-          ><template #lead
-            ><span class="s-label"
-              >{{ $t("track.graph") }} · {{ $t("track.select") }}</span
-            ></template
-          ></UiTrackBoard
-        >
+        />
         <UiEmptyState v-if="!selected" :title="$t('track.details')" icon="track" compact>{{
           $t("track.select")
         }}</UiEmptyState>
