@@ -2,7 +2,7 @@ import { randomInt, randomUUID } from "node:crypto";
 import { LEGAL_TERMS_VERSION, type LessonBlocks, type ProfileQuestionnaire } from "@startodel/core";
 import { inArray } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, test } from "vite-plus/test";
-import { createDatabase, forUser, signInWithGitHub } from "@startodel/db";
+import { createDatabase, forUser, publicReader, signInWithGitHub } from "@startodel/db";
 import { users } from "@startodel/db/schema";
 
 const url = process.env.DATABASE_URL_TEST;
@@ -11,11 +11,13 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
   let alice: ReturnType<typeof forUser>;
   let bob: typeof alice;
   let owners: string[];
+  let login: string;
   beforeEach(async () => {
     db = createDatabase(url!);
+    login = "catalog-" + randomUUID();
     const identity = {
       githubId: BigInt(-randomInt(1, 2 ** 46)) * 2n,
-      login: "a",
+      login,
       name: null,
       avatarUrl: null,
     };
@@ -35,6 +37,33 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     } finally {
       await db.$client.end();
     }
+  });
+
+  test("Lesson navigation ranks memberships, prerequisites and sparse Lesson positions", async () => {
+    const first = await alice.createTrack("Timers");
+    const second = await alice.createTrack("Runtime");
+    const timers = await alice.upsertTopic({ slug: "timers", title: "Timers" });
+    const tasks = await alice.upsertTopic({ slug: "tasks", title: "Tasks" });
+    const lesson = (await alice.createLesson({
+      topicId: timers.id,
+      title: "Delay",
+      position: 42,
+    }))!;
+    await alice.createLesson({ topicId: timers.id, title: "Registration", position: 10 });
+    expect((await alice.getLessonDetails(lesson.id))?.tracks).toEqual([]);
+    await alice.attachTopicToTrack(first.id, timers.id, 10);
+    await alice.attachTopicToTrack(first.id, tasks.id, 20);
+    await alice.attachTopicToTrack(second.id, tasks.id, 8);
+    await alice.attachTopicToTrack(second.id, timers.id, 8);
+    await alice.addEdges([{ from: "tasks", to: "timers" }]);
+    expect((await alice.getLessonDetails(lesson.id))?.tracks).toEqual([
+      { id: first.id, slug: first.slug, title: first.title, topicOrdinal: 1 },
+      { id: second.id, slug: second.slug, title: second.title, topicOrdinal: 2 },
+    ]);
+    expect(await bob.getLessonDetails(lesson.id)).toBeUndefined();
+    await alice.setTrackVisibility(first.id, true, true);
+    const preview = await publicReader(db).lesson(login, first.slug, lesson.id);
+    expect(preview).toMatchObject({ topicTitle: "Timers", topicOrdinal: 2, lessonOrdinal: 2 });
   });
 
   test("Track Slugs transliterate titles and allocate collision suffixes within each Owner", async () => {

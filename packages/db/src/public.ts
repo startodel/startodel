@@ -1,5 +1,6 @@
 import {
   publicBlock,
+  studyOrder,
   TrackSources,
   type ForkedFrom,
   type PublicBlock,
@@ -9,7 +10,7 @@ import {
   type PublicTrack,
 } from "@startodel/core";
 import { and, desc, eq, sql, type SQL } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+import { alias, type SelectedFields } from "drizzle-orm/pg-core";
 import type { Connection } from "./index.ts";
 import type { Transaction } from "./owned.ts";
 import { users, tracks, trackTopics, topics, topicEdges, lessons } from "./schema.ts";
@@ -62,14 +63,11 @@ const previewBlocks = sql<PublicBlock[]>`(select coalesce(jsonb_agg(case b->>'ty
   when 'exercise' then b - 'solution'
   else b end order by bi),'[]'::jsonb)
   from jsonb_array_elements(${lessons.blocks}) with ordinality as blocks(b,bi))`;
-function trackLessons<T extends typeof lessons.blocks | SQL<PublicBlock[]>>(
-  db: Connection,
-  blocks: T,
-) {
+function trackLessons<T extends SelectedFields>(db: Connection, fields: T) {
   return db
     .select({
       ...lessonSummary,
-      blocks,
+      ...fields,
       topic: topics.slug,
       trackTitle: tracks.title,
       language: tracks.language,
@@ -78,6 +76,21 @@ function trackLessons<T extends typeof lessons.blocks | SQL<PublicBlock[]>>(
     .innerJoin(trackTopics, eq(trackTopics.trackId, tracks.id))
     .innerJoin(topics, eq(topics.id, trackTopics.topicId))
     .innerJoin(lessons, eq(lessons.topicId, topics.id));
+}
+
+function publicEdges(db: Connection, where: SQL | undefined) {
+  const dest = alias(trackTopics, "dest");
+  const target = alias(topics, "target");
+  return db
+    .select({ from: topics.slug, to: target.slug })
+    .from(tracks)
+    .innerJoin(trackTopics, eq(trackTopics.trackId, tracks.id))
+    .innerJoin(topicEdges, eq(topicEdges.fromTopicId, trackTopics.topicId))
+    .innerJoin(dest, and(eq(dest.trackId, tracks.id), eq(dest.topicId, topicEdges.toTopicId)))
+    .innerJoin(topics, eq(topics.id, trackTopics.topicId))
+    .innerJoin(target, eq(target.id, dest.topicId))
+    .where(where)
+    .orderBy(topics.slug, target.slug);
 }
 
 // Fork-only reads. Neither function is exposed on the public reader or the package entry point.
@@ -95,7 +108,7 @@ export async function lockForkSource(
   return row;
 }
 export function forkLessons(tx: Transaction, login: string, slug: string, topic: string) {
-  return trackLessons(tx, lessons.blocks)
+  return trackLessons(tx, { blocks: lessons.blocks })
     .where(and(publicTrack(tx, login, slug), eq(topics.slug, topic)))
     .orderBy(lessons.position, lessons.id);
 }
@@ -146,18 +159,7 @@ export function publicReader(db: Connection) {
         }
         if (lesson) member.lessons.push(lesson);
       }
-      const dest = alias(trackTopics, "dest");
-      const target = alias(topics, "target");
-      const edges = await db
-        .select({ from: topics.slug, to: target.slug })
-        .from(tracks)
-        .innerJoin(trackTopics, eq(trackTopics.trackId, tracks.id))
-        .innerJoin(topicEdges, eq(topicEdges.fromTopicId, trackTopics.topicId))
-        .innerJoin(dest, and(eq(dest.trackId, tracks.id), eq(dest.topicId, topicEdges.toTopicId)))
-        .innerJoin(topics, eq(topics.id, trackTopics.topicId))
-        .innerJoin(target, eq(target.id, dest.topicId))
-        .where(where)
-        .orderBy(topics.slug, target.slug);
+      const edges = await publicEdges(db, where);
       const forks = await db
         .select({
           login: users.login,
@@ -180,10 +182,29 @@ export function publicReader(db: Connection) {
       };
     },
     async lesson(login: string, slug: string, id: string): Promise<PublicLesson | undefined> {
-      const [lesson] = await trackLessons(db, previewBlocks).where(
-        and(publicTrack(db, login, slug), eq(lessons.id, id)),
-      );
-      if (lesson) return { ...lesson, blocks: lesson.blocks.map(publicBlock) };
+      const where = publicTrack(db, login, slug);
+      const [lesson] = await trackLessons(db, {
+        blocks: previewBlocks,
+        topicTitle: topics.title,
+        lessonOrdinal: sql<number>`(select count(*)::int from lessons as sibling
+          where sibling.topic_id = ${lessons.topicId}
+          and (sibling.position, sibling.id) <= (${lessons.position}, ${lessons.id}))`,
+      }).where(and(where, eq(lessons.id, id)));
+      if (!lesson) return;
+      // The Public Track numbers its syllabus in prerequisite order, retaining membership order on ties.
+      const [members, edges] = await Promise.all([
+        db
+          .select({ id: topics.slug })
+          .from(tracks)
+          .innerJoin(trackTopics, eq(trackTopics.trackId, tracks.id))
+          .innerJoin(topics, eq(topics.id, trackTopics.topicId))
+          .where(where)
+          .orderBy(trackTopics.position, topics.slug),
+        publicEdges(db, where),
+      ]);
+      const index = studyOrder(members, edges).findIndex((member) => member.id === lesson.topic);
+      if (index >= 0)
+        return { ...lesson, topicOrdinal: index + 1, blocks: lesson.blocks.map(publicBlock) };
     },
     sitemap() {
       // Match the Public Profile lookup when a GitHub login has been reassigned.

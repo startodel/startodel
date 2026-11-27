@@ -1,3 +1,4 @@
+import { studyOrder } from "@startodel/core";
 import { expect, test } from "vite-plus/test";
 import {
   BOARD_SIZES,
@@ -5,7 +6,6 @@ import {
   type BoardTopic,
   boardModel,
   layoutBoard,
-  studyOrder,
   topicStates,
   traceHop,
 } from "../app/components/ui/board";

@@ -1,5 +1,5 @@
-import type { PublicLessonSummary, PublicTopic } from "@startodel/core";
-import { studyOrder, type BoardEdge } from "../components/ui/board";
+import { studyOrder, type PublicLessonSummary, type PublicTopic } from "@startodel/core";
+import type { BoardEdge } from "../components/ui/board";
 
 type Topic = Pick<PublicTopic, "slug" | "title" | "summary"> & {
   lessons: Pick<PublicLessonSummary, "id" | "title">[];

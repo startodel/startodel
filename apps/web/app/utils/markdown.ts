@@ -20,3 +20,16 @@ md.renderer.rules.image = (tokens, i, options, env, renderer) => {
     ? `<a href="${md.utils.escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`
     : label;
 };
+
+/** Use visible inline text so links, emphasis and fenced examples do not become outline headings. */
+export function markdownOutlinePhrase(source: string) {
+  const tokens = md.parse(source, {});
+  let opening = "";
+  for (const [index, token] of tokens.entries()) {
+    if (token.type !== "inline") continue;
+    const text = md.renderer.renderInlineAsText(token.children ?? [], md.options, {}).trim();
+    if (text && tokens[index - 1]?.type === "heading_open") return text;
+    if (!opening) opening = text.split(/\n|(?<=[.!?])\s/u, 1)[0] ?? "";
+  }
+  return opening;
+}

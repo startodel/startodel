@@ -84,6 +84,9 @@ export interface PublicTrack extends PublicTrackSummary {
 }
 export interface PublicLesson extends PublicLessonSummary {
   topic: string;
+  topicTitle: string;
+  topicOrdinal: number;
+  lessonOrdinal: number;
   trackTitle: string;
   language: TrackLanguage;
   blocks: PublicBlock[];

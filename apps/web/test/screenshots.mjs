@@ -111,6 +111,7 @@ try {
     if (pr12 && !name.startsWith("pr12-")) return;
     if (process.argv.includes("--pr11") && !name.startsWith("pr11-")) return;
     if (
+      !name.startsWith("lesson-") &&
       !name.startsWith("pr12-") &&
       !name.startsWith("pr11-") &&
       !name.startsWith("pr9-") &&
@@ -264,12 +265,69 @@ try {
   await owner.setMastery(by.runtime.id, 3);
   const guide = await readFile("docs/agent-guide/references/browser-tasks.md", "utf8");
   const blocks = JSON.parse(guide.split("```json\n")[1].split("\n```")[0]);
+  const titles = { order: "timers.js", latency: "When the timer is late", trace: "Move the save" };
+  for (const block of blocks) {
+    if (titles[block.id]) block.title = titles[block.id];
+  }
   const lesson = await owner.createLesson({
     topicId: by.tasks.id,
     title: "When does a timer run?",
     summary: "Trace a timer callback through a single browser task.",
     blocks,
   });
+  async function checkLesson(prefix, isPublic) {
+    const trackPath = prefix + (isPublic ? "/u/bob/" : "/tracks/") + track.slug;
+    const crumbs = page.locator(".lesson .s-crumbs");
+    assert.deepEqual(await crumbs.locator(".s-crumbs__link, .s-crumbs__here").allTextContents(), [
+      track.title,
+      "T02 Tasks and timers",
+      "L01",
+    ]);
+    assert.deepEqual(
+      await crumbs
+        .getByRole("link")
+        .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
+      [trackPath, trackPath + (isPublic ? "#topic-tasks" : "?topic=" + by.tasks.id)],
+    );
+    const header = page.locator(".lesson .s-page-header");
+    assert.equal(await header.locator("h1").textContent(), lesson.title);
+    assert.equal(
+      await header.locator(".s-page-header__kicker").textContent(),
+      (prefix ? "Урок" : "Lesson") + " L01 · T02 Tasks and timers",
+    );
+    assert.equal(await header.locator(".s-page-header__description").count(), 0);
+    assert.deepEqual(
+      (await header.locator(".s-badge").allTextContents()).slice(0, 2),
+      prefix ? ["7 мин", "9 блоков"] : ["7 min", "9 Blocks"],
+    );
+    assert.equal(await header.locator(".s-mastery").count(), isPublic ? 0 : 1);
+    if (isPublic) {
+      assert.equal(
+        await header.getByRole("link", { name: "@bob" }).getAttribute("href"),
+        prefix + "/u/bob",
+      );
+      assert.equal(await header.getByTitle(prefix ? "Язык трека" : "Track language").count(), 1);
+      assert.equal(
+        await page.locator('meta[name="description"]').getAttribute("content"),
+        lesson.summary,
+      );
+    }
+    const outline = page.locator(".s-index");
+    assert.ok(await outline.isVisible());
+    assert.deepEqual(await outline.locator(".s-index__title").allTextContents(), [
+      "You’re testing two messages in the browser console.",
+      "timers.js",
+      "Which message will you see first?",
+      "The console shows sync first.",
+      "When the timer is late",
+      blocks.find((b) => b.id === "docs").title,
+      blocks.find((b) => b.id === "talk").title,
+      prefix ? "Тест · 1 вопрос" : "Quiz · 1 question",
+      prefix ? "Задача: Move the save" : "Exercise: Move the save",
+    ]);
+    assert.equal(await page.locator(".s-code__title").textContent(), "timers.js");
+    await shot("lesson-" + (isPublic ? "public-" : "private-") + (prefix ? "ru" : "en"));
+  }
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await page.locator("main").getByRole("link", { name: track.title }).waitFor();
   await page.locator(".s-rail__item--track").filter({ hasText: track.title }).waitFor();
@@ -446,6 +504,10 @@ try {
     await page.locator("iframe[title]").getAttribute("src"),
     "https://www.youtube-nocookie.com/embed/8aGhZQkoFbQ?autoplay=1",
   );
+  for (const prefix of ["", "/ru"]) {
+    await visit(prefix + "/lessons/" + lesson.id);
+    await checkLesson(prefix, false);
+  }
   await page.setViewportSize({ width: 375, height: 812 });
   await visit("/tracks/" + track.slug);
   await page.locator(".s-tracklist__row").filter({ hasText: "Tasks and timers" }).click();
@@ -615,6 +677,7 @@ try {
       "/tracks/" + track.slug,
       "/topics/" + by.tasks.id,
       "/lessons/" + lesson.id,
+      "/ru/lessons/" + lesson.id,
       "/grills",
       "/grills/" + grill.id,
       "/grills/" + finished.id,
@@ -639,6 +702,7 @@ try {
       "/design/screens/public-track",
       "/ru/design/screens/public-track",
       publicTrack + "/lessons/" + lesson.id,
+      "/ru" + publicTrack + "/lessons/" + lesson.id,
     ])
       await audit(path);
     // Compare the responsive Landing composition directly with its reference screen.
@@ -962,6 +1026,9 @@ try {
     await shot("pr11-" + (prefix ? "ru" : "en") + "-public-syllabus");
     await page.setViewportSize({ width: 390, height: 900 });
     await shot("pr11-" + (prefix ? "ru" : "en") + "-public-syllabus-mobile");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await visit(path + "/lessons/" + lesson.id);
+    await checkLesson(prefix, true);
   }
   await noJs.close();
   await owner.updateTrack(track.id, { description: pitch });

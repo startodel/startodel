@@ -85,17 +85,16 @@ onMounted(() => {
     ]"
   >
     <article class="lesson">
-      <UiPageHeader
-        :kicker="`Lesson ${lesson.tag} · ${lesson.topic.tag} ${lesson.topic.title}`"
+      <UiLessonHeader
         :title="lesson.title"
-        voice="content"
+        :tag="lesson.tag"
+        :topic-title="lesson.topic.title"
+        :topic-tag="lesson.topic.tag"
+        :minutes="lesson.minutes"
+        :block-count="lesson.blocks.length"
       >
-        <template #meta>
-          <UiBadge icon="clock">{{ lesson.minutes }} min</UiBadge>
-          <UiBadge icon="lesson">{{ lesson.blocks.length }} Blocks</UiBadge>
-          <UiMastery :level="allCorrect ? 2 : lesson.topic.level" show="full" />
-        </template>
-      </UiPageHeader>
+        <UiMastery :level="allCorrect ? 2 : lesson.topic.level" show="full" />
+      </UiLessonHeader>
 
       <UiLessonLayout>
         <UiLessonBlock

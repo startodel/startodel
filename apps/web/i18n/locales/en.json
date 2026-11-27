@@ -233,6 +233,10 @@
     "end": "No dependent Topics yet."
   },
   "lesson": {
+    "kicker": "Lesson {tag} · {topicTag} {topicTitle}",
+    "untrackedKicker": "Lesson {tag} · {topicTitle}",
+    "quizOutline": "Quiz · {count} question | Quiz · {count} questions",
+    "exerciseOutline": "Exercise: {title}",
     "empty": "This Lesson has no Blocks yet.",
     "read": "Marked as read",
     "mark": "Mark as read",
