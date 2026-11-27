@@ -8,6 +8,7 @@ export default defineHandler(async (event) => {
   const callback = useRuntimeConfig().oauth.github.redirectURL;
   return {
     user,
+    handle: await data.getPublicHandle(),
     profile,
     onboarded: profile.onboardedAt !== null,
     mcpUrl: new URL("/mcp", callback || event.req.url).href,

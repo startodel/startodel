@@ -11,13 +11,12 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
   let alice: ReturnType<typeof forUser>;
   let bob: typeof alice;
   let owners: string[];
-  let login: string;
+  let handle: string;
   beforeEach(async () => {
     db = createDatabase(url!);
-    login = "catalog-" + randomUUID();
     const identity = {
       githubId: BigInt(-randomInt(1, 2 ** 46)) * 2n,
-      login,
+      login: "catalog-" + randomUUID(),
       name: null,
       avatarUrl: null,
     };
@@ -30,6 +29,7 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     owners = [a.id, b.id];
     alice = forUser(db, a.id);
     bob = forUser(db, b.id);
+    handle = (await alice.getPublicHandle())!;
   });
   afterEach(async () => {
     try {
@@ -101,7 +101,7 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     ]);
     expect(await bob.getLessonDetails(lesson.id)).toBeUndefined();
     await alice.setTrackVisibility(first.id, true, true);
-    const preview = await publicReader(db).lesson(login, first.slug, lesson.id);
+    const preview = await publicReader(db).lesson(handle, first.slug, lesson.id);
     expect(preview).toMatchObject({ topicTitle: "Timers", topicOrdinal: 2, lessonOrdinal: 2 });
   });
 
@@ -163,8 +163,6 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
   });
 
   test("concurrent Forks preserve an existing empty Topic and copy its Lessons only once", async () => {
-    const login = randomUUID();
-    await db.$client.query("update users set login=$1 where id=$2", [login, owners[0]]);
     const track = await alice.createTrack({ title: "Runtime", language: "pt-br" });
     await bob.updateProfile({ preferredLanguage: "ru" });
     const topic = await alice.upsertTopic({ slug: "runtime", title: "Source topic" });
@@ -173,8 +171,8 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     await alice.setTrackVisibility(track.id, true, true);
     const existing = await bob.upsertTopic({ slug: "runtime", title: "My topic" });
     const forks = await Promise.all([
-      bob.forkTrack(login, track.slug),
-      bob.forkTrack(login, track.slug),
+      bob.forkTrack(handle, track.slug),
+      bob.forkTrack(handle, track.slug),
     ]);
     expect(forks.map((fork) => fork?.language)).toEqual(["pt-br", "pt-br"]);
     expect(new Set(forks.map((fork) => fork?.slug))).toEqual(new Set(["runtime", "runtime-2"]));

@@ -84,7 +84,7 @@ export function trackWrites(db: Connection, userId: string) {
       return db.transaction(async (tx) => {
         const [track] = await tx
           .update(tracks)
-          .set({ public: visible, updatedAt: new Date() })
+          .set({ public: visible, pinOrder: visible ? undefined : null, updatedAt: new Date() })
           .where(ownTrack(id))
           .returning();
         if (!track || !visible) return track;

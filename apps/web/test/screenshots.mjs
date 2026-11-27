@@ -87,6 +87,7 @@ try {
   }
   await signIn("bob");
   const me = await (await request.get(origin + "/api/me")).json();
+  const profilePath = "/u/" + me.handle;
   const owner = forUser(db, me.user.id);
   const page = await context.newPage();
   // SSR links and form controls become visible before their click handlers are attached.
@@ -113,6 +114,7 @@ try {
     if (pr12 && !name.startsWith("pr12-")) return;
     if (process.argv.includes("--pr11") && !name.startsWith("pr11-")) return;
     if (
+      !name.startsWith("public-profile-") &&
       !name.startsWith("lesson-") &&
       !name.startsWith("track-header-") &&
       !name.startsWith("pr12-") &&
@@ -305,7 +307,7 @@ try {
     });
     await editor.waitFor();
     assert.deepEqual(await editor.locator(".cm-line").allTextContents(), [""]);
-    const trackPath = prefix + (isPublic ? "/u/bob/" : "/tracks/") + track.slug;
+    const trackPath = prefix + (isPublic ? profilePath + "/" : "/tracks/") + track.slug;
     const crumbs = page.locator(".lesson .s-crumbs");
     assert.deepEqual(await crumbs.locator(".s-crumbs__link, .s-crumbs__here").allTextContents(), [
       track.title,
@@ -332,8 +334,8 @@ try {
     assert.equal(await header.locator(".s-mastery").count(), isPublic ? 0 : 1);
     if (isPublic) {
       assert.equal(
-        await header.getByRole("link", { name: "@bob" }).getAttribute("href"),
-        prefix + "/u/bob",
+        await header.getByRole("link", { name: "@" + me.handle }).getAttribute("href"),
+        prefix + profilePath,
       );
       assert.equal(await header.getByTitle(prefix ? "Язык трека" : "Track language").count(), 1);
       assert.equal(
@@ -824,12 +826,12 @@ try {
     ])
       await audit(path);
     await owner.setTrackVisibility(track.id, true, true);
-    await visit("/u/bob/" + track.slug);
+    await visit(profilePath + "/" + track.slug);
     await page.getByRole("link", { name: "Change visibility" }).click();
     await page.getByRole("dialog", { name: "Make this Track private?" }).waitFor();
     await checkCascade(page, "/tracks/" + track.slug);
     await context.clearCookies();
-    const profile = "/u/bob";
+    const profile = profilePath;
     const publicTrack = profile + "/" + track.slug;
     for (const path of [
       "/ru",
@@ -925,7 +927,7 @@ try {
 
     await owner.setTrackVisibility(track.id, true, true);
     await context.clearCookies();
-    const publicPath = "/u/bob/" + track.slug;
+    const publicPath = profilePath + "/" + track.slug;
     await visit("/ru" + publicPath);
     await page.locator(".s-map .s-trace").first().waitFor();
     await shot("pr12-ru-public-track");
@@ -959,7 +961,7 @@ try {
       .getByRole("checkbox", { name: "I agree to the Publishing rules and Terms of Use" })
       .check();
     await page.getByRole("button", { name: "Publish", exact: true }).click();
-    const permalink = origin + "/u/bob/" + track.slug;
+    const permalink = origin + profilePath + "/" + track.slug;
     await page.getByRole("link", { name: permalink, exact: true }).waitFor();
     await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin });
     await actions.click();
@@ -973,12 +975,12 @@ try {
       .click();
   }
   if (process.argv.includes("--pr11")) {
-    const publicPath = "/u/bob/" + track.slug;
+    const publicPath = profilePath + "/" + track.slug;
     await visit("/terms?lang=en");
     await page.getByRole("heading", { name: "Terms of Use", exact: true }).waitFor();
     await shot("pr11-terms");
     await context.clearCookies();
-    await visit("/u/bob");
+    await visit(profilePath);
     await page.getByRole("link", { name: track.title }).waitFor();
     await shot("pr11-public-profile");
     await page.getByRole("link", { name: track.title }).click();
@@ -990,7 +992,7 @@ try {
       .getByRole("button", { name: /Tasks and timers/ })
       .click();
     let enrichedPreview = false;
-    await page.route("**/api/public/bob/*/lessons/*", async (route) => {
+    await page.route("**/api/public/" + me.handle + "/*/lessons/*", async (route) => {
       const response = await route.fetch();
       const json = await response.json();
       for (const block of json.blocks) {
@@ -1059,7 +1061,7 @@ try {
 
     const recipient = forUser(db, reader.id);
     for (let i = 0; i < 5; i++) {
-      const copy = await recipient.forkTrack("bob", track.slug);
+      const copy = await recipient.forkTrack(me.handle, track.slug);
       await recipient.setTrackVisibility(copy.id, true, true);
     }
     await visit(publicPath);
@@ -1075,7 +1077,7 @@ try {
     assert.deepEqual(await targets(), first);
   }
   await owner.setTrackVisibility(track.id, true, true);
-  const publicPath = "/u/bob/" + track.slug;
+  const publicPath = profilePath + "/" + track.slug;
   await signIn("bob");
   await visit(publicPath);
   assert.equal(
@@ -1153,7 +1155,7 @@ try {
       await syllabus.locator("#topic-rendering .public__requires a").allTextContents(),
       ["T02 · Tasks and timers", "T03 · Microtasks"],
     );
-    assert.equal(await page.locator(".public__author").getAttribute("href"), prefix + "/u/bob");
+    assert.equal(await page.locator(".public__author").getAttribute("href"), prefix + profilePath);
     await page
       .locator("#forks")
       .getByRole("link", { name: track.title, exact: true })
@@ -1192,7 +1194,7 @@ try {
   await owner.setTrackVisibility(second.id, true, true);
   await signIn("bob");
   const filter = page.locator("main").getByRole("combobox", { name: "Filter Tracks by language" });
-  for (const path of ["/dashboard", "/progress", "/u/bob"]) {
+  for (const path of ["/dashboard", "/progress", profilePath]) {
     await visit(path);
     const links = page.locator("main").getByRole("link", { name: new RegExp(second.title) });
     assert.equal(await links.count(), 0);
@@ -1208,7 +1210,7 @@ try {
   await page.waitForFunction(() => document.documentElement.lang === "ru");
   assert.equal(
     await page.locator('link[rel="canonical"]').getAttribute("href"),
-    origin + "/u/bob/" + second.slug,
+    origin + profilePath + "/" + second.slug,
   );
   assert.equal(await page.locator("link[hreflang]").count(), 0);
   await page.locator(".public__login").click();
@@ -1216,6 +1218,77 @@ try {
   assert.equal(await page.locator("link[hreflang]").count(), 3);
   if (!cascade && !pr12 && !process.argv.includes("--pr11"))
     await checkLessonInteractions({ page, owner, visit, shot });
+  // Populate dated Quiz Attempts on the local fixture so the rolling calendar spans all seasons.
+  await db.$client.query(
+    `insert into quiz_attempts
+    (user_id,lesson_id,block_id,answers,correct,total,source,created_at)
+    select $1,$2,$3,'[0]',0,1,'ui',now()-d * interval '1 day'
+    from generate_series(1,363) d cross join lateral generate_series(1,1+(d*13)%9) n
+    where (d*37)%17 < 5`,
+    [me.user.id, lesson.id, blocks.find((b) => b.type === "quiz").id],
+  );
+  await signIn("bob");
+  await visit("/settings");
+  const settings = page.locator("#public-profile-settings");
+  await settings.getByLabel("Headline", { exact: true }).fill("Frontend engineer");
+  await settings
+    .getByLabel("Bio", { exact: true })
+    .fill("Studying browser scheduling, rendering and the details behind a responsive interface.");
+  await settings.getByRole("button", { name: "Add link" }).click();
+  await settings.getByLabel("HTTPS URL").fill("https://example.org/notes");
+  await settings.getByLabel("Label (optional)").fill("Field notes");
+  await settings.getByRole("switch", { name: /Learning progress/ }).click();
+  await settings.getByRole("checkbox", { name: track.title, exact: true }).click();
+  await settings.getByRole("button", { name: "Save profile" }).click();
+  await settings.getByRole("status").filter({ hasText: "Profile saved." }).waitFor();
+  for (const prefix of ["", "/ru"]) {
+    const lang = prefix ? "ru" : "en";
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await visit(prefix + "/settings");
+      assert.equal(
+        await settings.getByLabel(prefix ? "Роль или специализация" : "Headline").inputValue(),
+        "Frontend engineer",
+      );
+      // Frame the whole group between the app header and mobile tab bar.
+      const groupHeight = (await settings.boundingBox()).height;
+      await page.setViewportSize({ width, height: Math.ceil(groupHeight) + 156 });
+      await settings.evaluate((el) => window.scrollBy(0, el.getBoundingClientRect().top - 68));
+      await shot("public-profile-settings-" + lang + "-" + width, { fullPage: false });
+      await page.setViewportSize({ width, height: 900 });
+      await visit(prefix + profilePath);
+      await page.locator(".s-histogram").waitFor();
+      await page.locator("main").getByRole("combobox").click();
+      await page.getByRole("option", { name: prefix ? "Все языки" : "All languages" }).click();
+      assert.ok(
+        await page
+          .locator(".s-trackcard")
+          .first()
+          .getByText(prefix ? "Закреплён" : "Pinned", { exact: true })
+          .isVisible(),
+      );
+      assert.equal(await page.locator(".s-heat__cell").count(), 364);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      const heat = page.locator(".s-heat__scroll");
+      assert.equal(await heat.evaluate((el) => el.scrollWidth > el.clientWidth), width === 390);
+      const today = heat.locator("[data-day='363']");
+      await today.focus();
+      await today.press("ArrowLeft");
+      assert.ok(
+        await heat.locator("[data-day='356']").evaluate((el) => el === document.activeElement),
+      );
+      assert.ok(await page.getByRole("tooltip").isVisible());
+      await page.evaluate(() => document.activeElement.blur());
+      await page.mouse.move(0, 0);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await shot("public-profile-page-" + lang + "-" + width);
+    }
+    if (cascade) {
+      await checkCascade(page, prefix + profilePath);
+      await visit(prefix + "/settings");
+      await checkCascade(page, prefix + "/settings");
+    }
+  }
   assert.deepEqual(errors, []);
 } finally {
   await browser?.close();

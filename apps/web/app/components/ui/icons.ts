@@ -4,6 +4,7 @@ const path = (d: string) => `<path d="${d}"/>`;
 const solid = (d: string) => `<path d="${d}" fill="currentColor" stroke="none"/>`;
 
 export const icons = {
+  pin: path("M6 2h5l-1 4 2 3H4l2-3zM8 9v5"),
   fork:
     path("M4.5 5.5v1.2c0 1 .8 1.8 1.8 1.8h3.4c1 0 1.8-.8 1.8-1.8V5.5M8 8.5v2.5") +
     dot(4.5, 4) +

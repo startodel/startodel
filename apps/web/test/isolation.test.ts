@@ -734,7 +734,11 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       expect(published).toMatchObject({
         id: own.id,
         url: publicOrigin + "/tracks/database-design",
-        publicUrl: publicOrigin + "/u/alice/database-design",
+        publicUrl:
+          publicOrigin +
+          "/u/" +
+          (await (await request("/api/me", a)).json()).handle +
+          "/database-design",
       });
       expect(await call("list_tracks")).toContainEqual(published);
       for (const visible of [false, true, false])

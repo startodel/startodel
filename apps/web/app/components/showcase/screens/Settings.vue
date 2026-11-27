@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { PublicProfilePatch } from "@startodel/core";
+import type { ProfileSettings } from "../../ui/PublicProfileSettings.vue";
+import { specimenSettings } from "../public-profile";
 import type { TableColumn } from "../../ui/Table.vue";
 import {
   sampleGrades,
@@ -17,6 +20,18 @@ const columns: TableColumn<Token>[] = [
   { key: "lastUsed", label: "Last used" },
   { key: "actions", label: "", align: "right" },
 ];
+const publicSettings = ref<ProfileSettings>(specimenSettings);
+async function saveProfile({ pinnedTrackIds, ...patch }: PublicProfilePatch) {
+  publicSettings.value = {
+    ...publicSettings.value,
+    ...patch,
+    tracks: publicSettings.value.tracks.map((track) => {
+      if (!pinnedTrackIds) return track;
+      const i = pinnedTrackIds.indexOf(track.id);
+      return { ...track, pinOrder: i === -1 ? null : i + 1 };
+    }),
+  };
+}
 const name = ref("");
 const tried = ref(false);
 const revoking = ref<Token | undefined>(props.state === "revoke" ? sampleTokens[1] : undefined);
@@ -110,9 +125,6 @@ function revoke() {
               <p class="who__name">{{ sampleProfile.name }}</p>
               <p class="s-muted">@{{ sampleProfile.login }} · signed in with GitHub</p>
             </div>
-            <UiButton :to="screenPath('public-profile')" size="sm" icon-right="external"
-              >Public Profile</UiButton
-            >
           </div>
           <UiField label="Stack">
             <div class="s-cluster" style="--s-gap: var(--s-2)">
@@ -133,6 +145,17 @@ function revoke() {
         </div>
       </section>
 
+      <section class="group">
+        <header class="group__head">
+          <h2 class="group__title">{{ $t("publicProfile.settings") }}</h2>
+          <p class="group__text">{{ $t("publicProfile.settingsHint") }}</p>
+        </header>
+        <UiPublicProfileSettings
+          :settings="publicSettings"
+          :save="saveProfile"
+          :profile-to="screenPath('public-profile')"
+        />
+      </section>
       <section class="group" aria-labelledby="set-look">
         <header class="group__head">
           <h2 id="set-look" class="group__title">Interface</h2>

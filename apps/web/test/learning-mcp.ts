@@ -52,7 +52,7 @@ export function learningMcpTests(
       ]);
     });
 
-    test("a reassigned GitHub login only links to the current public namespace", async () => {
+    test("accounts sharing a GitHub login publish at distinct stable handles", async () => {
       const login = randomUUID();
       const former = await connect(login);
       const track = await former.call("create_track", { title: "Same slug" });
@@ -63,10 +63,10 @@ export function learningMcpTests(
       const ref = { slug: track.slug };
       const privateLink = await former.call("get_track", ref);
       expect(privateLink.id).toBe(track.id);
-      expect(privateLink).not.toHaveProperty("publicUrl");
+      expect(privateLink.publicUrl).toBe(environment().publicOrigin + "/u/" + login + "/same-slug");
       expect(await current.call("get_track", ref)).toMatchObject({
         id: other.id,
-        publicUrl: environment().publicOrigin + "/u/" + login + "/same-slug",
+        publicUrl: environment().publicOrigin + "/u/" + login + "-2/same-slug",
       });
     });
 

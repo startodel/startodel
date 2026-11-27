@@ -10,6 +10,7 @@ defineProps<{
   /** Shown when the list mixes Owners, such as a list of Forks. */
   owner?: { login: string; name?: string | null; avatarUrl?: string | null; to?: LinkTarget };
   topics?: number;
+  pinned?: boolean;
   lessons?: number;
   forks?: number;
   updated?: string;
@@ -30,6 +31,7 @@ const countArgs = useCountArgs();
     </h3>
     <p v-if="description" class="s-trackcard__text">{{ description }}</p>
     <p class="s-trackcard__facts">
+      <span v-if="pinned"><UiIcon name="pin" :size="12" />{{ $t("publicProfile.pinned") }}</span>
       <UiTrackLanguageBadge :language="language" />
       <span v-if="topics !== undefined"
         ><UiIcon name="track" :size="12" />{{ $t("count.topics", countArgs(topics)) }}</span

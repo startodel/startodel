@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { PublicProfilePatch } from "@startodel/core";
 definePageMeta({ layout: "app" });
 const { t } = useI18n();
 useHead({ title: t("nav.settings") });
@@ -16,6 +17,16 @@ const {
   revokeToken,
 } = useMcpTokens();
 const me = useMe();
+const {
+  data: settings,
+  refresh: refreshSettings,
+  error: settingsError,
+} = await useFetch("/api/profile/public");
+async function saveProfile(patch: PublicProfilePatch) {
+  await $fetch("/api/profile/public", { method: "PATCH", body: patch });
+  await refreshSettings();
+  me.value = await fetchMe();
+}
 const displayDate = useDisplayDate();
 const animate = useBoardMotion();
 const logout = useLogout();
@@ -104,18 +115,26 @@ function confirmRevoke() {
             <p class="who__name">{{ me.user.name || me.user.login }}</p>
             <p class="s-muted">@{{ me.user.login }}</p>
           </div>
-          <UiButton
-            :to="'/u/' + encodeURIComponent(me.user.login)"
-            icon-right="external"
-            size="sm"
-            >{{ $t("settings.publicProfile") }}</UiButton
-          >
         </div>
         <div class="s-cluster">
           <UiChip v-for="tech in me.profile.stack" :key="tech">{{ tech }}</UiChip>
           <UiBadge v-if="me.profile.experience">{{ $t(`grade.${me.profile.experience}`) }}</UiBadge>
         </div>
         <div><UiButton to="/onboarding" icon="user">{{ $t("settings.edit") }}</UiButton></div>
+      </div>
+    </section>
+    <section class="group" id="public-profile-settings">
+      <header class="group__head">
+        <h2 class="group__title">{{ $t("publicProfile.settings") }}</h2>
+        <p class="group__text">{{ $t("publicProfile.settingsHint") }}</p>
+      </header>
+      <div class="group__body">
+        <UiPublicProfileSettings v-if="settings" :settings="settings" :save="saveProfile" />
+        <UiNotice v-else-if="settingsError" tone="danger" :title="$t('common.error')"
+          ><template #actions
+            ><UiButton @click="refreshSettings()">{{ $t("common.retry") }}</UiButton></template
+          ></UiNotice
+        >
       </div>
     </section>
     <section class="group">

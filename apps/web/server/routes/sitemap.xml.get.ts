@@ -14,11 +14,11 @@ export default defineHandler(async (event) => {
   const content = new Map<string, string | undefined>();
   for (const row of await publicData().sitemap()) {
     const profile = "/u/" + encodeURIComponent(row.login);
-    if (!translated.has(profile)) translated.set(profile, undefined);
+    if (row.profileEnabled && !translated.has(profile)) translated.set(profile, undefined);
     if (!row.slug || !row.updatedAt) continue;
     const track = profile + "/" + encodeURIComponent(row.slug);
     const date = row.updatedAt.toISOString();
-    if ((translated.get(profile) ?? "") < date) translated.set(profile, date);
+    if (row.profileEnabled && (translated.get(profile) ?? "") < date) translated.set(profile, date);
     content.set(track, date);
     if (row.lessonId)
       content.set(
