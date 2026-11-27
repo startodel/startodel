@@ -126,9 +126,11 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
     return { ...row, url: entityUrl(origin, "lessons", row.id) };
   }
   const lesson = z.strictObject({ title, summary, blocks: LessonBlocks });
+  const lessonWriting =
+    "Open with 5–10 lines of code or a concrete scenario before asking for a prediction. Save the answer and its step-by-step explanation for a later theory Block. Teach one idea per theory Block in about 60–100 words. Define jargon on first use. Cite primary sources with labelled links and keep background reading in Track Sources. Use short, direct sentences like a colleague at a whiteboard. Cut filler.";
   register(
     "create_lesson",
-    "Append a Lesson to a Topic by slug or ID. Supply up to 200 ordered Blocks with unique IDs. Returns the full Lesson.",
+    `Append a Lesson to a Topic by slug or ID. Supply up to 200 ordered Blocks with unique IDs. Returns the full Lesson. ${lessonWriting}`,
     lesson.extend({ topic: topicRef }),
     async ({ topic, ...input }) => {
       const parent = await resolveTopic(data, topic);
@@ -139,7 +141,7 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
   );
   register(
     "update_lesson",
-    "Patch a Lesson by ID. Supplying blocks replaces all Blocks (up to 200). Returns the full updated Lesson.",
+    `Patch a Lesson by ID. Supplying blocks replaces all Blocks. Send up to 200 ordered Blocks with unique IDs and preserve IDs across edits. Returns the full updated Lesson. ${lessonWriting}`,
     lesson.partial().extend({ lessonId: id }),
     ({ lessonId, ...patch }) => data.updateLesson(lessonId, patch),
   );

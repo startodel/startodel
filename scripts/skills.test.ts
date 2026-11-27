@@ -78,7 +78,7 @@ test("skill files have valid front matter and identical bytes across builds and 
   }
 });
 
-test("only Track skills install the linked seven-Block reference and check its contents", async () => {
+test("only Track skills install the linked browser tasks Lesson and check its contents", async () => {
   const output = await outputDirectory();
   await buildSkills(source, output);
   const file = "references/browser-tasks.md";

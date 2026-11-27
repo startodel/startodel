@@ -128,8 +128,38 @@ test("a complete Lesson explains, demonstrates, cautions, cites and tests transf
     /primary source/i,
     /Quiz.*diagnos/i,
     /transfer Exercise/i,
+    /stable IDs/i,
+    /read the Lesson back/i,
   ])
     expect(lesson).toMatch(criterion);
+});
+
+test("Lesson authors show the example before the prediction and explain one idea at a time", () => {
+  const lesson = workflow("lessons-and-blocks");
+  expect(lesson).toMatch(/5–10 lines.*`code`.*concrete scenario/i);
+  expect(lesson).toMatch(/show the example before asking.*prediction/i);
+  expect(lesson).toMatch(/answer.*later `theory` Block/i);
+  expect(lesson).toMatch(/one idea per `theory` Block/i);
+  expect(lesson).toMatch(/60–100 words.*(?:one or two|1–2) short paragraphs/i);
+});
+
+test("the Good vs Bad opening models a prediction the learner can actually make", () => {
+  const opening = workflow("lessons-and-blocks").split("## Good vs Bad Lesson opening")[1];
+  expect(opening).toMatch(/\*\*Bad\*\*.*`theory`/);
+  const good = opening.split("**Good**")[1];
+  expect(good).toMatch(/```js\n.+?```.*`callout`[^\n]+\?.*`theory`/s);
+});
+
+test("Lesson prose defines terms, labels sources and sounds like a colleague at a whiteboard", () => {
+  const lesson = workflow("lessons-and-blocks");
+  expect(lesson).toMatch(/jargon.*plain language.*first use/i);
+  expect(lesson).toMatch(/Markdown link.*publisher.*title/i);
+  expect(lesson).toMatch(/background reading.*Track Sources/i);
+  expect(lesson).toMatch(/unlinked parenthetical/i);
+  expect(lesson).toMatch(/colleague at a whiteboard/i);
+  expect(lesson).toMatch(/short, direct sentences/i);
+  expect(lesson).toMatch(/filler.*stock introductions.*em dashes/i);
+  expect(workflow("rules")).toMatch(/every Lesson.*jargon.*first use/i);
 });
 
 test("free-text assessment uses the learner's level, quoted evidence and the Mastery rubric", () => {

@@ -142,6 +142,20 @@ export function learningMcpTests(
       }
     });
 
+    test("both Lesson writing Tools describe how to order, explain and source Blocks", async () => {
+      const { client } = await connect();
+      const { tools } = await client.listTools();
+      for (const name of ["create_lesson", "update_lesson"]) {
+        const description = tools.find((tool) => tool.name === name)?.description;
+        expect(description, name).toMatch(/code.*scenario.*before.*prediction/i);
+        expect(description, name).toMatch(/answer.*later theory Block/i);
+        expect(description, name).toMatch(/one idea per theory Block/i);
+        expect(description, name).toMatch(/jargon on first use/i);
+        expect(description, name).toMatch(/labelled links.*Track Sources/i);
+        expect(description, name).toMatch(/short, direct sentences.*filler/i);
+      }
+    });
+
     test("guide resources, questionnaire, graph, Lessons, assessment and Leitner review form a complete learning loop", async () => {
       const { client, call, user } = await connect();
       expect(client.getInstructions()).toContain("get_guide");
@@ -183,11 +197,17 @@ export function learningMcpTests(
         "theory",
         "code",
         "callout",
+        "theory",
+        "callout",
         "link",
         "video",
         "quiz",
         "exercise",
       ]);
+      expect(blocks[0].markdown).not.toMatch(/predict|which.*first|\?/i);
+      expect(blocks[1]).not.toHaveProperty("explanation");
+      expect(blocks[2].markdown).toMatch(/which.*first\?/i);
+      expect(blocks[3].markdown).toMatch(/`sync` first/);
       async function step(id: string) {
         const guide = await call("get_guide");
         expect(guide.nextSteps[0]).toMatchObject({
