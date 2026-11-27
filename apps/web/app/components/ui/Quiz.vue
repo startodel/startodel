@@ -52,7 +52,7 @@ function optionState(question: number, option: number) {
 </script>
 <template>
   <section v-if="readOnly" class="s-quiz">
-    <div v-for="(q, i) in questions" :key="i" class="s-quiz__question">
+    <div v-for="(q, i) in questions" :key="i" class="s-quiz__item s-quiz__question">
       <UiProse :markdown="q.prompt" size="sm" />
       <ol class="s-quiz__options">
         <li v-for="(option, j) in q.options" :key="j" class="s-cluster">
@@ -64,55 +64,55 @@ function optionState(question: number, option: number) {
     <p class="s-quiz__score">{{ $t("lesson.forkPractice") }}</p>
   </section>
   <form v-else class="s-quiz" :class="{ 'is-judged': result }" @submit.prevent="$emit('submit')">
-    <fieldset
-      v-for="(q, i) in questions"
-      :key="i"
-      class="s-quiz__question"
-      :class="result && (result.perQuestion[i] ? 'is-correct' : 'is-wrong')"
-      :disabled="disabled || busy || !!result"
-    >
-      <legend class="s-quiz__prompt">
-        <span class="s-quiz__number">{{ String(startAt + i).padStart(2, "0") }}</span>
-        <span class="s-quiz__text"><UiInline :text="q.prompt" /></span>
-      </legend>
-      <div class="s-quiz__options">
-        <label
-          v-for="(option, j) in q.options"
-          :key="j"
-          class="s-quiz__option"
-          :class="'is-' + optionState(i, j)"
-        >
-          <input
-            type="radio"
-            class="s-quiz__input"
-            :name="name + '-' + i"
-            :value="j"
-            :checked="answers[i] === j"
-            required
-            @change="pick(i, j)"
+    <div v-for="(q, i) in questions" :key="i" class="s-quiz__item">
+      <fieldset
+        class="s-quiz__question"
+        :class="result && (result.perQuestion[i] ? 'is-correct' : 'is-wrong')"
+        :disabled="disabled || busy || !!result"
+      >
+        <legend class="s-quiz__prompt">
+          <span class="s-quiz__number">{{ String(startAt + i).padStart(2, "0") }}</span>
+          <span class="s-quiz__text"><UiInline :text="q.prompt" /></span>
+        </legend>
+        <div class="s-quiz__options">
+          <label
+            v-for="(option, j) in q.options"
+            :key="j"
+            class="s-quiz__option"
+            :class="'is-' + optionState(i, j)"
+          >
+            <input
+              type="radio"
+              class="s-quiz__input"
+              :name="name + '-' + i"
+              :value="j"
+              :checked="answers[i] === j"
+              required
+              @change="pick(i, j)"
+            />
+            <span class="s-quiz__letter" aria-hidden="true">{{ letter(j) }}</span>
+            <span class="s-quiz__option-text"><UiInline :text="option" /></span>
+            <span v-if="optionState(i, j) === 'correct'" class="s-quiz__mark"
+              ><UiIcon name="check" :size="12" />{{ $t("quiz.right") }}</span
+            >
+            <span v-else-if="optionState(i, j) === 'wrong'" class="s-quiz__mark"
+              ><UiIcon name="x" :size="12" />{{ $t("quiz.yours") }}</span
+            >
+          </label>
+        </div>
+        <div v-if="result" class="s-quiz__feedback">
+          <p class="s-quiz__outcome">
+            <UiVerdict :verdict="result.perQuestion[i] ? 'strong' : 'weak'" glyph-only size="sm" />
+            {{ result.perQuestion[i] ? $t("quiz.right") : $t("quiz.wrong") }}
+          </p>
+          <UiProse
+            v-if="result.feedback?.[i]?.explanation"
+            :markdown="result.feedback[i]!.explanation!"
+            size="sm"
           />
-          <span class="s-quiz__letter" aria-hidden="true">{{ letter(j) }}</span>
-          <span class="s-quiz__option-text"><UiInline :text="option" /></span>
-          <span v-if="optionState(i, j) === 'correct'" class="s-quiz__mark"
-            ><UiIcon name="check" :size="12" />{{ $t("quiz.right") }}</span
-          >
-          <span v-else-if="optionState(i, j) === 'wrong'" class="s-quiz__mark"
-            ><UiIcon name="x" :size="12" />{{ $t("quiz.yours") }}</span
-          >
-        </label>
-      </div>
-      <div v-if="result" class="s-quiz__feedback">
-        <p class="s-quiz__outcome">
-          <UiVerdict :verdict="result.perQuestion[i] ? 'strong' : 'weak'" glyph-only size="sm" />
-          {{ result.perQuestion[i] ? $t("quiz.right") : $t("quiz.wrong") }}
-        </p>
-        <UiProse
-          v-if="result.feedback?.[i]?.explanation"
-          :markdown="result.feedback[i]!.explanation!"
-          size="sm"
-        />
-      </div>
-    </fieldset>
+        </div>
+      </fieldset>
+    </div>
     <footer class="s-quiz__foot">
       <template v-if="result">
         <p class="s-quiz__score" role="status">
@@ -156,12 +156,13 @@ function optionState(question: number, option: number) {
   gap: var(--s-3);
   min-width: 0;
 }
-.s-quiz__question + .s-quiz__question {
+.s-quiz__item + .s-quiz__item {
   padding-top: var(--s-6);
   border-top: 1px dashed var(--s-line);
 }
 .s-quiz__prompt {
   display: flex;
+  align-items: baseline;
   gap: var(--s-3);
   width: 100%;
   margin-bottom: var(--s-3);
@@ -169,7 +170,6 @@ function optionState(question: number, option: number) {
 }
 .s-quiz__number {
   flex: none;
-  padding-top: 0.3125rem;
   font: 500 var(--s-text-xs) / 1 var(--s-font-mono);
   font-stretch: 75%;
   color: var(--s-copper);

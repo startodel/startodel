@@ -138,6 +138,8 @@ onMounted(() => {
           </UiQuiz>
           <UiExercise
             v-else-if="b.type === 'exercise'"
+            :lesson-id="lesson.id"
+            :block-id="b.id"
             :prompt="b.prompt"
             :hints="b.hints"
             :solution="solution"
@@ -169,8 +171,5 @@ onMounted(() => {
 .lesson {
   display: grid;
   gap: var(--s-10);
-}
-.lesson__nav {
-  justify-content: space-between;
 }
 </style>

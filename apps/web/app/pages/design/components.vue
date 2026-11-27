@@ -115,7 +115,12 @@ const videoBlock = { title: videoTitle, url: videoUrl, note: videoNote };
 const theoryMarkdown = blockOf("theory").markdown;
 const calloutMarkdown = blockOf("callout").markdown;
 const quizQuestions = quiz.questions;
-const { prompt: exercisePrompt, hints: exerciseHints, solution: exerciseSolution } = exercise;
+const {
+  id: exerciseId,
+  prompt: exercisePrompt,
+  hints: exerciseHints,
+  solution: exerciseSolution,
+} = exercise;
 const grillPrompt = sampleQuestions[10]!.prompt;
 const reviewCards = sampleReviews.slice(0, 2);
 const boxCounts = sampleBoxes.map((b) => b.count);
@@ -1159,6 +1164,8 @@ const prompt =
         layout="block"
       >
         <UiExercise
+          lesson-id="design-components"
+          :block-id="exerciseId"
           :prompt="exercisePrompt"
           :hints="exerciseHints"
           :solution="solution"
