@@ -1,6 +1,7 @@
 // Run from the workspace root after building the app. PLAYWRIGHT_MODULE may point to a local installation.
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 import { checkCascade } from "./cascade.mjs";
+import { icons } from "../app/components/ui/icons.ts";
 import { localGitHub } from "./github.ts";
 import { createDatabase, forUser } from "@startodel/db";
 import { spawn } from "node:child_process";
@@ -106,7 +107,7 @@ try {
   );
   await mkdir(directory, { recursive: true });
   const pr12 = process.argv.includes("--pr12");
-  const shot = async (name, { fullPage = true } = {}) => {
+  const shot = async (name, { fullPage = true, locator } = {}) => {
     if (cascade) return;
     if (pr12 && !name.startsWith("pr12-")) return;
     if (process.argv.includes("--pr11") && !name.startsWith("pr11-")) return;
@@ -119,11 +120,15 @@ try {
       !process.argv.includes("--include-pr8")
     )
       return;
-    await page.screenshot({
+    const options = {
       path: directory + "/" + name + ".png",
-      fullPage,
       animations: "disabled",
-    });
+    };
+    if (locator) {
+      // Keep the whole row clear of the fixed mobile tab bar.
+      await locator.evaluate((el) => el.scrollIntoView({ block: "center", behavior: "instant" }));
+      await locator.screenshot(options);
+    } else await page.screenshot({ ...options, fullPage });
     console.log(name);
   };
   if (cascade) {
@@ -268,6 +273,24 @@ try {
   const blocks = JSON.parse(guide.split("```json\n")[1].split("\n```")[0]);
   // Exercise the outline fallback for an older Theory Block alongside authored titles.
   delete blocks.find((b) => b.id === "order-trace").title;
+  blocks.splice(
+    blocks.findIndex((b) => b.id === "latency") + 1,
+    0,
+    {
+      id: "minimum-delay",
+      type: "callout",
+      variant: "gotcha",
+      title: "A minimum delay",
+      markdown: "A zero-delay timer still waits for the current task to finish.",
+    },
+    {
+      id: "measure-delay",
+      type: "callout",
+      variant: "tip",
+      title: "Measure the delay",
+      markdown: "Compare two performance.now() readings to measure how late the callback ran.",
+    },
+  );
   const lesson = await owner.createLesson({
     topicId: by.tasks.id,
     title: "When does a timer run?",
@@ -297,7 +320,7 @@ try {
     assert.equal(await header.locator(".s-page-header__description").count(), 0);
     assert.deepEqual(
       (await header.locator(".s-badge").allTextContents()).slice(0, 2),
-      prefix ? ["8 мин", "9 блоков"] : ["8 min", "9 Blocks"],
+      prefix ? ["8 мин", "11 блоков"] : ["8 min", "11 Blocks"],
     );
     assert.equal(await header.locator(".s-mastery").count(), isPublic ? 0 : 1);
     if (isPublic) {
@@ -319,6 +342,8 @@ try {
       prefix ? "Тест · 1 вопрос" : "Quiz · 1 question",
       "The console shows sync first.",
       "When the timer is late",
+      "A minimum delay",
+      "Measure the delay",
       blocks.find((b) => b.id === "docs").title,
       blocks.find((b) => b.id === "talk").title,
       prefix ? "Тест · 1 вопрос" : "Quiz · 1 question",
@@ -326,6 +351,57 @@ try {
     ]);
     assert.equal(await page.locator(".s-code__title").textContent(), "timers.js");
     await shot("lesson-" + (isPublic ? "public-" : "private-") + (prefix ? "ru" : "en"));
+    const viewport = page.viewportSize();
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.evaluate(() => document.fonts.ready);
+      for (const [id, variant, label] of [
+        ["latency", "production", prefix ? "В продакшене" : "Production"],
+        ["minimum-delay", "gotcha", prefix ? "Нюанс" : "Gotcha"],
+        ["measure-delay", "tip", prefix ? "Совет" : "Tip"],
+      ]) {
+        const anchor = "#lesson-block-" + id;
+        const block = page.locator(anchor);
+        const kind = block.locator(".s-block__kind");
+        assert.equal((await kind.textContent()).trim(), label);
+        for (const icon of [
+          kind.locator("svg"),
+          outline.locator(`a[href="${anchor}"] .s-index__icon`),
+        ]) {
+          const matches = await icon.evaluate((svg, markup) => {
+            const expected = svg.cloneNode(false);
+            expected.innerHTML = markup;
+            return svg.isEqualNode(expected);
+          }, icons[variant]);
+          assert.ok(matches, id + " uses the " + variant + " glyph");
+        }
+        assert.ok(await block.locator(".s-callout__kind").isHidden());
+        assert.ok(await block.locator(".s-callout__body").isVisible());
+        const bounds = await kind.boundingBox();
+        const box = await block.locator(".s-callout").boundingBox();
+        const reference = await page.locator("#lesson-block-order .s-block__kind").boundingBox();
+        assert.ok(
+          await kind.evaluate((el) => {
+            const range = document.createRange();
+            range.selectNodeContents(el.lastChild);
+            return range.getClientRects().length === 1;
+          }),
+          label + " fits on one line",
+        );
+        if (width === 390) assert.ok(bounds.y + bounds.height <= box.y);
+        else {
+          assert.ok(Math.abs(bounds.x + bounds.width - reference.x - reference.width) <= 1);
+          assert.ok(
+            bounds.x >= (await block.boundingBox()).x - 1 && bounds.x + bounds.width < box.x,
+          );
+        }
+        if (!isPublic)
+          await shot(`lesson-callout-${prefix ? "ru" : "en"}-${width}-${variant}`, {
+            locator: block,
+          });
+      }
+    }
+    await page.setViewportSize(viewport);
   }
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await page.locator("main").getByRole("link", { name: track.title }).waitFor();
@@ -670,6 +746,12 @@ try {
     }
     const previousViewport = page.viewportSize();
     await visit("/design/components");
+    const standalone = page.getByRole("figure").filter({ hasText: "Callout · kinds" });
+    assert.deepEqual(await standalone.locator(".s-callout__kind:visible").allInnerTexts(), [
+      "TIP",
+      "GOTCHA",
+      "PRODUCTION",
+    ]);
     const shellWithActions = page
       .locator(".s-topbar")
       .filter({ has: page.locator(".s-topbar__actions button") })
@@ -677,6 +759,12 @@ try {
     await page.setViewportSize({ width: 1440, height: 900 });
     assert.ok(await shellWithActions.isVisible(), "desktop top bar keeps its actions");
     await page.setViewportSize({ width: 390, height: 900 });
+    const specimenCallout = page
+      .locator("#lesson .s-block")
+      .filter({ has: page.locator(".s-callout") });
+    const margin = await specimenCallout.locator(".s-block__margin").boundingBox();
+    const box = await specimenCallout.locator(".s-callout").boundingBox();
+    assert.ok(margin.y + margin.height <= box.y, "the narrow specimen stacks the Callout gutter");
     for (const prefix of ["", "/ru"]) {
       await audit(prefix + "/progress");
       const names = page.locator(".s-histogram__name");

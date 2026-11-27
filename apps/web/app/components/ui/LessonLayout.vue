@@ -24,7 +24,7 @@
 .lesson__end {
   display: grid;
   gap: var(--s-5);
-  max-width: calc(var(--s-block-margin, 6.5rem) + var(--s-6) + var(--s-read-measure));
+  max-width: calc(var(--s-block-margin) + var(--s-6) + var(--s-read-measure));
   padding-top: var(--s-8);
   border-top: 1px solid var(--s-line);
 }

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { blockIcons, type BlockKind } from "./lesson";
+import type { IconName } from "./icons";
 /** The parts list of a Lesson: every Block with its designator, linked to its place on the page. */
 const props = defineProps<{
-  blocks: { id: string; kind: BlockKind; title: string; done?: boolean }[];
+  blocks: { id: string; icon: IconName; title: string; done?: boolean }[];
   /** The id of the Block in view. */
   current?: string;
   label?: string;
@@ -44,7 +44,7 @@ const active = computed(() => props.current ?? visible.value ?? props.blocks[0]?
           :aria-current="active === b.id ? 'location' : undefined"
         >
           <span class="s-index__ref">{{ "B" + String(i + 1).padStart(2, "0") }}</span>
-          <UiIcon :name="blockIcons[b.kind]" :size="12" class="s-index__icon" />
+          <UiIcon :name="b.icon" :size="12" class="s-index__icon" />
           <span class="s-index__title">{{ b.title }}</span>
           <UiIcon v-if="b.done" name="check" :size="12" class="s-index__done" />
         </a>
