@@ -1,5 +1,6 @@
 // Run from the workspace root after building the app. PLAYWRIGHT_MODULE may point to a local installation.
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
+import { checkLessonInteractions } from "./lesson-screenshots.mjs";
 import { checkCascade } from "./cascade.mjs";
 import { icons } from "../app/components/ui/icons.ts";
 import { localGitHub } from "./github.ts";
@@ -298,6 +299,12 @@ try {
     blocks,
   });
   async function checkLesson(prefix, isPublic) {
+    // The original fixture has no fenced starter. Both Lesson routes still offer an empty editor.
+    const editor = page.getByRole("textbox", {
+      name: prefix ? "Редактор задачи" : "Exercise editor",
+    });
+    await editor.waitFor();
+    assert.deepEqual(await editor.locator(".cm-line").allTextContents(), [""]);
     const trackPath = prefix + (isPublic ? "/u/bob/" : "/tracks/") + track.slug;
     const crumbs = page.locator(".lesson .s-crumbs");
     assert.deepEqual(await crumbs.locator(".s-crumbs__link, .s-crumbs__here").allTextContents(), [
@@ -602,7 +609,7 @@ try {
     page.getByRole("button", { name: "Mark as read" }).click(),
   ]);
   assert.ok(read.ok());
-  await page.getByRole("button", { name: "Marked as read" }).waitFor();
+  await page.locator(".lesson__end").getByRole("status").getByText("Marked as read").waitFor();
   await page.locator("figure pre code span").first().waitFor();
   await shot("lesson");
   await page.locator(".s-video__poster").click();
@@ -742,6 +749,8 @@ try {
   if (cascade) {
     async function audit(path) {
       await visit(path);
+      if (await page.locator(".s-editor").count())
+        await page.locator(".s-editor .cm-content").first().waitFor();
       await checkCascade(page, path);
     }
     const previousViewport = page.viewportSize();
@@ -802,6 +811,8 @@ try {
       "/ru/dashboard",
       "/dashboard",
       "/design/screens/track",
+      "/design/screens/lesson",
+      "/ru/design/screens/lesson",
       "/settings",
       "/tracks/" + track.slug,
       "/topics/" + by.tasks.id,
@@ -1203,6 +1214,8 @@ try {
   await page.locator(".public__login").click();
   await page.waitForFunction(() => document.documentElement.lang === "en");
   assert.equal(await page.locator("link[hreflang]").count(), 3);
+  if (!cascade && !pr12 && !process.argv.includes("--pr11"))
+    await checkLessonInteractions({ page, owner, visit, shot });
   assert.deepEqual(errors, []);
 } finally {
   await browser?.close();

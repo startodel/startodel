@@ -33,3 +33,49 @@ export function markdownOutlinePhrase(source: string) {
   }
   return opening;
 }
+
+/** Lift the first fence out of the rendered prompt, keeping reference links and later examples intact. */
+export function renderExercisePrompt(source: string, imageLabel: string) {
+  const env = { imageLabel };
+  const tokens = md.parse(source, env);
+  const index = tokens.findIndex((token) => token.type === "fence");
+  const [fence] = index < 0 ? [] : tokens.splice(index, 1);
+  // A nested fence belongs to a list or quote. Finish rendering that container before the editor.
+  let split = fence ? index : tokens.length;
+  while (split < tokens.length && (tokens[split]!.level > 0 || tokens[split]!.nesting === -1))
+    split++;
+  const code = fence?.content.replace(/\n$/, "") ?? "";
+  const info = fence?.info.trim().split(/\s+/)[0]?.toLowerCase();
+  return {
+    before: md.renderer.render(tokens.slice(0, split), md.options, env),
+    after: md.renderer.render(tokens.slice(split), md.options, env),
+    code,
+    language: exerciseLanguage(info, code),
+  };
+}
+
+function exerciseLanguage(info: string | undefined, code: string) {
+  const jsx = /<>|<\/[\w.:-]+>|<[\w.:-]+\b[^<>]*\/>/.test(code);
+  switch (info) {
+    case undefined:
+    case "":
+    case "js":
+    case "javascript":
+      return jsx ? "jsx" : "javascript";
+    case "ts":
+    case "typescript":
+      return jsx ? "tsx" : "typescript";
+    case "py":
+      return "python";
+    case "jsx":
+    case "tsx":
+    case "html":
+    case "css":
+    case "python":
+    case "sql":
+    case "json":
+      return info;
+    default:
+      return "text";
+  }
+}

@@ -28,6 +28,9 @@
   padding-top: var(--s-8);
   border-top: 1px solid var(--s-line);
 }
+.lesson__end :deep(.lesson__nav > .s-button--primary) {
+  margin-inline-start: auto;
+}
 @container s-main (min-width: 66rem) {
   .lesson__layout {
     grid-template-columns: minmax(0, 1fr) 15rem;

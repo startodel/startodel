@@ -1,7 +1,11 @@
+import { EditorState } from "@codemirror/state";
+import { syntaxTree } from "@codemirror/language";
+import { classHighlighter, highlightTree } from "@lezer/highlight";
+import { editorLanguage } from "../app/utils/exercise-editor";
 import { publicBlock } from "@startodel/core";
 import { expect, test } from "vite-plus/test";
 import { practiceQuizProps } from "../app/utils/practice-quiz";
-import { renderMarkdown } from "../app/utils/markdown";
+import { renderExercisePrompt, renderMarkdown } from "../app/utils/markdown";
 import { httpUrl, trackSourceLink, youtubeEmbed } from "../app/utils/links";
 
 test("Lesson Markdown escapes HTML and admits only HTTP(S) links", () => {
@@ -23,6 +27,91 @@ test("Lesson Markdown escapes HTML and admits only HTTP(S) links", () => {
   ])
     expect(httpUrl(url)).toBeUndefined();
 });
+test("an Exercise lifts its first fenced starter into the editor and keeps the surrounding Markdown", () => {
+  const prompt = [
+    "Edit the [handler][docs].",
+    "~~~~tsx",
+    "const view = <button>Save</button>;",
+    "~~~~",
+    "Expected output:",
+    "```text",
+    "Saved",
+    "```",
+    "[docs]: https://example.org/",
+  ].join("\r\n");
+  const result = renderExercisePrompt(prompt, "Image:");
+  expect(result.language).toBe("tsx");
+  expect(result.code).toBe("const view = <button>Save</button>;");
+  expect(result.before).toContain('href="https://example.org/"');
+  expect(result.before).not.toContain("<pre");
+  expect(result.after).toContain("Expected output:");
+  expect(result.after).toContain('<code class="language-text">Saved');
+});
+
+test("an Exercise without a fence starts with an empty JavaScript editor", () => {
+  expect(renderExercisePrompt("Try `answer()`.", "Image:")).toEqual({
+    before: "<p>Try <code>answer()</code>.</p>\n",
+    after: "",
+    code: "",
+    language: "javascript",
+  });
+});
+
+test("an Exercise keeps a nested starter's list intact and unknown languages editable as text", () => {
+  const result = renderExercisePrompt(
+    "- Edit this:\n\n  ```rust\n  fn main() {}\n  ```\n\nThen explain.",
+    "Image:",
+  );
+  expect(result.before).toContain("</li>\n</ul>");
+  expect(result.before).not.toContain("<pre");
+  expect(result.after).toContain("Then explain.");
+  expect(result.code).toBe("fn main() {}");
+  expect(result.language).toBe("text");
+});
+
+test("an unlabelled JSX starter and a TypeScript fence containing JSX select the JSX grammars", () => {
+  const view = "return <Counter />;";
+  for (const [info, language] of [
+    ["", "jsx"],
+    ["TS", "tsx"],
+  ]) {
+    expect(renderExercisePrompt("```" + info + "\n" + view + "\n```", "Image:").language).toBe(
+      language,
+    );
+  }
+});
+
+test("the editor highlights its supported fence languages and opens other fences as plain text", async () => {
+  const examples = {
+    js: "const x = 1;",
+    ts: "let x: number = 1;",
+    jsx: "<Counter />",
+    tsx: "const x: View = <Counter />;",
+    html: "<b>count</b>",
+    css: "b { color: red; }",
+    py: "def count(): return 1",
+    sql: "SELECT 1;",
+    json: '{"count": 1}',
+  };
+  for (const [info, code] of Object.entries(examples)) {
+    const prompt = renderExercisePrompt("```" + info + "\n" + code + "\n```", "Image:");
+    const state = EditorState.create({
+      doc: prompt.code,
+      extensions: await editorLanguage(prompt.language),
+    });
+    const highlights: string[] = [];
+    highlightTree(syntaxTree(state), classHighlighter, (from, to) =>
+      highlights.push(state.sliceDoc(from, to)),
+    );
+    expect(highlights.length, info).toBeGreaterThan(0);
+  }
+  for (const info of ["go", "rust", "bash", "unknown"]) {
+    const prompt = renderExercisePrompt("```" + info + "\nexample\n```", "Image:");
+    expect(prompt.language).toBe("text");
+    expect(await editorLanguage(prompt.language)).toEqual([]);
+  }
+});
+
 test("Track Source labels show host and path while the link keeps its query and fragment", () => {
   const href = "https://www.react.dev/blog/react-v19/?lang=en#changes";
   expect(trackSourceLink(href)).toEqual({ label: "react.dev/blog/react-v19", href });

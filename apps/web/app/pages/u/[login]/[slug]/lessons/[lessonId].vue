@@ -86,6 +86,8 @@ const index = computed(
         <UiQuiz v-else-if="b.type === 'quiz'" :name="b.id" :questions="b.questions" read-only />
         <UiExercise
           v-else-if="b.type === 'exercise'"
+          :lesson-id="data.id"
+          :block-id="b.id"
           :prompt="b.prompt"
           :hints="b.hints"
           read-only

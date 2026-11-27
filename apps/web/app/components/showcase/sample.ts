@@ -236,6 +236,7 @@ export type SampleBlock =
   | { id: string; type: "exercise"; prompt: string; hints: string[]; solution: string };
 
 export const sampleLesson = {
+  id: "design-timers",
   tag: "L02",
   topic: sampleTopics[3]!,
   title: "When does a timer actually run?",
@@ -323,7 +324,7 @@ console.log("sync done", since());`,
       id: "b07",
       type: "exercise",
       prompt:
-        "Write `measureLag(intervalMs, report)`. It reports how late each tick of a repeating timer fires, so that you can chart event loop lag. A late tick must not shift every later tick.",
+        "Write `measureLag(intervalMs, report)`. It reports how late each tick of a repeating timer fires, so that you can chart event loop lag. A late tick must not shift every later tick.\n\n```js\nexport function measureLag(intervalMs, report) {\n  const start = performance.now();\n}\n```",
       hints: [
         "Compare `performance.now()` with the time the tick was due, not with the previous tick.",
         "Schedule each tick from its planned time, not from the time the callback ran.",

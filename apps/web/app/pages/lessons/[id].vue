@@ -164,6 +164,8 @@ const index = computed(
           />
           <UiExercise
             v-else-if="b.type === 'exercise'"
+            :lesson-id="data.lesson.id"
+            :block-id="b.id"
             :prompt="b.prompt"
             :hints="b.hints"
             :solution="solutions.get(b.id)"
@@ -178,14 +180,13 @@ const index = computed(
           <UiNotice v-if="data.readAt" tone="success" :title="$t('lesson.read')">{{
             $t("lesson.readHint")
           }}</UiNotice>
-          <div>
+          <div v-else>
             <UiButton
               icon="check"
-              :variant="data.readAt ? 'ghost' : 'primary'"
+              :variant="data.next ? 'secondary' : 'primary'"
               :loading="marking"
-              :disabled="!!data.readAt"
               @click="read"
-              >{{ data.readAt ? $t("lesson.read") : $t("lesson.mark") }}</UiButton
+              >{{ $t("lesson.mark") }}</UiButton
             >
           </div>
           <nav class="s-cluster lesson__nav" :aria-label="$t('topic.lessons')">
@@ -198,7 +199,11 @@ const index = computed(
                   : $t("topic.lessons")
               }}</UiButton
             >
-            <UiButton v-if="data.next" icon-right="arrow-right" :to="lessonLink(data.next.id)"
+            <UiButton
+              v-if="data.next"
+              variant="primary"
+              icon-right="arrow-right"
+              :to="lessonLink(data.next.id)"
               >{{ lessonTag(data.lessonOrdinal + 1) }} {{ data.next.title }}</UiButton
             >
           </nav>
@@ -211,8 +216,5 @@ const index = computed(
 .lesson {
   display: grid;
   gap: var(--s-10);
-}
-.lesson__nav {
-  justify-content: space-between;
 }
 </style>

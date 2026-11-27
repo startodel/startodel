@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * An Exercise. The learner works on it away from the page. Hints open one at a time, and the
- * solution is fetched only when the learner asks to see it.
+ * Hints open one at a time. The solution is fetched only when the learner asks to see it.
  */
 const props = defineProps<{
+  lessonId: string;
+  blockId: string;
   readOnly?: boolean;
   prompt: string;
   hints?: string[];
@@ -14,6 +15,8 @@ const props = defineProps<{
   error?: string;
 }>();
 defineEmits<{ reveal: [] }>();
+const { t, locale } = useI18n();
+const task = computed(() => renderExercisePrompt(props.prompt, t("lesson.image")));
 const opened = ref(0);
 const total = computed(() => props.hints?.length ?? 0);
 </script>
@@ -23,7 +26,15 @@ const total = computed(() => props.hints?.length ?? 0);
       <p class="s-exercise__label">
         <UiIcon name="exercise" :size="12" />{{ $t("lesson.yourTurn") }}
       </p>
-      <UiProse :markdown="prompt" />
+      <div v-if="task.before" class="s-prose" v-html="task.before" />
+      <UiExerciseEditor
+        :key="JSON.stringify([lessonId, blockId, task.language, task.code, locale])"
+        :lesson-id="lessonId"
+        :block-id="blockId"
+        :starter="task.code"
+        :language="task.language"
+      />
+      <div v-if="task.after" class="s-prose" v-html="task.after" />
     </div>
     <div v-if="total" class="s-exercise__hints">
       <ol v-if="opened" class="s-exercise__list">
@@ -69,6 +80,7 @@ const total = computed(() => props.hints?.length ?? 0);
 }
 .s-exercise__task {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s-3);
   padding: var(--s-5);
 }
