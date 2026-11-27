@@ -14,7 +14,13 @@ function expectPublicHtml(response: Response) {
   expect(response.headers.getSetCookie()).toEqual([]);
 }
 
-function expectSocialHead(html: string, path: string, lang: string, type = "website") {
+function expectSocialHead(
+  html: string,
+  path: string,
+  lang: string,
+  type = "website",
+  contentLocale?: string,
+) {
   const origin = "https://startodel.example";
   const localized = (prefix: string) => origin + (prefix && path === "/" ? prefix : prefix + path);
   const image = origin + "/og" + (path.startsWith("/u/") ? path : "/site") + ".png?lang=" + lang;
@@ -26,7 +32,7 @@ function expectSocialHead(html: string, path: string, lang: string, type = "webs
   expect(title).toBeTruthy();
   expect(description).toBeTruthy();
   expect(meta("property", "og:type")).toBe(type);
-  expect(meta("property", "og:locale")).toBe(lang === "en" ? "en_US" : "ru_RU");
+  expect(meta("property", "og:locale")).toBe(contentLocale ?? (lang === "en" ? "en_US" : "ru_RU"));
   expect(meta("property", "og:description")).toBe(description);
   expect(meta("property", "og:site_name")).toBe(lang === "ru" ? "Стартодел" : "Startodel");
   expect(meta("property", "og:image")).toBe(image);
@@ -36,9 +42,14 @@ function expectSocialHead(html: string, path: string, lang: string, type = "webs
   expect(meta("name", "twitter:title")).toBe(title);
   expect(meta("name", "twitter:description")).toBe(description);
   expect(meta("name", "twitter:image")).toBe(image);
-  const canonical = localized(lang === "ru" ? "/ru" : "");
+  const canonical = localized(!contentLocale && lang === "ru" ? "/ru" : "");
   expect(meta("property", "og:url")).toBe(canonical);
   expect(html.match(/<link[^>]*rel="canonical"[^>]*>/)?.[0]).toContain('href="' + canonical + '"');
+  expect(html.match(/<link[^>]*rel="canonical"[^>]*>/g)).toHaveLength(1);
+  if (contentLocale) {
+    expect(html).not.toMatch(/<link[^>]*\bhreflang=/);
+    return;
+  }
   for (const alternate of ["ru", "en", "x-default"]) {
     const tag = html.match(new RegExp('<link[^>]*hreflang="' + alternate + '"[^>]*>'))?.[0];
     expect(tag).toContain('href="' + localized(alternate === "ru" ? "/ru" : "") + '"');
@@ -80,6 +91,7 @@ export function publicHttpTests(
       recipient = forUser(db, reader.id);
     const track = await owner.createTrack({
       title: "Public curriculum",
+      language: "pt-br",
       sources: { docs: ["https://example.org/docs"] },
     });
     const hidden = await owner.createTrack("Hidden-track-sentinel");
@@ -377,14 +389,23 @@ export function publicHttpTests(
           }
           const type =
             suffix === "/publisher" ? "profile" : suffix === path ? "website" : "article";
-          expectSocialHead(html, "/u" + suffix, prefix ? "ru" : "en", type);
+          const profile = suffix === "/publisher";
+          expectSocialHead(
+            html,
+            "/u" + suffix,
+            prefix ? "ru" : "en",
+            type,
+            profile ? undefined : "pt_BR",
+          );
+          expect((profile ? data.tracks[0] : data).language).toBe("pt-br");
+          expect(response.redirected).toBe(false);
           const schemaText = html.match(
             /<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/,
           )?.[1];
           expect(schemaText).toBeTruthy();
           expect(schemaText).not.toContain("<");
           const schema = JSON.parse(schemaText!);
-          const url = "https://startodel.example" + prefix + "/u" + suffix;
+          const url = "https://startodel.example" + (profile ? prefix : "") + "/u" + suffix;
           expect(schema).toMatchObject({ "@context": "https://schema.org", url });
           if (suffix === "/publisher") {
             expect(schema).toMatchObject({
@@ -395,10 +416,11 @@ export function publicHttpTests(
             expect(schema).toMatchObject({
               "@type": "Course",
               name: track.title,
+              inLanguage: "pt-br",
               author: {
                 "@type": "Person",
                 name: "publisher",
-                url: "https://startodel.example" + prefix + "/u/publisher",
+                url: "https://startodel.example/u/publisher",
               },
               syllabusSections: [
                 {
@@ -429,9 +451,10 @@ export function publicHttpTests(
             expect(schema).toMatchObject({
               "@type": "LearningResource",
               name: lesson.title,
+              inLanguage: "pt-br",
               isPartOf: {
                 "@type": "Course",
-                url: "https://startodel.example" + prefix + "/u" + path,
+                url: "https://startodel.example/u" + path,
               },
             });
           }
@@ -439,7 +462,9 @@ export function publicHttpTests(
           expect(html.match(/id="s-layer"/g)).toHaveLength(1);
           expect(html).toContain('class="s-site"');
           if (suffix === "/publisher") expect(main).toContain('class="s-trackcard"');
-          expect(html).toMatch(new RegExp('<html[^>]* lang="' + (prefix ? "ru" : "en") + '"'));
+          expect(html).toMatch(
+            new RegExp('<html[^>]* lang="' + (profile ? (prefix ? "ru" : "en") : "pt-br") + '"'),
+          );
           if (suffix === path) {
             expect(main).toMatch(/<h1\b[^>]*>Public curriculum<\/h1>/);
             expect(main).toContain("s-part is-outline");
@@ -470,6 +495,15 @@ export function publicHttpTests(
           }
         }
     }
+    const upperId = await request("/ru/u" + path + "/lessons/" + lesson.id.toUpperCase());
+    expect(upperId.status).toBe(200);
+    expectSocialHead(
+      await upperId.text(),
+      "/u" + path + "/lessons/" + lesson.id,
+      "ru",
+      "article",
+      "pt_BR",
+    );
     const graph = await (await request(api)).json();
     expect(Object.keys(graph).sort()).toEqual([
       "author",
@@ -479,6 +513,7 @@ export function publicHttpTests(
       "forkCount",
       "forkedFrom",
       "forks",
+      "language",
       "slug",
       "sources",
       "title",
@@ -566,6 +601,7 @@ export function publicHttpTests(
     const copy = await result.json();
     expect(copy).toMatchObject({
       title: track.title,
+      language: "pt-br",
       slug: track.slug,
       public: false,
       forkedFromTrackId: track.id,
@@ -599,7 +635,13 @@ export function publicHttpTests(
     expect((await recipient.listLessonsForTopic(copiedTopic.id))?.length).toBe(1);
     await recipient.setTrackVisibility(copy.id, true, true);
     expect((await (await request(api)).json()).forks).toEqual([
-      { login: "forker", slug: copy.slug, title: copy.title, createdAt: copy.createdAt },
+      {
+        login: "forker",
+        slug: copy.slug,
+        title: copy.title,
+        language: "pt-br",
+        createdAt: copy.createdAt,
+      },
     ]);
     expect((await (await request("/api/public/forker/" + copy.slug)).json()).forkedFrom).toEqual({
       login: "publisher",
@@ -609,10 +651,13 @@ export function publicHttpTests(
     await recipient.setTrackVisibility(copy.id, false);
     expect(await (await request(api)).json()).toMatchObject({ forkCount: 2, forks: [] });
     const sitemap = () => request("/sitemap.xml").then((r) => r.text());
-    for (const prefix of ["", "/ru"]) {
-      expect(await sitemap()).toContain(
-        "<loc>https://startodel.example" + prefix + page + "/lessons/" + lesson.id + "</loc>",
-      );
+    const published = await sitemap();
+    for (const path of [page, page + "/lessons/" + lesson.id]) {
+      const loc = "<loc>https://startodel.example" + path + "</loc>";
+      const entries = published.match(/<url>.*?<\/url>/g)!.filter((entry) => entry.includes(loc));
+      expect(entries).toHaveLength(1);
+      expect(entries[0]).not.toContain("hreflang");
+      expect(published).not.toContain("https://startodel.example/ru" + path + "<");
     }
     expect((await request(visibility, a, "PATCH", { public: false })).status).toBe(200);
     for (const p of [api, page, api + "/lessons/" + lesson.id, page + "/lessons/" + lesson.id])

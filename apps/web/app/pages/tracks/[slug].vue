@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LEGAL_TERMS_VERSION } from "@startodel/core";
+import { LEGAL_TERMS_VERSION, type TrackLanguage } from "@startodel/core";
 import { COMPLETE_LEVEL, topicStates } from "../../components/ui/board";
 
 definePageMeta({ layout: "app" });
@@ -57,6 +57,10 @@ function confirmVisibility() {
   saveError.value = false;
   open.value = true;
 }
+async function saveLanguage(language: TrackLanguage) {
+  await $fetch(`/api/tracks/${data.value!.track.id}`, { method: "PATCH", body: { language } });
+  await Promise.all([refresh(), refreshNuxtData(["rail-tracks", "dashboard"])]);
+}
 async function save() {
   if (!data.value || !canSave.value || saving.value) return;
   saving.value = true;
@@ -91,6 +95,7 @@ async function save() {
         :description="data.track.description ?? undefined"
       >
         <template #meta>
+          <UiTrackLanguageEditor :language="data.track.language" :save="saveLanguage" />
           <UiBadge tone="copper" pad>{{
             $t("track.mastered", { done: $n(completed), total: $n(topics.length) })
           }}</UiBadge>

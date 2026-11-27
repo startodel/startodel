@@ -31,6 +31,7 @@ const blockers = computed(() =>
     .map((t) => t.tag + " " + t.title)
     .join(" and "),
 );
+const language = ref("en");
 const complete = sampleTopics.filter((t) => t.level >= 2).length;
 const actions = [
   {
@@ -62,6 +63,14 @@ const actions = [
         :description="sampleTrack.goal"
       >
         <template #meta>
+          <UiTrackLanguageEditor
+            :language="language"
+            :save="
+              (tag) => {
+                language = tag;
+              }
+            "
+          />
           <UiBadge tone="copper" pad>{{
             $t("track.mastered", { done: $n(complete), total: $n(sampleTopics.length) })
           }}</UiBadge>

@@ -21,6 +21,7 @@ const columns: TableColumn<SampleTopic>[] = [
 ];
 const rows = sampleTopics.slice(0, 8);
 const view = ref<"mastery" | "activity">("mastery");
+const { language, options, filtered } = useTrackLanguageFilter(() => sampleTracks);
 </script>
 <template>
   <ShowcaseApp current="progress" :crumbs="[{ label: 'Progress' }]">
@@ -41,10 +42,16 @@ const view = ref<"mastery" | "activity">("mastery");
       <div class="s-split" style="--s-aside: 24rem">
         <div class="s-stack" style="--s-gap: var(--s-8)">
           <section class="s-stack" style="--s-gap: var(--s-2)">
-            <UiSectionHeading title="Tracks" :count="sampleTracks.length" />
+            <UiTrackFilterHeading
+              v-model="language"
+              title="Tracks"
+              :count="filtered.length"
+              :options="options"
+            />
             <div class="rows">
               <UiTrackStrip
-                v-for="t in sampleTracks"
+                v-for="t in filtered"
+                :language="t.language"
                 :key="t.id"
                 :title="t.title"
                 :levels="t.levels"

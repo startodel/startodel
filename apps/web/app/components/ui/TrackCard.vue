@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import type { TrackLanguage } from "@startodel/core";
 import type { LinkTarget } from "./nav";
 /** A Public Track in a list: on a Public Profile or among the Forks of a Track. */
 defineProps<{
   title: string;
+  language: TrackLanguage;
   to: LinkTarget;
   description?: string | null;
   /** Shown when the list mixes Owners, such as a list of Forks. */
@@ -28,6 +30,7 @@ const countArgs = useCountArgs();
     </h3>
     <p v-if="description" class="s-trackcard__text">{{ description }}</p>
     <p class="s-trackcard__facts">
+      <UiTrackLanguageBadge :language="language" />
       <span v-if="topics !== undefined"
         ><UiIcon name="track" :size="12" />{{ $t("count.topics", countArgs(topics)) }}</span
       >

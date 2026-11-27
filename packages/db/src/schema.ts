@@ -5,6 +5,7 @@ import type {
   MasteryLevel,
   ProfileQuestionnaire,
   PreferredLanguage,
+  TrackLanguage,
   TrackSources,
   Verdict,
 } from "@startodel/core";
@@ -103,6 +104,7 @@ export const tracks = pgTable(
     forkedFromSlug: text("forked_from_slug"),
     title: text("title").notNull(),
     description: text("description"),
+    language: text("language").$type<TrackLanguage>().notNull(),
     sources: jsonb("sources").$type<TrackSources>().default({}).notNull(),
   },
   (t) => [

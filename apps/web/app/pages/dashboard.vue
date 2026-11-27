@@ -85,6 +85,7 @@ const firstPrompt = computed(() => {
   const goals = profile?.goals.map((goal) => goalLabels.value.get(goal) ?? goal).join(", ");
   return t("next.buildPrompt", { goals: goals || profile?.stack.join(", ") || t("next.goals") });
 });
+const { language, options, filtered } = useTrackLanguageFilter(() => data.value?.tracks);
 </script>
 <template>
   <div class="s-stack" style="--s-gap: var(--s-8)">
@@ -151,10 +152,16 @@ const firstPrompt = computed(() => {
           >
         </UiNotice>
         <section v-if="data?.tracks.length" class="s-stack" style="--s-gap: var(--s-2)">
-          <UiSectionHeading :title="$t('dashboard.tracks')" :count="data.tracks.length" />
+          <UiTrackFilterHeading
+            v-model="language"
+            :title="$t('dashboard.tracks')"
+            :count="filtered.length"
+            :options="options"
+          />
           <div class="rows">
             <UiTrackStrip
-              v-for="track in data.tracks"
+              v-for="track in filtered"
+              :language="track.language"
               :key="track.trackId"
               :title="track.title"
               :to="privateTrackPath(track.trackSlug)"

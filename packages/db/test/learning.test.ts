@@ -50,6 +50,22 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     expect((await bob.createTrack("Основы сетей")).slug).toBe("osnovy-setey");
   });
 
+  test("Track creation uses the explicit language, then the Owner preference, then the title", async () => {
+    expect((await alice.createTrack("SQL")).language).toBe("en");
+    expect((await alice.createTrack("SQL • Ї")).language).toBe("ru");
+    expect((await alice.createTrack("SQL • ҂")).language).toBe("en");
+    await alice.updateProfile({ preferredLanguage: "ru" });
+    expect((await alice.createTrack("SQL")).language).toBe("ru");
+    await alice.updateProfile({ preferredLanguage: "en" });
+    expect((await alice.createTrack("Основы")).language).toBe("en");
+    const track = await alice.createTrack({ title: "Основы", language: "pt-br" });
+    expect(track.language).toBe("pt-br");
+    expect((await alice.updateTrack(track.id, "Новый"))?.language).toBe("pt-br");
+    expect((await alice.updateTrack(track.id, { language: "de" }))?.language).toBe("de");
+    await expect(alice.updateTrack(track.id, { language: "DE" })).rejects.toThrow();
+    await expect(alice.createTrack({ title: "X", language: "" })).rejects.toThrow();
+  });
+
   test("new Track Slugs avoid UUIDs and reserved route segments", async () => {
     const track = await alice.createTrack("Custom slug");
     for (const reserved of ["new", "edit", "fork", randomUUID()]) {
@@ -81,7 +97,8 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
   test("concurrent Forks preserve an existing empty Topic and copy its Lessons only once", async () => {
     const login = randomUUID();
     await db.$client.query("update users set login=$1 where id=$2", [login, owners[0]]);
-    const track = await alice.createTrack("Runtime");
+    const track = await alice.createTrack({ title: "Runtime", language: "pt-br" });
+    await bob.updateProfile({ preferredLanguage: "ru" });
     const topic = await alice.upsertTopic({ slug: "runtime", title: "Source topic" });
     await alice.attachTopicToTrack(track.id, topic.id, 3);
     await alice.createLesson({ topicId: topic.id, title: "Study", position: 7 });
@@ -91,6 +108,7 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
       bob.forkTrack(login, track.slug),
       bob.forkTrack(login, track.slug),
     ]);
+    expect(forks.map((fork) => fork?.language)).toEqual(["pt-br", "pt-br"]);
     expect(new Set(forks.map((fork) => fork?.slug))).toEqual(new Set(["runtime", "runtime-2"]));
     expect(await bob.getTopicBySlug("runtime")).toEqual(existing);
     expect(await bob.listLessonsForTopic(existing.id)).toMatchObject([

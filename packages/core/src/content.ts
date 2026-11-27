@@ -26,6 +26,21 @@ export const ProfileQuestionnaire = z.strictObject({
 });
 export type ProfileQuestionnaire = z.infer<typeof ProfileQuestionnaire>;
 
+/** Lowercase BCP-47 tags with a two- or three-letter primary language (e.g. en, pt-br, zh-hant-tw). */
+export const TrackLanguage = z
+  .string()
+  .max(255)
+  .regex(/^[a-z]{2,3}(?:-[a-z0-9]{1,8})*$/)
+  .refine((tag) => {
+    try {
+      // Intl checks subtag order, repetitions and extensions. Keep the author's lowercase tag.
+      return Intl.getCanonicalLocales(tag).length === 1;
+    } catch {
+      return false;
+    }
+  }, "Expected a lowercase language tag");
+export type TrackLanguage = z.infer<typeof TrackLanguage>;
+
 export const PreferredLanguage = z.enum(["ru", "en"]);
 export type PreferredLanguage = z.infer<typeof PreferredLanguage>;
 export const ProfilePatch = ProfileQuestionnaire.extend({

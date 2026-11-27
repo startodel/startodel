@@ -1,3 +1,4 @@
+import type { TrackLanguage } from "@startodel/core";
 import type { RouteLocationNamedI18n } from "vue-router";
 import { basePath } from "../../../shared/locale";
 import type { IconName } from "./icons";
@@ -16,6 +17,7 @@ export interface NavItem {
   count?: number;
 }
 export interface NavTrack {
+  language: TrackLanguage;
   id: string;
   title: string;
   to: LinkTarget;

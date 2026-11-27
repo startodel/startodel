@@ -4,6 +4,7 @@ import {
   LessonBlocks,
   TopicSlug,
   TrackSources,
+  TrackLanguage,
   ProfileQuestionnaire,
 } from "@startodel/core";
 
@@ -90,4 +91,23 @@ test("validates catalog slugs, repository and documentation links, and experienc
     false,
   );
   expect(ProfileQuestionnaire.shape.yearsOfExperience.safeParse(61).success).toBe(false);
+});
+
+test("Track language accepts lowercase language tags and rejects malformed or freeform input", () => {
+  for (const tag of ["en", "ru", "pt-br", "zh-hant-tw", "fil"])
+    expect(TrackLanguage.parse(tag)).toBe(tag);
+  for (const tag of [
+    "EN",
+    "",
+    "English",
+    "english",
+    "pt-BR",
+    " en",
+    "en_US",
+    "en--us",
+    "en/ru",
+    "en-u",
+    "en\n",
+  ])
+    expect(TrackLanguage.safeParse(tag).success, tag).toBe(false);
 });

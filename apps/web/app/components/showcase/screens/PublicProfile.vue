@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { samplePublicTracks, sampleProfile, screenPath } from "../sample";
 const forks = samplePublicTracks.reduce((sum, t) => sum + t.forks, 0);
+const { language, options, filtered } = useTrackLanguageFilter(() => samplePublicTracks);
 </script>
 <template>
   <ShowcaseSite>
@@ -18,10 +19,17 @@ const forks = samplePublicTracks.reduce((sum, t) => sum + t.forks, 0);
       </header>
 
       <section class="s-stack" style="--s-gap: var(--s-4)">
-        <UiSectionHeading title="Public Tracks" :count="samplePublicTracks.length" />
+        <UiTrackFilterHeading
+          v-model="language"
+          show-single
+          title="Public Tracks"
+          :count="filtered.length"
+          :options="options"
+        />
         <div class="s-columns" style="--s-col: 20rem">
           <UiTrackCard
-            v-for="t in samplePublicTracks"
+            v-for="t in filtered"
+            :language="t.language"
             :key="t.slug"
             :title="t.title"
             :to="screenPath('public-track')"

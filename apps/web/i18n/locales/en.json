@@ -1,5 +1,18 @@
 {
   "brand": "Startodel",
+  "trackLanguage": {
+    "english": "English",
+    "russian": "Russian",
+    "label": "Track language",
+    "all": "All languages",
+    "filter": "Filter Tracks by language",
+    "edit": "Change Track language ({tag})",
+    "other": "Other language",
+    "tag": "Language tag",
+    "format": "Use a lowercase tag such as pt-br.",
+    "save": "Save language",
+    "saveError": "Could not save the Track language"
+  },
   "nav": {
     "language": "Language",
     "dashboard": "Dashboard",

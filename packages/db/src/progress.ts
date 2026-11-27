@@ -79,6 +79,7 @@ export function progressForUser(db: Connection, userId: string) {
       .select({
         trackId: tracks.id,
         trackSlug: tracks.slug,
+        language: tracks.language,
         title: tracks.title,
         total: count(trackTopics.topicId),
         completed: sql<number>`count(*) filter (where ${topicMastery.level} >= 2)`.mapWith(Number),

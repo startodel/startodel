@@ -25,6 +25,7 @@ usePublicHead(
   }),
 );
 const forkTotal = computed(() => data.value?.tracks.reduce((sum, t) => sum + t.forkCount, 0) ?? 0);
+const { language, options, filtered } = useTrackLanguageFilter(() => data.value?.tracks);
 </script>
 <template>
   <div v-if="data" class="s-page profile">
@@ -40,10 +41,17 @@ const forkTotal = computed(() => data.value?.tracks.reduce((sum, t) => sum + t.f
       </dl>
     </header>
     <section class="s-stack">
-      <UiSectionHeading :title="$t('public.tracks')" :count="$n(data.tracks.length)" />
+      <UiTrackFilterHeading
+        v-model="language"
+        show-single
+        :title="$t('public.tracks')"
+        :count="filtered.length"
+        :options="options"
+      />
       <div v-if="data.tracks.length" class="s-columns" style="--s-col: 20rem">
         <UiTrackCard
-          v-for="track in data.tracks"
+          v-for="track in filtered"
+          :language="track.language"
           :key="track.slug"
           :to="'/u/' + login + '/' + encodeURIComponent(track.slug)"
           :title="track.title"

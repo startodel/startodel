@@ -1,4 +1,4 @@
-import type { Block, TrackSources } from "./content.ts";
+import type { Block, TrackLanguage, TrackSources } from "./content.ts";
 
 type Quiz = Extract<Block, { type: "quiz" }>;
 export type PublicBlock =
@@ -43,6 +43,7 @@ export interface PublicAuthor {
   avatarUrl: string | null;
 }
 export interface PublicTrackSummary {
+  language: TrackLanguage;
   title: string;
   description: string | null;
   slug: string;
@@ -77,10 +78,11 @@ export interface PublicTrack extends PublicTrackSummary {
   forkedFrom: ForkedFrom | null;
   topics: PublicTopic[];
   edges: { from: string; to: string }[];
-  forks: { login: string; slug: string; title: string; createdAt: Date }[];
+  forks: { login: string; slug: string; title: string; language: TrackLanguage; createdAt: Date }[];
 }
 export interface PublicLesson extends PublicLessonSummary {
   topic: string;
   trackTitle: string;
+  language: TrackLanguage;
   blocks: PublicBlock[];
 }

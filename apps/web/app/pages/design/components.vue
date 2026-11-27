@@ -1094,6 +1094,7 @@ const prompt =
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Track strip" note="One cell per Topic" layout="stack">
         <UiTrackStrip
+          language="en"
           v-for="t in sampleTracks"
           :key="t.id"
           :title="t.title"
@@ -1293,6 +1294,7 @@ const prompt =
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Track card" layout="grid">
         <UiTrackCard
+          language="en"
           title="Node.js runtime internals"
           :to="{ hash: '#public' }"
           description="From the call stack to production profiling: how Node.js spends time and memory."
@@ -1302,6 +1304,7 @@ const prompt =
           updated="3 days ago"
         />
         <UiTrackCard
+          language="en"
           title="Node.js internals for SRE"
           :to="{ hash: '#public' }"
           :owner="{ login: 'lena', name: 'Lena Orlova' }"

@@ -314,6 +314,25 @@ try {
   const more = page.getByRole("button", { name: "Show more", exact: true });
   assert.equal(await more.count(), 0);
 
+  const editLanguage = (tag) =>
+    page.getByRole("button", { name: "Change Track language (" + tag + ")" });
+  await editLanguage("en").click();
+  const field = page.getByRole("combobox", { name: "Track language", exact: true });
+  await field.click();
+  await page.getByRole("option", { name: "Other language" }).click();
+  const customTag = page.getByRole("textbox", { name: "Language tag" });
+  await customTag.fill("PT-BR");
+  const saveLanguage = page.getByRole("button", { name: "Save language" });
+  assert.ok(await saveLanguage.isDisabled());
+  await customTag.fill("pt-br");
+  if (cascade) await checkCascade(page, "/tracks/" + track.slug);
+  await saveLanguage.click();
+  await editLanguage("pt-br").click();
+  await field.click();
+  await page.getByRole("option", { name: "English" }).click();
+  await saveLanguage.click();
+  await editLanguage("en").waitFor();
+
   // This pitch fits the desktop header and overflows three lines on a phone.
   const pitch =
     "Trace the browser event loop from a timer callback through the microtask queue to the next paint. Use the performance timeline to explain why a busy page misses a frame.";
@@ -949,6 +968,33 @@ try {
   await visit(publicPath);
   assert.equal(await page.getByRole("heading", { name: "About this Track" }).count(), 0);
   assert.equal(await page.getByText(pitch, { exact: true }).count(), 1);
+  // Mixed-language lists filter their own rows. Following a card keeps the chosen chrome.
+  const second = await owner.createTrack({ title: "Сетевые протоколы", language: "ru" });
+  await owner.setTrackVisibility(second.id, true, true);
+  await signIn("bob");
+  const filter = page.locator("main").getByRole("combobox", { name: "Filter Tracks by language" });
+  for (const path of ["/dashboard", "/progress", "/u/bob"]) {
+    await visit(path);
+    const links = page.locator("main").getByRole("link", { name: new RegExp(second.title) });
+    assert.equal(await links.count(), 0);
+    await filter.click();
+    await page.getByRole("option", { name: "All languages" }).click();
+    await links.waitFor();
+    await filter.click();
+    await page.getByRole("option", { name: "RU", exact: true }).click();
+    assert.equal(await page.locator("main .s-trackcard, main .s-trackstrip").count(), 1);
+    if (cascade) await checkCascade(page, path);
+  }
+  await page.getByRole("link", { name: second.title, exact: true }).click();
+  await page.waitForFunction(() => document.documentElement.lang === "ru");
+  assert.equal(
+    await page.locator('link[rel="canonical"]').getAttribute("href"),
+    origin + "/u/bob/" + second.slug,
+  );
+  assert.equal(await page.locator("link[hreflang]").count(), 0);
+  await page.locator(".public__login").click();
+  await page.waitForFunction(() => document.documentElement.lang === "en");
+  assert.equal(await page.locator("link[hreflang]").count(), 3);
   assert.deepEqual(errors, []);
 } finally {
   await browser?.close();

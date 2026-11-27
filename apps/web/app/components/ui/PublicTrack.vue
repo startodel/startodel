@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import type { PublicAuthor, TrackSources } from "@startodel/core";
+import type { PublicAuthor, TrackLanguage, TrackSources } from "@startodel/core";
 import type { BoardEdge } from "./board";
 import type { publicTrackTopics } from "../../utils/public-track";
 
 const props = defineProps<{
   title: string;
   slug: string;
+  language: TrackLanguage;
   description: ReturnType<typeof splitTrackDescription>;
   author: PublicAuthor;
   profileTo: string;
@@ -36,6 +37,7 @@ const { state: copyState, copy } = useCopy();
       <p v-if="description.lead" class="public__lead">{{ description.lead }}</p>
       <div class="s-cluster public__stats">
         <slot name="forked-from" />
+        <UiTrackLanguageBadge :language="language" />
         <UiBadge icon="track">{{ $t("count.topics", countArgs(topics.length)) }}</UiBadge>
         <UiBadge icon="lesson">{{ $t("count.lessons", countArgs(lessonCount)) }}</UiBadge>
         <UiBadge icon="fork">{{ $t("count.forks", countArgs(forkCount)) }}</UiBadge>

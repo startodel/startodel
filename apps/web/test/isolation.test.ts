@@ -231,9 +231,13 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
   test("foreign and missing Tracks return 404 for GET, PATCH and DELETE and leave the Owner's row intact", async () => {
     const a = await signIn("alice");
     const b = await signIn("bob");
-    const mine = await request("/api/tracks", a, "POST", { title: "Alice only" });
+    const mine = await request("/api/tracks", a, "POST", {
+      title: "Alice only",
+      language: "pt-br",
+    });
     expect(mine.status).toBe(201);
     const own = await mine.json();
+    expect(own.language).toBe("pt-br");
     const created = await request("/api/tracks", b, "POST", { title: "Bob only" });
     expect(created.status).toBe(201);
     const foreign = await created.json();
@@ -260,6 +264,16 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
     expect((await request(`/api/tracks/${own.id}`, a, "PATCH", { title: "updated" })).status).toBe(
       200,
     );
+    for (const language of ["EN", "", null]) {
+      expect((await request("/api/tracks", a, "POST", { title: "Invalid", language })).status).toBe(
+        400,
+      );
+      expect((await request(`/api/tracks/${own.id}`, a, "PATCH", { language })).status).toBe(400);
+    }
+    expect((await request(`/api/tracks/${own.id}`, a, "PATCH", {})).status).toBe(400);
+    expect(
+      await (await request(`/api/tracks/${own.id}`, a, "PATCH", { language: "fr" })).json(),
+    ).toMatchObject({ title: "updated", language: "fr" });
     expect((await request(`/api/tracks/${own.id}`, a, "DELETE")).status).toBe(204);
   });
 
@@ -672,17 +686,26 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       expect(await (await request("/api/profile", a)).json()).toEqual(updated);
       expect(await (await request("/api/profile", b)).json()).toEqual(profileB);
 
-      const own = await call("create_track", { title: "Databases", slug: "db-foundations" });
-      expect(own).toMatchObject({ title: "Databases", userId: profileA.userId });
+      const own = await call("create_track", {
+        title: "Databases",
+        slug: "db-foundations",
+        language: "pt-br",
+      });
+      expect(own).toMatchObject({ title: "Databases", language: "pt-br", userId: profileA.userId });
       expect(await call("get_track", { id: own.id })).toEqual(own);
       expect(await call("list_tracks")).toEqual([
         ...before.map((t: { slug: string }) => ({ ...t, url: publicOrigin + "/tracks/" + t.slug })),
         own,
       ]);
-      const renamed = await call("update_track", { id: own.id, title: "Database design" });
+      const renamed = await call("update_track", {
+        id: own.id,
+        title: "Database design",
+        language: "fr",
+      });
       expect(renamed).toMatchObject({
         id: own.id,
         title: "Database design",
+        language: "fr",
         slug: "db-foundations",
       });
       expect(renamed).toEqual({
@@ -728,6 +751,8 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       for (const [name, args] of [
         ["get_profile", { userId: profileB.userId }],
         ["create_track", { title: "   " }],
+        ["create_track", { title: "SQL", language: "EN" }],
+        ["update_track", { id: own.id, language: "" }],
         ["create_track", { title: "Invalid slug", slug: "a/b" }],
         ["update_track", { id: own.id, slug: "Upper" }],
         ["set_track_visibility", { ...visibility, acceptTerms: true }],
