@@ -16,6 +16,7 @@ const week = sampleWeek.map((d) => ({
   count: d.count,
   today: d.today,
 }));
+const { language, options, filtered } = useTrackLanguageFilter(() => sampleTracks);
 </script>
 <template>
   <ShowcaseApp
@@ -70,10 +71,16 @@ const week = sampleWeek.map((d) => ({
         <div class="s-split">
           <div class="s-stack" style="--s-gap: var(--s-8)">
             <section class="s-stack" style="--s-gap: var(--s-2)">
-              <UiSectionHeading title="Tracks" :count="sampleTracks.length" />
+              <UiTrackFilterHeading
+                v-model="language"
+                title="Tracks"
+                :count="filtered.length"
+                :options="options"
+              />
               <div class="rows">
                 <UiTrackStrip
-                  v-for="t in sampleTracks"
+                  v-for="t in filtered"
+                  :language="t.language"
                   :key="t.id"
                   :title="t.title"
                   :levels="t.levels"

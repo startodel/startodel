@@ -22,9 +22,21 @@ export const sampleNav: NavItem[] = [
 ];
 
 export const sampleNavTracks: NavTrack[] = [
-  { id: "node", title: "Node.js runtime internals", to: screenPath("track"), percent: 50 },
-  { id: "pg", title: "PostgreSQL for backend engineers", to: screenPath("track"), percent: 22 },
-  { id: "go", title: "Go concurrency", to: screenPath("track"), percent: 0 },
+  {
+    id: "node",
+    title: "Node.js runtime internals",
+    language: "en",
+    to: screenPath("track"),
+    percent: 50,
+  },
+  {
+    id: "pg",
+    title: "PostgreSQL for backend engineers",
+    language: "en",
+    to: screenPath("track"),
+    percent: 22,
+  },
+  { id: "go", title: "Go concurrency", language: "ru", to: screenPath("track"), percent: 0 },
 ];
 
 export interface SampleTopic extends BoardTopic {
@@ -525,6 +537,7 @@ export const sampleMasteryCounts = [9, 5, 7, 4, 2];
 
 export const sampleTracks = [
   {
+    language: "en",
     id: "node",
     title: "Node.js runtime internals",
     topics: 12,
@@ -533,6 +546,7 @@ export const sampleTracks = [
     updated: "today",
   },
   {
+    language: "en",
     id: "pg",
     title: "PostgreSQL for backend engineers",
     topics: 9,
@@ -541,6 +555,7 @@ export const sampleTracks = [
     updated: "3 days ago",
   },
   {
+    language: "ru",
     id: "go",
     title: "Go concurrency",
     topics: 6,
@@ -696,6 +711,7 @@ const publicPitch =
   "From the call stack to production profiling: how Node.js schedules work, manages memory and where latency comes from.";
 
 export const samplePublicTrack = {
+  language: "en",
   sources: sampleTrack.sources,
   title: "Node.js runtime internals",
   slug: "node-runtime-internals",
@@ -762,6 +778,7 @@ export const sampleSyllabus = [
 
 export const sampleForks = [
   {
+    language: "en",
     login: "dmitry-s",
     name: "Dmitry Sokolov",
     slug: "node-runtime-internals",
@@ -770,6 +787,7 @@ export const sampleForks = [
     forks: 2,
   },
   {
+    language: "en",
     login: "lena",
     name: "Elena Orlova",
     slug: "node-internals-for-sre",
@@ -778,6 +796,7 @@ export const sampleForks = [
     forks: 0,
   },
   {
+    language: "en",
     login: "tkhan",
     name: "Timur Khan",
     slug: "node-runtime-internals",
@@ -786,6 +805,7 @@ export const sampleForks = [
     forks: 1,
   },
   {
+    language: "ru",
     login: "ana-m",
     name: "Ana Morales",
     slug: "event-loop-deep-dive",
@@ -797,6 +817,7 @@ export const sampleForks = [
 
 export const samplePublicTracks = [
   {
+    language: "en",
     slug: "node-runtime-internals",
     title: "Node.js runtime internals",
     description: publicPitch,
@@ -806,6 +827,7 @@ export const samplePublicTracks = [
     updated: "2 days ago",
   },
   {
+    language: "en",
     slug: "postgres-for-backend",
     title: "PostgreSQL for backend engineers",
     description:
@@ -816,6 +838,7 @@ export const samplePublicTracks = [
     updated: "last week",
   },
   {
+    language: "ru",
     slug: "go-concurrency",
     title: "Go concurrency",
     description:

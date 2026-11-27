@@ -1,5 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ProfilePatch, TrackSlug, TrackSources } from "@startodel/core";
+import { ProfilePatch, TrackLanguage, TrackSlug, TrackSources } from "@startodel/core";
 import { z } from "zod";
 import { privateTrackPath } from "../../shared/locale";
 import { empty, id, registerTools, summary, title, type UserData } from "./register";
@@ -12,7 +12,7 @@ export function createToolServer(data: UserData, origin: string) {
   const register = registerTools(server);
   register(
     "get_profile",
-    "Read your Profile and Onboarding Questionnaire before planning a Track. Includes your GitHub login and preferred learning language (ru, en or null).",
+    "Read your Profile and Onboarding Questionnaire before planning a Track. Includes your GitHub login and preferred UI language (ru, en or null).",
     empty,
     () => data.getProfileWithLogin(),
   );
@@ -36,7 +36,7 @@ export function createToolServer(data: UserData, origin: string) {
   }
   register(
     "list_tracks",
-    "List your Tracks, including IDs and sources, to choose what to study.",
+    "List your Tracks, including IDs, content language and sources, to choose what to study.",
     empty,
     async () => {
       const tracks = await data.listTracks();
@@ -46,7 +46,7 @@ export function createToolServer(data: UserData, origin: string) {
   );
   register(
     "get_track",
-    "Read one of your Tracks by exactly one UUID id or Track slug. Returns its canonical url and, when published at your login, publicUrl.",
+    "Read one of your Tracks by exactly one UUID id or Track slug. Returns its content language, canonical url and, when published at your login, publicUrl.",
     z
       .strictObject({ id: id.optional(), slug: TrackSlug.optional() })
       .refine(
@@ -61,18 +61,19 @@ export function createToolServer(data: UserData, origin: string) {
   const track = z.strictObject({
     title,
     slug: TrackSlug.optional(),
+    language: TrackLanguage.optional(),
     description: summary,
     sources: TrackSources.optional(),
   });
   register(
     "create_track",
-    "Create a Track for a learning goal. Describe the learning outcome and scope in one or two sentences. Put versioned references in sources (one GitHub repo and up to 20 documentation links). Returns the Track.",
+    "Create a Track for a learning goal. Set language explicitly when you know the content language (lowercase tag such as pt-br). Describe the learning outcome and scope in one or two sentences. Put versioned references in sources (one GitHub repo and up to 20 documentation links). Returns the Track.",
     track,
     async (input) => trackLinks(await data.createTrack(input)),
   );
   register(
     "update_track",
-    "Revise a Track by ID. Keep the description to one or two sentences on the learning outcome and scope. Put versioned references in sources. Supplied sources replace previous sources. Returns the updated Track.",
+    "Revise a Track by ID. Set language when correcting the content language. Keep the description to one or two sentences on the learning outcome and scope. Put versioned references in sources. Supplied sources replace previous sources. Returns the updated Track.",
     track.partial().extend({ id }),
     async ({ id, ...patch }) => {
       const track = await data.updateTrack(id, patch);

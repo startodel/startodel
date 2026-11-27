@@ -1,3 +1,5 @@
+import type { TrackLanguage } from "@startodel/core";
+
 export type UiLocale = "ru" | "en";
 export const languageCookie = "startodel_language";
 export function pageLocale(path: string): UiLocale {
@@ -19,6 +21,14 @@ export function privateTrackPath(slug: string, locale: UiLocale = "en") {
 export function alternateUrls(origin: string, path: string) {
   const en = origin + localizedPath(path, "en");
   return { en, ru: origin + localizedPath(path, "ru"), "x-default": en };
+}
+
+/** Open Graph uses language_TERRITORY. Prefer an explicit region, then CLDR's likely region
+ * (en → en_US, ru → ru_RU). Keep the language alone if CLDR has no region for it. */
+export function openGraphLocale(tag: TrackLanguage) {
+  const locale = new Intl.Locale(tag);
+  const region = locale.region ?? locale.maximize().region;
+  return region ? locale.language + "_" + region : locale.language;
 }
 
 const rules = new Intl.PluralRules("ru");

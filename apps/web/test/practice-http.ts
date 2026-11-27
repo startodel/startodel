@@ -46,7 +46,7 @@ export function practiceHttpTests(
     // Rows created before slug routing may have both v4 IDs and UUID-shaped slugs.
     const legacySlug = crypto.randomUUID();
     await env().db.$client.query(
-      "insert into tracks (user_id, id, title, slug) values ($1,$2,'Legacy Track','legacy-track'), ($1,$3,'UUID slug',$2::uuid::text), ($1,$4,'Another legacy Track',$5)",
+      "insert into tracks (user_id, id, language, title, slug) values ($1,$2,'en','Legacy Track','legacy-track'), ($1,$3,'en','UUID slug',$2::uuid::text), ($1,$4,'en','Another legacy Track',$5)",
       [own.id, id, crypto.randomUUID(), crypto.randomUUID(), legacySlug],
     );
     const query = "?topic=one&filter=a%20b&filter=two";

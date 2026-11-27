@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { TrackLanguage } from "@startodel/core";
 import type { LinkTarget } from "./nav";
 import { NuxtLinkLocale } from "#components";
 import { COMPLETE_LEVEL } from "./board";
@@ -8,6 +9,7 @@ import { COMPLETE_LEVEL } from "./board";
  */
 const props = defineProps<{
   title: string;
+  language: TrackLanguage;
   /** The Mastery level of every Topic, in Track order. */
   levels: number[];
   completed?: number;
@@ -27,7 +29,7 @@ const complete = computed(
     :class="{ 's-trackstrip--link': to }"
   >
     <div class="s-trackstrip__head">
-      <h3 class="s-trackstrip__title">{{ title }}</h3>
+      <h3 class="s-trackstrip__title">{{ title }} <UiTrackLanguageBadge :language="language" /></h3>
       <p class="s-trackstrip__count">
         <strong>{{ complete }}</strong> {{ $t("board.liveOf", { total: total ?? levels.length }) }}
       </p>

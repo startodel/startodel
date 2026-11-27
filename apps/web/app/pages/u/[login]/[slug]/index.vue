@@ -46,10 +46,12 @@ usePublicHead(
       hasPart: topic.lessons.map((lesson) => ({
         "@type": "LearningResource",
         name: lesson.title,
+        inLanguage: track.language,
         url: pageUrl(lesson.to),
       })),
     })),
   }),
+  track.language,
 );
 const { user } = useUserSession();
 const isOwner = computed(() => user.value?.login === login);
@@ -71,12 +73,19 @@ async function fork() {
 }
 const perPage = 4;
 const page = ref(1);
-const forks = computed(() => track.forks.slice((page.value - 1) * perPage, page.value * perPage));
+const { language, options, filtered } = useTrackLanguageFilter(() => track.forks);
+watch(language, () => {
+  page.value = 1;
+});
+const forks = computed(() =>
+  filtered.value.slice((page.value - 1) * perPage, page.value * perPage),
+);
 </script>
 <template>
   <UiPublicTrack
     :title="track.title"
     :slug="slug"
+    :language="track.language"
     :description="description"
     :author="track.author"
     :profile-to="profilePath"
@@ -139,20 +148,26 @@ const forks = computed(() => track.forks.slice((page.value - 1) * perPage, page.
       <UiNotice v-if="forkFailed" tone="danger" :title="$t('public.forkError')" />
     </template>
     <template #forks>
-      <UiSectionHeading :title="$t('public.forks')" :count="$n(track.forks.length)" />
+      <UiTrackFilterHeading
+        v-model="language"
+        :options="options"
+        :title="$t('public.forks')"
+        :count="filtered.length"
+      />
       <UiTrackCard
         v-for="f in forks"
         :key="f.login + '/' + f.slug"
         :title="f.title"
+        :language="f.language"
         :to="'/u/' + encodeURIComponent(f.login) + '/' + encodeURIComponent(f.slug)"
         :owner="{ login: f.login, to: '/u/' + encodeURIComponent(f.login) }"
         :updated="displayDate(f.createdAt)"
       />
       <UiEmptyState v-if="!track.forks.length" :title="$t('public.noForks')" icon="fork" compact />
       <UiPagination
-        v-if="track.forks.length > perPage"
+        v-if="filtered.length > perPage"
         v-model:page="page"
-        :total="track.forks.length"
+        :total="filtered.length"
         :per-page="perPage"
         :label="$t('public.forks')"
       />

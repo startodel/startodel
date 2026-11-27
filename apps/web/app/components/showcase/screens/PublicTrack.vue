@@ -3,6 +3,7 @@ import { sampleEdges, sampleForks, samplePublicTrack, sampleSyllabus, screenPath
 import { publicTrackTopics } from "../../../utils/public-track";
 const props = defineProps<{ state?: string }>();
 const track = samplePublicTrack;
+const { language, options, filtered } = useTrackLanguageFilter(() => sampleForks);
 const owner = computed(() => props.state === "owner" || props.state === "publish");
 const publishing = ref(props.state === "publish");
 const agree = ref(false);
@@ -40,6 +41,7 @@ function publish() {
     <UiPublicTrack
       :title="track.title"
       :slug="track.slug"
+      :language="track.language"
       :description="description"
       :author="{ ...track.owner, avatarUrl: null }"
       :profile-to="screenPath('public-profile')"
@@ -87,9 +89,15 @@ function publish() {
         <p v-else class="s-muted">{{ $t("public.forkHint") }}</p>
       </template>
       <template #forks>
-        <UiSectionHeading :title="$t('public.forks')" :count="sampleForks.length" />
+        <UiTrackFilterHeading
+          v-model="language"
+          :title="$t('public.forks')"
+          :count="filtered.length"
+          :options="options"
+        />
         <UiTrackCard
-          v-for="f in sampleForks"
+          v-for="f in filtered"
+          :language="f.language"
           :key="f.login"
           :title="f.title"
           :to="screenPath('public-track')"

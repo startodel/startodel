@@ -36,8 +36,9 @@ const items = computed<NavItem[]>(() => [
 ]);
 const tracks = computed(() => {
   const progress = new Map(dashboard.value?.tracks.map((track) => [track.trackId, track.percent]));
-  return catalog.value?.map(({ id, slug, title }) => ({
+  return catalog.value?.map(({ id, slug, title, language }) => ({
     id: slug,
+    language,
     title,
     to: privateTrackPath(slug),
     percent: progress.get(id) ?? 0,

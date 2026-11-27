@@ -47,6 +47,7 @@ const columns = computed(() => [
   { key: "read", label: t("progress.read") },
   { key: "last", label: t("progress.last") },
 ]);
+const { language, options, filtered } = useTrackLanguageFilter(() => data.value?.perTrack);
 </script>
 <template>
   <div class="s-stack" style="--s-gap: var(--s-8)">
@@ -80,7 +81,12 @@ const columns = computed(() => [
       <div class="s-split" style="--s-aside: 24rem">
         <div class="s-stack" style="--s-gap: var(--s-8)">
           <section class="s-stack">
-            <UiSectionHeading :title="$t('progress.completion')" :count="data.perTrack.length" />
+            <UiTrackFilterHeading
+              v-model="language"
+              :title="$t('progress.completion')"
+              :count="filtered.length"
+              :options="options"
+            />
             <p class="s-muted">{{ $t("progress.threshold") }}</p>
             <UiEmptyState
               v-if="!data.perTrack.length"
@@ -90,7 +96,8 @@ const columns = computed(() => [
             />
             <div class="rows">
               <UiTrackStrip
-                v-for="track in data.perTrack"
+                v-for="track in filtered"
+                :language="track.language"
                 :key="track.trackId"
                 :title="track.title"
                 :levels="levels.get(track.trackId) ?? []"

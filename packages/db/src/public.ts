@@ -25,6 +25,7 @@ export const forkedFrom = sql<ForkedFrom | null>`case when tracks.forked_from_lo
      from tracks as source join users as source_author on source_author.id = source.user_id
      where source.id = tracks.forked_from_track_id and source.public = true)) end`;
 const trackSummary = {
+  language: tracks.language,
   title: tracks.title,
   description: tracks.description,
   slug: tracks.slug,
@@ -71,6 +72,7 @@ function trackLessons<T extends typeof lessons.blocks | SQL<PublicBlock[]>>(
       blocks,
       topic: topics.slug,
       trackTitle: tracks.title,
+      language: tracks.language,
     })
     .from(tracks)
     .innerJoin(trackTopics, eq(trackTopics.trackId, tracks.id))
@@ -161,6 +163,7 @@ export function publicReader(db: Connection) {
           login: users.login,
           slug: fork.slug,
           title: fork.title,
+          language: fork.language,
           createdAt: fork.createdAt,
         })
         .from(tracks)

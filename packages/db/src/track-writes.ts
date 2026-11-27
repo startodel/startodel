@@ -1,11 +1,12 @@
-import { LEGAL_TERMS_VERSION, TrackSlug, TrackSources } from "@startodel/core";
+import { LEGAL_TERMS_VERSION, TrackLanguage, TrackSlug, TrackSources } from "@startodel/core";
 import { and, eq } from "drizzle-orm";
 import type { Connection } from "./index.ts";
-import { tracks, users } from "./schema.ts";
+import { profiles, tracks, users } from "./schema.ts";
 import { reservedTrackSlug, trackSlugFromTitle } from "./track-slug.ts";
 
 type TrackInput = {
   title: string;
+  language?: TrackLanguage;
   slug?: string;
   description?: string | null;
   sources?: TrackSources;
@@ -15,6 +16,7 @@ type ForkSource = { id: string; login: string; slug: string };
 function fields(input: Partial<TrackInput>) {
   return {
     title: input.title,
+    language: input.language === undefined ? undefined : TrackLanguage.parse(input.language),
     description: input.description,
     sources: input.sources === undefined ? undefined : TrackSources.parse(input.sources),
     slug: input.slug === undefined ? undefined : TrackSlug.parse(input.slug),
@@ -22,11 +24,20 @@ function fields(input: Partial<TrackInput>) {
 }
 
 export function trackWrites(db: Connection, userId: string) {
+  // New Tracks use the Owner's preference when available. Migration 0008 uses only the title.
+  async function defaultLanguage(title: string): Promise<TrackLanguage> {
+    const [profile] = await db
+      .select({ preference: profiles.preferredLanguage })
+      .from(profiles)
+      .where(eq(profiles.userId, userId));
+    return profile?.preference ?? (/(?=\p{Letter})\p{Script=Cyrillic}/u.test(title) ? "ru" : "en");
+  }
   const ownTrack = (id: string) => and(eq(tracks.userId, userId), eq(tracks.id, id));
   return {
     async createTrack(input: string | TrackInput, source?: ForkSource) {
       const values = typeof input === "string" ? { title: input } : input;
       const parsed = fields(values);
+      const language = parsed.language ?? (await defaultLanguage(values.title));
       const base = parsed.slug ?? trackSlugFromTitle(values.title);
       for (let n = reservedTrackSlug(base) ? 2 : 1; ; n++) {
         const suffix = n === 1 ? "" : "-" + n;
@@ -35,6 +46,7 @@ export function trackWrites(db: Connection, userId: string) {
           .insert(tracks)
           .values({
             ...parsed,
+            language,
             title: values.title,
             slug,
             userId,

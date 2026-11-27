@@ -1,5 +1,19 @@
-import { isUuid, TrackSlug } from "@startodel/core";
+import { isUuid, TrackLanguage, TrackSlug } from "@startodel/core";
 import { createError, getRouterParam, readBody, type RequestEvent } from "nuxt/server";
+
+import { z } from "zod";
+
+export const trackInput = z.strictObject({
+  title: z.string().regex(/\S/),
+  language: TrackLanguage.optional(),
+});
+export const trackPatch = trackInput.partial().refine((patch) => Object.keys(patch).length > 0);
+
+export async function readTrackInput<T>(event: RequestEvent, schema: z.ZodType<T>): Promise<T> {
+  const result = schema.safeParse(await readBody(event));
+  if (!result.success) throw createError({ status: 400, message: "Invalid Track input" });
+  return result.data;
+}
 
 async function readOnlyField(event: RequestEvent, key: string): Promise<unknown> {
   const body = await readBody(event);

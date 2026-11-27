@@ -106,6 +106,23 @@ test.skipIf(!url)(
       await apply("0005_review_practice_score");
       await apply("0006_profile_preferred_language");
       await apply("0007_uuidv7_defaults");
+      await client.query("update profiles set preferred_language='ru'");
+      await client.query(
+        "insert into tracks(user_id,title,slug) select id,'SQL · Ї','sql-uk' from users",
+      );
+      await apply("0008_track_language");
+      const languages = await client.query("select title,language from tracks order by slug");
+      expect(languages.rows).toEqual([
+        { title: "Existing", language: "en" },
+        { title: "Existing", language: "en" },
+        { title: "Existing 2", language: "en" },
+        { title: "SQL · Ї", language: "ru" },
+        { title: "中文", language: "en" },
+      ]);
+      const column = await client.query(
+        "select is_nullable from information_schema.columns where table_schema='learning_upgrade' and table_name='tracks' and column_name='language'",
+      );
+      expect(column.rows).toEqual([{ is_nullable: "NO" }]);
       const existing = await client.query(
         "select id, uuid_extract_version(id) as version from users",
       );

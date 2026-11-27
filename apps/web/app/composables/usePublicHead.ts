@@ -1,4 +1,5 @@
-import { alternateUrls, localizedPath } from "../../shared/locale";
+import type { TrackLanguage } from "@startodel/core";
+import { alternateUrls, localizedPath, openGraphLocale } from "../../shared/locale";
 export function usePublicOrigin() {
   return useState("public-origin", () => {
     const callback = import.meta.server ? useRuntimeConfig().oauth.github.redirectURL : "";
@@ -11,16 +12,20 @@ export function usePublicHead(
   path: string,
   type: "website" | "article" | "profile" = "website",
   structuredData?: (pageUrl: (path: string) => string) => Record<string, unknown>,
+  contentLanguage?: TrackLanguage,
 ) {
   const origin = usePublicOrigin().value;
   const { locale, t } = useI18n();
-  const alternates = alternateUrls(origin, path);
-  const url = alternates[locale.value];
+  const alternates = contentLanguage ? [] : Object.entries(alternateUrls(origin, path));
+  const pageUrl = (path: string) =>
+    origin + (contentLanguage ? path : localizedPath(path, locale.value));
+  const url = pageUrl(path);
   const image =
     origin + "/og" + (path.startsWith("/u/") ? path : "/site") + ".png?lang=" + locale.value;
-  const schema = structuredData?.((path) => origin + localizedPath(path, locale.value));
+  const schema = structuredData?.(pageUrl);
   useHead({
     title,
+    htmlAttrs: contentLanguage ? { lang: contentLanguage } : undefined,
     script: schema
       ? [
           {
@@ -29,6 +34,7 @@ export function usePublicHead(
             innerHTML: JSON.stringify({
               "@context": "https://schema.org",
               url,
+              inLanguage: contentLanguage,
               ...schema,
             }).replaceAll("<", "\\u003c"),
           },
@@ -36,7 +42,7 @@ export function usePublicHead(
       : [],
     link: [
       { rel: "canonical", href: url },
-      ...Object.entries(alternates).map(([hreflang, href]) => ({
+      ...alternates.map(([hreflang, href]) => ({
         rel: "alternate" as const,
         type: "text/html",
         hreflang,
@@ -49,7 +55,7 @@ export function usePublicHead(
     ogTitle: title,
     ogDescription: description,
     ogUrl: url,
-    ogLocale: locale.value === "ru" ? "ru_RU" : "en_US",
+    ogLocale: openGraphLocale(contentLanguage ?? locale.value),
     ogType: type,
     ogSiteName: () => t("brand"),
     ogImage: image,

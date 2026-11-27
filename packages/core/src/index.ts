@@ -3,6 +3,7 @@ import type {
   PreferredLanguage,
   ProfileQuestionnaire,
   TopicSlug,
+  TrackLanguage,
   TrackSources,
 } from "./content.ts";
 import type { ReviewSchedule, Verdict } from "./review.ts";
@@ -26,6 +27,7 @@ export interface TopicEdge extends OwnedRecord {
   toTopicId: string;
 }
 export interface Track extends OwnedRecord {
+  language: TrackLanguage;
   slug: string;
   public: boolean;
   forkedFromTrackId: string | null;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { LinkTarget, NavItem, NavTrack, NavUser } from "./nav";
-withDefaults(
+const props = withDefaults(
   defineProps<{
     items: NavItem[];
     current?: string;
@@ -13,6 +13,7 @@ withDefaults(
 );
 defineEmits<{ logout: [] }>();
 const collapsed = defineModel<boolean>("collapsed", { default: false });
+const { language, options, filtered } = useTrackLanguageFilter(() => props.tracks, false);
 </script>
 <template>
   <aside class="s-rail" :class="{ 's-rail--collapsed': collapsed }">
@@ -50,8 +51,15 @@ const collapsed = defineModel<boolean>("collapsed", { default: false });
       </ul>
       <template v-if="tracks?.length">
         <p class="s-rail__heading">{{ $t("nav.tracks") }}</p>
+        <UiSelect
+          v-if="!collapsed && options.length > 2"
+          v-model="language"
+          size="sm"
+          :label="$t('trackLanguage.filter')"
+          :options="options"
+        />
         <ul class="s-rail__list">
-          <li v-for="t in tracks" :key="t.id">
+          <li v-for="t in collapsed ? tracks : filtered" :key="t.id">
             <NuxtLinkLocale
               :to="t.to"
               class="s-rail__item s-rail__item--track"
