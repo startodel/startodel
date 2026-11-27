@@ -75,6 +75,9 @@ test("skill files have valid front matter and identical bytes across builds and 
     const description = JSON.parse(metadata![2]!);
     expect(description.trim().length).toBeGreaterThan(0);
     expect(description.length).toBeLessThan(1024);
+    if (name === "startodel-build-track") {
+      expect(description).toMatch(/one technology.*compare technologies.*explicitly asks/i);
+    }
   }
 });
 

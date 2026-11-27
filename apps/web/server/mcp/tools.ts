@@ -12,7 +12,7 @@ export function createToolServer(data: UserData, origin: string) {
   const register = registerTools(server);
   register(
     "get_profile",
-    "Read your Profile and Onboarding Questionnaire before planning a Track. Includes your GitHub login and preferred UI language (ru, en or null).",
+    "Read your Profile and Onboarding Questionnaire before planning a Track. Includes your GitHub login and preferred UI language (ru, en or null). Use it with what you already know to choose the starting Topic, depth, pace, prerequisites, project examples and learning language. Teach in the requested technology.",
     empty,
     () => data.getProfileWithLogin(),
   );
