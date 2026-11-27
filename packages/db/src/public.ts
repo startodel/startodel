@@ -9,20 +9,21 @@ import {
   type PublicTopic,
   type PublicTrack,
 } from "@startodel/core";
-import { and, desc, eq, sql, type SQL } from "drizzle-orm";
+import { and, eq, sql, type SQL } from "drizzle-orm";
 import { alias, type SelectedFields } from "drizzle-orm/pg-core";
 import type { Connection } from "./index.ts";
 import type { Transaction } from "./owned.ts";
-import { users, tracks, trackTopics, topics, topicEdges, lessons } from "./schema.ts";
+import { activityHeatmap, learningProgress } from "./public-activity.ts";
+import { profiles, users, tracks, trackTopics, topics, topicEdges, lessons } from "./schema.ts";
 
-const author = { login: users.login, name: users.name, avatarUrl: users.avatarUrl };
+const author = { login: users.handle, name: users.name, avatarUrl: users.avatarUrl };
 const visible = eq(tracks.public, true);
 const fork = alias(tracks, "fork");
 // Qualify both sides of correlated subqueries, including in a single-table projection.
 export const forkCount = sql<number>`(select count(*)::integer from tracks as fork where fork.forked_from_track_id = tracks.id)`;
 export const forkedFrom = sql<ForkedFrom | null>`case when tracks.forked_from_login is not null then
-  json_build_object('login', tracks.forked_from_login, 'slug', tracks.forked_from_slug, 'source',
-    (select json_build_object('login', source_author.login, 'slug', source.slug)
+  json_build_object('login', coalesce((select source_author.handle from tracks as source join users as source_author on source_author.id = source.user_id where source.id = tracks.forked_from_track_id and source.public), tracks.forked_from_login), 'slug', tracks.forked_from_slug, 'source',
+    (select json_build_object('login', source_author.handle, 'slug', source.slug)
      from tracks as source join users as source_author on source_author.id = source.user_id
      where source.id = tracks.forked_from_track_id and source.public = true)) end`;
 const trackSummary = {
@@ -41,18 +42,12 @@ const lessonSummary = {
   position: lessons.position,
 };
 
-export function accountId(db: Connection, login: string | typeof users.login) {
-  // A GitHub login can be reassigned. Resolve one identity before reading its catalog.
-  const candidate = alias(users, "candidate");
-  return db
-    .select({ id: candidate.id })
-    .from(candidate)
-    .where(eq(candidate.login, login))
-    .orderBy(desc(candidate.updatedAt), candidate.id)
-    .limit(1);
-}
 function publicTrack(db: Connection, login: string, slug: string) {
-  return and(visible, eq(tracks.userId, accountId(db, login)), eq(tracks.slug, slug));
+  return and(
+    visible,
+    eq(tracks.userId, db.select({ id: users.id }).from(users).where(eq(users.handle, login))),
+    eq(tracks.slug, slug),
+  );
 }
 // Anonymous Lesson queries discard practice keys inside PostgreSQL. WITH ORDINALITY
 // preserves the authored order of both Blocks and questions.
@@ -116,24 +111,55 @@ export function forkLessons(tx: Transaction, login: string, slug: string, topic:
 export function publicReader(db: Connection) {
   return {
     async profile(login: string): Promise<PublicProfile | undefined> {
-      const [user] = await db
-        .select(author)
-        .from(users)
-        .where(eq(users.id, accountId(db, login)));
-      if (!user) return undefined;
-      const list = await db
-        .select(trackSummary)
-        .from(tracks)
-        .where(and(visible, eq(tracks.userId, accountId(db, login))))
-        .orderBy(tracks.title, tracks.slug);
-      return { ...user, tracks: list };
+      return db.transaction(
+        async (tx) => {
+          const [user] = await tx
+            .select({
+              ...author,
+              id: users.id,
+              bio: profiles.bio,
+              headline: profiles.headline,
+              links: profiles.links,
+              showHeatmap: profiles.showActivityHeatmap,
+              includePrivate: profiles.includePrivateActivity,
+              showProgress: profiles.showLearningProgress,
+            })
+            .from(users)
+            .innerJoin(profiles, eq(profiles.userId, users.id))
+            .where(and(eq(users.handle, login), eq(profiles.publicProfileEnabled, true)));
+          if (!user) return;
+          const { id, showHeatmap, includePrivate, showProgress, ...identity } = user;
+          const list = await tx
+            .select({
+              ...trackSummary,
+              pinOrder: tracks.pinOrder,
+              topicCount: sql<number>`(select count(*)::int from track_topics where track_id = tracks.id)`,
+            })
+            .from(tracks)
+            .where(and(visible, eq(tracks.userId, id)))
+            .orderBy(tracks.pinOrder, tracks.title, tracks.slug);
+          return {
+            ...identity,
+            tracks: list,
+            ...(showHeatmap && { heatmap: await activityHeatmap(tx, id, includePrivate) }),
+            ...(showProgress && { learningProgress: await learningProgress(tx, id) }),
+          };
+        },
+        { isolationLevel: "repeatable read", accessMode: "read only" },
+      );
     },
     async track(login: string, slug: string): Promise<PublicTrack | undefined> {
       const where = publicTrack(db, login, slug);
       const [track] = await db
-        .select({ ...trackSummary, sources: tracks.sources, author, forkedFrom })
+        .select({
+          ...trackSummary,
+          sources: tracks.sources,
+          author: { ...author, profileEnabled: profiles.publicProfileEnabled },
+          forkedFrom,
+        })
         .from(tracks)
         .innerJoin(users, eq(users.id, tracks.userId))
+        .innerJoin(profiles, eq(profiles.userId, users.id))
         .where(where);
       if (!track) return undefined;
       const rows = await db
@@ -162,7 +188,8 @@ export function publicReader(db: Connection) {
       const edges = await publicEdges(db, where);
       const forks = await db
         .select({
-          login: users.login,
+          login: users.handle,
+          profileEnabled: profiles.publicProfileEnabled,
           slug: fork.slug,
           title: fork.title,
           language: fork.language,
@@ -171,6 +198,7 @@ export function publicReader(db: Connection) {
         .from(tracks)
         .innerJoin(fork, and(eq(fork.forkedFromTrackId, tracks.id), eq(fork.public, true)))
         .innerJoin(users, eq(users.id, fork.userId))
+        .innerJoin(profiles, eq(profiles.userId, users.id))
         .where(where)
         .orderBy(fork.createdAt, fork.id);
       return {
@@ -185,6 +213,7 @@ export function publicReader(db: Connection) {
       const where = publicTrack(db, login, slug);
       const [lesson] = await trackLessons(db, {
         blocks: previewBlocks,
+        profileEnabled: sql<boolean>`(select public_profile_enabled from profiles where user_id = tracks.user_id)`,
         topicTitle: topics.title,
         lessonOrdinal: sql<number>`(select count(*)::int from lessons as sibling
           where sibling.topic_id = ${lessons.topicId}
@@ -207,25 +236,21 @@ export function publicReader(db: Connection) {
         return { ...lesson, topicOrdinal: index + 1, blocks: lesson.blocks.map(publicBlock) };
     },
     sitemap() {
-      // Match the Public Profile lookup when a GitHub login has been reassigned.
-      const accounts = db
-        .selectDistinctOn([users.login], { id: users.id, login: users.login })
-        .from(users)
-        .orderBy(users.login, desc(users.updatedAt), users.id)
-        .as("public_accounts");
       return db
         .select({
-          login: accounts.login,
+          login: users.handle,
+          profileEnabled: profiles.publicProfileEnabled,
           slug: tracks.slug,
           updatedAt: tracks.updatedAt,
           lessonId: lessons.id,
           lessonUpdatedAt: lessons.updatedAt,
         })
-        .from(accounts)
-        .leftJoin(tracks, and(eq(tracks.userId, accounts.id), visible))
+        .from(users)
+        .innerJoin(profiles, eq(profiles.userId, users.id))
+        .leftJoin(tracks, and(eq(tracks.userId, users.id), visible))
         .leftJoin(trackTopics, eq(trackTopics.trackId, tracks.id))
         .leftJoin(lessons, eq(lessons.topicId, trackTopics.topicId))
-        .orderBy(accounts.login, tracks.slug, lessons.id);
+        .orderBy(users.handle, tracks.slug, lessons.id);
     },
   };
 }

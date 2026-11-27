@@ -60,3 +60,4 @@ export interface ReviewItem extends OwnedRecord, ReviewSchedule {
 export * from "./legal.ts";
 export * from "./public.ts";
 export * from "./study-order.ts";
+export * from "./public-profile.ts";

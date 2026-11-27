@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { NuxtLinkLocale } from "#components";
 import type { PublicAuthor, TrackLanguage, TrackSources } from "@startodel/core";
 import type { BoardEdge } from "./board";
 import type { publicTrackTopics } from "../../utils/public-track";
@@ -9,7 +10,7 @@ const props = defineProps<{
   language: TrackLanguage;
   description: ReturnType<typeof splitTrackDescription>;
   author: PublicAuthor;
-  profileTo: string;
+  profileTo?: string;
   publicUrl: string;
   topics: ReturnType<typeof publicTrackTopics>;
   edges: BoardEdge[];
@@ -30,7 +31,10 @@ const { state: copyState, copy } = useCopy();
     <header class="public__head">
       <p class="public__owner">
         <UiAvatar :name="author.name || author.login" :src="author.avatarUrl" :size="24" />
-        <NuxtLinkLocale class="public__login" :to="profileTo">@{{ author.login }}</NuxtLinkLocale>
+        <NuxtLinkLocale v-if="profileTo" class="public__login" :to="profileTo"
+          >@{{ author.login }}</NuxtLinkLocale
+        >
+        <span v-else>@{{ author.login }}</span>
         <span>/ {{ slug }}</span>
       </p>
       <h1 class="s-title">{{ title }}</h1>
@@ -115,14 +119,14 @@ const { state: copyState, copy } = useCopy();
     <footer class="s-columns public__footer">
       <section class="s-stack">
         <UiSectionHeading :title="$t('public.author')" />
-        <NuxtLinkLocale :to="profileTo" class="public__author">
+        <component :is="profileTo ? NuxtLinkLocale : 'div'" :to="profileTo" class="public__author">
           <UiAvatar :name="author.name || author.login" :src="author.avatarUrl" :size="44" />
           <span class="public__identity">
             <strong v-if="author.name">{{ author.name }}</strong>
             <span class="s-muted">@{{ author.login }}</span>
           </span>
-          <UiIcon name="arrow-right" :size="16" />
-        </NuxtLinkLocale>
+          <UiIcon v-if="profileTo" name="arrow-right" :size="16" />
+        </component>
       </section>
       <section id="forks" class="s-stack"><slot name="forks" /></section>
     </footer>
@@ -161,7 +165,7 @@ const { state: copyState, copy } = useCopy();
   text-decoration: none;
 }
 .public__login:hover,
-.public__author:hover strong {
+a.public__author:hover strong {
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }

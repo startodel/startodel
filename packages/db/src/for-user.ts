@@ -6,7 +6,7 @@ import { progressForUser } from "./progress.ts";
 import { grillsForUser } from "./grills.ts";
 import { lessonsForUser } from "./lessons.ts";
 import { masteryForUser } from "./mastery.ts";
-import { accountId } from "./public.ts";
+import { publicProfileSettings } from "./public-profile-settings.ts";
 import { ProfilePatch } from "@startodel/core";
 import { catalogForUser } from "./catalog.ts";
 import { tokensForUser } from "./mcp-tokens.ts";
@@ -33,6 +33,7 @@ export function forUser(db: Connection, userId: string) {
   return {
     forkTrack: (login: string, slug: string) => forkTrack(db, userId, login, slug),
     ...catalog,
+    ...publicProfileSettings(db, userId),
     ...trackWrites(db, userId),
     async getTopicDetails(key: CatalogKey) {
       const topic = await catalog.getTopic(key);
@@ -55,12 +56,12 @@ export function forUser(db: Connection, userId: string) {
     ...lessons,
     ...mastery,
     mcpTokens: tokensForUser(db, userId),
-    async getPublicLogin() {
+    async getPublicHandle() {
       const [owner] = await db
-        .select({ login: users.login })
+        .select({ handle: users.handle })
         .from(users)
-        .where(and(eq(users.id, userId), eq(users.id, accountId(db, users.login))));
-      return owner?.login;
+        .where(eq(users.id, userId));
+      return owner?.handle;
     },
     async getProfileWithLogin() {
       const [profile] = await db

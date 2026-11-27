@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import type {
   AnswerSource,
+  ProfileLink,
   LessonBlocks,
   MasteryLevel,
   ProfileQuestionnaire,
@@ -41,6 +42,7 @@ export const users = pgTable("users", {
   acceptedTermsVersion: text("accepted_terms_version"),
   acceptedTermsAt: timestamp("accepted_terms_at", { withTimezone: true }),
   githubId: bigint("github_id", { mode: "bigint" }).notNull().unique(),
+  handle: text("handle").notNull().unique(),
   login: text("login").notNull(),
   name: text("name"),
   avatarUrl: text("avatar_url"),
@@ -76,6 +78,13 @@ export const profiles = pgTable(
   {
     ...rowColumns(),
     userId: owner().unique(),
+    bio: text("bio"),
+    headline: text("headline"),
+    links: jsonb("links").$type<ProfileLink[]>().notNull().default([]),
+    publicProfileEnabled: boolean("public_profile_enabled").notNull().default(true),
+    showActivityHeatmap: boolean("show_activity_heatmap").notNull().default(true),
+    includePrivateActivity: boolean("include_private_activity").notNull().default(false),
+    showLearningProgress: boolean("show_learning_progress").notNull().default(false),
     goals: text("goals").array().notNull().default([]),
     stack: text("stack").array().notNull().default([]),
     experience: text("experience").$type<ProfileQuestionnaire["experience"]>(),
@@ -96,6 +105,7 @@ export const tracks = pgTable(
   {
     ...ownedColumns(),
     slug: text("slug").notNull(),
+    pinOrder: smallint("pin_order"),
     public: boolean("public").notNull().default(false),
     forkedFromTrackId: uuid("forked_from_track_id").references((): AnyPgColumn => tracks.id, {
       onDelete: "set null",
@@ -113,6 +123,11 @@ export const tracks = pgTable(
     check(
       "tracks_slug_check",
       sql`length(${t.slug}) <= 120 and ${t.slug} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`,
+    ),
+    unique().on(t.userId, t.pinOrder),
+    check(
+      "tracks_pin_check",
+      sql`${t.pinOrder} is null or (${t.public} and ${t.pinOrder} between 1 and 6)`,
     ),
     index("tracks_fork_source_idx").on(t.forkedFromTrackId),
   ],

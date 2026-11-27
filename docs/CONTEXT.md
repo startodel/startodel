@@ -41,11 +41,13 @@
 | Track Slug               | A lowercase, hyphen-separated URL name unique among one Owner’s Tracks. Renaming the Track preserves it.                                                                                                                                    |
 | Fork                     | A one-time copy of a Public Track into another Owner’s Topic Catalog, private on creation.                                                                                                                                                  |
 | Forked From              | The source attribution captured when a Fork is created, linked while the source is public.                                                                                                                                                  |
-| Public Profile           | A User’s public login, name, avatar and list of Public Tracks.                                                                                                                                                                              |
+| Public Profile           | A User’s optional page showing their public handle, identity, Public Tracks and selected learning activity.                                                                                                                                 |
 | Terms Acceptance         | The version of the Publishing rules and Terms of Use a User accepted and the time of acceptance.                                                                                                                                            |
 | Public Fork              | A Fork its Owner has published. It appears in its source Track’s public list of Forks.                                                                                                                                                      |
 
 On the dashboard, when a different Topic is ready to study alongside due Reviews, the Next Step names the study Topic and offers a secondary action to review the due Topics first.
+
+A public handle identifies a User in Public Profile and Public Track URLs. The Owner can edit it in Settings. Their GitHub login follows their GitHub account independently.
 
 ## Mastery
 

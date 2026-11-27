@@ -37,7 +37,7 @@ usePublicHead(
     author: {
       "@type": "Person",
       name: track.author.name || track.author.login,
-      url: pageUrl(profilePath),
+      url: track.author.profileEnabled ? pageUrl(profilePath) : undefined,
     },
     syllabusSections: topics.map((topic) => ({
       "@type": "Syllabus",
@@ -54,7 +54,12 @@ usePublicHead(
   track.language,
 );
 const { user } = useUserSession();
-const isOwner = computed(() => user.value?.login === login);
+const { data: viewer } = await useAsyncData(
+  "viewer-handle",
+  async () => (user.value ? await $fetch("/api/profile/handle") : null),
+  { server: false, watch: [user] },
+);
+const isOwner = computed(() => viewer.value?.handle === login);
 const publicUrl = usePublicOrigin().value + localePath(path);
 const busy = ref(false);
 const forkFailed = ref(false);
@@ -88,7 +93,7 @@ const forks = computed(() =>
     :language="track.language"
     :description="description"
     :author="track.author"
-    :profile-to="profilePath"
+    :profile-to="track.author.profileEnabled ? profilePath : undefined"
     :public-url="publicUrl"
     :topics="topics"
     :edges="track.edges"
@@ -160,7 +165,10 @@ const forks = computed(() =>
         :title="f.title"
         :language="f.language"
         :to="'/u/' + encodeURIComponent(f.login) + '/' + encodeURIComponent(f.slug)"
-        :owner="{ login: f.login, to: '/u/' + encodeURIComponent(f.login) }"
+        :owner="{
+          login: f.login,
+          to: f.profileEnabled ? '/u/' + encodeURIComponent(f.login) : undefined,
+        }"
         :updated="displayDate(f.createdAt)"
       />
       <UiEmptyState v-if="!track.forks.length" :title="$t('public.noForks')" icon="fork" compact />

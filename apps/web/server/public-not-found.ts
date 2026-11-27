@@ -30,6 +30,7 @@ export default defineNitroErrorHandler(async (error, event) => {
     new Response(body, {
       status: 404,
       headers: {
+        "x-robots-tag": "noindex",
         "content-type": json ? "application/json" : "text/html; charset=utf-8",
       },
     }),

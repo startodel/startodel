@@ -1,3 +1,4 @@
+import type { ProfileLink } from "./public-profile.ts";
 import type { Block, TrackLanguage, TrackSources } from "./content.ts";
 
 type Quiz = Extract<Block, { type: "quiz" }>;
@@ -54,7 +55,12 @@ export interface PublicTrackSummary {
   updatedAt: Date;
 }
 export interface PublicProfile extends PublicAuthor {
-  tracks: PublicTrackSummary[];
+  headline: string | null;
+  bio: string | null;
+  links: ProfileLink[];
+  tracks: (PublicTrackSummary & { topicCount: number; pinOrder: number | null })[];
+  heatmap?: { through: string; days: { date: string; count: number }[]; total: number };
+  learningProgress?: { title: string; slug: string; counts: number[] }[];
 }
 export interface ForkedFrom {
   login: string;
@@ -76,14 +82,22 @@ export interface PublicTopic {
 }
 export interface PublicTrack extends PublicTrackSummary {
   sources: TrackSources;
-  author: PublicAuthor;
+  author: PublicAuthor & { profileEnabled: boolean };
   forkedFrom: ForkedFrom | null;
   topics: PublicTopic[];
   edges: { from: string; to: string }[];
-  forks: { login: string; slug: string; title: string; language: TrackLanguage; createdAt: Date }[];
+  forks: {
+    profileEnabled: boolean;
+    login: string;
+    slug: string;
+    title: string;
+    language: TrackLanguage;
+    createdAt: Date;
+  }[];
 }
 export interface PublicLesson extends PublicLessonSummary {
   topic: string;
+  profileEnabled: boolean;
   topicTitle: string;
   topicOrdinal: number;
   lessonOrdinal: number;

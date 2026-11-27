@@ -92,7 +92,10 @@ export function publicHttpTests(
       const session = await signIn("alice");
       for (const prefix of ["", "/ru"]) {
         const title = prefix ? "Страница не найдена · Стартодел" : "Page not found · Startodel";
-        for (const path of ["/@hmbanan666", "/does-not-exist", "/tracks/missing/extra"]) {
+        const alias = await requestPage(prefix + "/@hmbanan666", "", accept);
+        expect(alias.status).toBe(301);
+        expect(alias.headers.get("location")).toBe(prefix + "/u/hmbanan666");
+        for (const path of ["/u/hmbanan666", "/does-not-exist", "/tracks/missing/extra"]) {
           for (const cookie of ["", session]) {
             const res = await requestPage(prefix + path, cookie, accept);
             expect(res.status, prefix + path).toBe(404);
@@ -226,6 +229,127 @@ export function publicHttpTests(
     expect(res.headers.get("location")).toBe("/");
   });
 
+  test("Settings validate public identity and keep Track and Fork URLs in sync", async () => {
+    const { owner, recipient, track, page, a, b } = await curriculum();
+    const patch = (body: unknown, cookie = a) =>
+      request("/api/profile/public", cookie, "PATCH", body);
+    expect((await patch({ bio: "unauthorized" }, "")).status).toBe(401);
+    for (const handle of [
+      "api",
+      "health",
+      "og",
+      "auth",
+      "progress",
+      "ru",
+      "robots.txt",
+      "sitemap.xml",
+      "With-Caps",
+      "a--b",
+      "x".repeat(41),
+    ])
+      expect((await patch({ handle })).status, handle).toBe(400);
+    for (const url of [
+      "http://example.org",
+      "https://me:pw@example.org",
+      "javascript:alert(1)",
+      "https://junk",
+      "broken",
+    ])
+      expect((await patch({ links: [{ url }] })).status, url).toBe(400);
+    expect((await patch({ links: Array(7).fill({ url: "https://example.org" }) })).status).toBe(
+      400,
+    );
+    expect((await patch({ handle: "forker" })).status).toBe(409);
+    expect((await patch({ goals: ["x"] })).status).toBe(400);
+    expect((await patch({ userId: "x" })).status).toBe(400);
+    await owner.setTrackVisibility(track.id, true, true);
+    expect((await patch({ pinnedTrackIds: [track.id] }, b)).status).toBe(404);
+    const fork = (await recipient.forkTrack("publisher", track.slug))!;
+    await recipient.setTrackVisibility(fork.id, true, true);
+    expect(
+      (
+        await patch({
+          handle: "new-publisher",
+          headline: "Database engineer",
+          bio: "Learning SQL.",
+          links: [{ url: "https://example.org", label: "Notes", kind: "website" }],
+        })
+      ).status,
+    ).toBe(200);
+    const profilePath = "/u/new-publisher";
+    const trackPath = profilePath + "/" + track.slug;
+    for (const old of ["/u/publisher", page]) expect((await requestPage(old)).status).toBe(404);
+    const alias = await requestPage("/@publisher");
+    expect((await requestPage(alias.headers.get("location")!)).status).toBe(404);
+    const html = await (await requestPage(profilePath)).text();
+    expectSocialHead(html, profilePath, "en", "profile");
+    expect(html).toContain('content="Database engineer · Learning SQL."');
+    expect(html).toContain('href="https://example.org"');
+    expect(await (await requestPage(trackPath)).text()).toContain('href="' + profilePath + '"');
+    const attribution = (await (await request("/api/public/forker/" + fork.slug)).json())
+      .forkedFrom;
+    expect(attribution).toEqual({
+      login: "new-publisher",
+      slug: track.slug,
+      source: { login: "new-publisher", slug: track.slug },
+    });
+    expect((await request("/og" + profilePath + ".png")).status).toBe(200);
+    expect((await patch({ publicProfileEnabled: false })).status).toBe(200);
+    for (const prefix of ["/u/", "/ru/u/", "/api/public/"]) {
+      const missing = await requestPage(prefix + "missing");
+      const hidden = await requestPage(prefix + "new-publisher");
+      expect(hidden.status).toBe(404);
+      expect(hidden.headers.get("x-robots-tag")).toBe("noindex");
+      const body = await hidden.text();
+      expect(body).toBe(await missing.text());
+      expectNoLanding(body);
+    }
+    expect((await request("/og" + profilePath + ".png")).status).toBe(404);
+    const published = await requestPage(trackPath);
+    expect(published.status).toBe(200);
+    const visible = await published.text();
+    expect(visible).toContain("@new-publisher");
+    expect(visible).not.toContain('href="' + profilePath + '"');
+    const sitemap = await (await request("/sitemap.xml")).text();
+    expect(sitemap).not.toContain("/@");
+    expect(sitemap).not.toContain(profilePath + "</loc>");
+    expect(sitemap).toContain(trackPath + "</loc>");
+    expect(sitemap).toContain("/u/forker</loc>");
+  });
+  test("private activity contributes only anonymous counts to public JSON and HTML", async () => {
+    const { owner, track, hidden, lesson, privateLesson, topic } = await curriculum();
+    await owner.setTrackVisibility(track.id, true, true);
+    await owner.updateProfile({ notes: "Hidden-notes-sentinel", goals: ["Hidden-goal-sentinel"] });
+    await owner.markLessonRead(lesson.id);
+    await owner.markLessonRead(privateLesson.id);
+    await owner.recordQuizAttempt(lesson.id, "q", [0], "ui");
+    const session = (await owner.startGrill({ title: "Hidden-round", trackId: hidden.id }))!;
+    const question = (await owner.addGrillQuestion(session.id, {
+      topicId: topic.id,
+      prompt: "Hidden-prompt",
+    }))!;
+    await owner.answerGrillQuestion(question.id, "Hidden-answer", "ui");
+    await owner.judgeGrillQuestion(question.id, "strong", "Hidden-feedback");
+    for (const [includePrivateActivity, total] of [
+      [false, 2],
+      [true, 4],
+    ] as const) {
+      await owner.updatePublicProfile({ includePrivateActivity, showLearningProgress: true });
+      const profile = await (await request("/api/public/publisher")).json();
+      expect(profile.heatmap.total).toBe(total);
+      expect(profile.heatmap.days).toEqual([
+        { date: new Date().toISOString().slice(0, 10), count: total },
+      ]);
+      expect(profile.learningProgress.map((t: { slug: string }) => t.slug)).toEqual([track.slug]);
+      const html = await (await requestPage("/u/publisher")).text();
+      expect(html).toContain('class="s-histogram"');
+      expect(html + JSON.stringify(profile)).not.toMatch(/hidden-|private-topic/i);
+    }
+    await owner.updatePublicProfile({ showActivityHeatmap: false, showLearningProgress: false });
+    const html = await (await requestPage("/u/publisher")).text();
+    expect(html).not.toContain('class="s-histogram"');
+    expect(html).not.toContain('class="s-heat__chart"');
+  });
   test("Open Graph images render only reachable public content", async () => {
     const { owner, track, lesson, hidden, privateLesson, page, b } = await curriculum();
     await owner.setTrackVisibility(track.id, true, true);
@@ -299,8 +423,9 @@ export function publicHttpTests(
   });
   test("public HTML varies on Session cookie presence and public files are shared", async () => {
     const session = await signIn("alice");
+    const { handle } = await (await request("/api/profile/handle", session)).json();
     for (const prefix of ["", "/ru"]) {
-      for (const path of ["", "/terms", "/rules", "/u/alice"]) {
+      for (const path of ["", "/terms", "/rules", "/u/" + handle]) {
         for (const cookie of ["", "startodel_language=ru"]) {
           const res = await request(prefix + path || "/", cookie);
           expect(res.status).toBe(!prefix && !path && cookie ? 302 : 200);
@@ -581,7 +706,12 @@ export function publicHttpTests(
       "updatedAt",
     ]);
     expect(graph.edges).toEqual([{ from: "public-topic", to: "reuse" }]);
-    expect(graph.author).toEqual({ login: "publisher", name: "publisher", avatarUrl: null });
+    expect(graph.author).toEqual({
+      login: "publisher",
+      name: "publisher",
+      avatarUrl: null,
+      profileEnabled: true,
+    });
     expect(graph.topics[0]).toEqual({
       slug: topic.slug,
       title: topic.title,
@@ -699,6 +829,7 @@ export function publicHttpTests(
     expect((await (await request(api)).json()).forks).toEqual([
       {
         login: "forker",
+        profileEnabled: true,
         slug: copy.slug,
         title: copy.title,
         language: "pt-br",

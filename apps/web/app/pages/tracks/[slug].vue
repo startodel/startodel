@@ -37,11 +37,11 @@ watch(
 const { data: details, error: topicError, refresh: retryTopic } = await useTopicDetails(selected);
 const states = computed(() => topicStates(topics.value, edges.value));
 const completed = computed(() => topics.value.filter((t) => t.level >= COMPLETE_LEVEL).length);
-const { user } = useUserSession();
+const me = useMe();
 const origin = usePublicOrigin();
 const localePath = useLocalePath();
 const publicPath = computed(
-  () => "/u/" + encodeURIComponent(user.value?.login ?? "") + "/" + data.value?.track.slug,
+  () => "/u/" + encodeURIComponent(me.value?.handle ?? "") + "/" + data.value?.track.slug,
 );
 const { state: copyState, copy } = useCopy();
 const publicUrl = computed(() => origin.value + localePath(publicPath.value));

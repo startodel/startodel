@@ -60,9 +60,10 @@ const index = computed(
       :block-count="data.blocks.length"
     >
       <UiTrackLanguageBadge :language="data.language" />
-      <NuxtLinkLocale class="s-link" :to="'/u/' + login">{{
+      <NuxtLinkLocale v-if="data.profileEnabled" class="s-link" :to="'/u/' + login">{{
         "@" + route.params.login
       }}</NuxtLinkLocale>
+      <span v-else>@{{ route.params.login }}</span>
     </UiLessonHeader>
     <UiLessonLayout v-if="data.blocks.length">
       <UiLessonBlock

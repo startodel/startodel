@@ -119,16 +119,26 @@ test.skipIf(!url)(
         { title: "SQL · Ї", language: "ru" },
         { title: "中文", language: "en" },
       ]);
+      await client.query(`insert into users(github_id,login,updated_at) values
+        (2,'learner','1999-01-01'),(3,'Mixed-Case','2000-01-01'),(4,'learner-2','2000-01-01')`);
+      await apply("0009_public_profiles");
+      const handles = await client.query("select handle from users order by github_id");
+      expect(handles.rows).toEqual([
+        { handle: "learner" },
+        { handle: "learner-3" },
+        { handle: "Mixed-Case" },
+        { handle: "learner-2" },
+      ]);
       const column = await client.query(
         "select is_nullable from information_schema.columns where table_schema='learning_upgrade' and table_name='tracks' and column_name='language'",
       );
       expect(column.rows).toEqual([{ is_nullable: "NO" }]);
       const existing = await client.query(
-        "select id, uuid_extract_version(id) as version from users",
+        "select id, uuid_extract_version(id) as version from users where github_id=1",
       );
       expect(existing.rows).toEqual([{ id: before.account.id, version: 4 }]);
       const inserted = await client.query(
-        "insert into mcp_tokens(user_id, name, token_prefix, token_hash) select id, 'New', 'prefix', 'new-digest' from users returning uuid_extract_version(id) as version",
+        "insert into mcp_tokens(user_id, name, token_prefix, token_hash) select id, 'New', 'prefix', 'new-digest' from users where github_id=1 returning uuid_extract_version(id) as version",
       );
       expect(inserted.rows).toEqual([{ version: 7 }]);
     } finally {

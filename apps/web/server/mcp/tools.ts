@@ -40,17 +40,17 @@ export function createToolServer(data: UserData, origin: string) {
     empty,
     async () => {
       const tracks = await data.listTracks();
-      const login = tracks.some((t) => t.public) ? await data.getPublicLogin() : undefined;
+      const login = tracks.some((t) => t.public) ? await data.getPublicHandle() : undefined;
       return tracks.map((t) => trackLinks(t, login));
     },
   );
   register(
     "get_track",
-    "Read one of your Tracks by exactly one UUID id or Track slug. Returns its content language, canonical url and, when published at your login, publicUrl.",
+    "Read one of your Tracks by exactly one UUID id or Track slug. Returns its content language, canonical url and, when published at your handle, publicUrl.",
     TrackLookup,
     async (ref) => {
       const track = await data.getTrack(catalogKey(ref));
-      if (track) return trackLinks(track, track.public ? await data.getPublicLogin() : undefined);
+      if (track) return trackLinks(track, track.public ? await data.getPublicHandle() : undefined);
     },
   );
   const track = z.strictObject({
@@ -78,7 +78,7 @@ export function createToolServer(data: UserData, origin: string) {
         ...patch,
         slug: id ? slug : undefined,
       });
-      if (track) return trackLinks(track, track.public ? await data.getPublicLogin() : undefined);
+      if (track) return trackLinks(track, track.public ? await data.getPublicHandle() : undefined);
     },
   );
   register(

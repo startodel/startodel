@@ -30,12 +30,15 @@ test.skipIf(!url)(
         .update(profiles)
         .set({ goals: ["SQL"] })
         .where(owned);
+      const owner = forUser(db, first.id);
+      await owner.updatePublicProfile({ handle: "custom-first" });
       const updated = await signInWithGitHub(db, {
         ...identity,
         login: "new-login",
         name: "New Name",
         avatarUrl: "https://example.org/avatar",
       });
+      expect(await owner.getPublicHandle()).toBe("custom-first");
       expect(updated).toEqual({
         id: first.id,
         login: "new-login",
