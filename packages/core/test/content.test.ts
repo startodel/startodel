@@ -4,6 +4,8 @@ import {
   LessonBlocks,
   publicBlock,
   TopicSlug,
+  TrackLookup,
+  TopicLookup,
   TrackSources,
   TrackLanguage,
   ProfileQuestionnaire,
@@ -75,6 +77,18 @@ test("bounds the ordered Lesson Blocks and requires unique stable ids", () => {
     LessonBlocks.safeParse(Array.from({ length: 201 }, (_, i) => ({ ...block, id: String(i) })))
       .success,
   ).toBe(false);
+});
+
+test("Track and Topic lookups require exactly one valid ID or slug", () => {
+  const id = "7b11ba8d-c0ff-43ba-a02d-c6753fc22222";
+  for (const lookup of [TrackLookup, TopicLookup]) {
+    expect(lookup.parse({ id })).toEqual({ id });
+    expect(lookup.parse({ slug: "runtime" })).toEqual({ slug: "runtime" });
+    for (const input of [{}, { id: "runtime" }, { id, slug: "runtime" }, { id, ownerId: id }])
+      expect(lookup.safeParse(input).success).toBe(false);
+  }
+  expect(TopicLookup.safeParse({ slug: "js/tasks" }).success).toBe(true);
+  expect(TrackLookup.safeParse({ slug: "js/tasks" }).success).toBe(false);
 });
 
 test("validates catalog slugs, repository and documentation links, and experience", () => {

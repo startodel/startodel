@@ -1,3 +1,4 @@
+import { isUuid } from "@startodel/core";
 import { nextStep } from "../lib/next-step";
 import sections from "./guide.generated.json";
 import type { UserData } from "./register";
@@ -11,7 +12,7 @@ function section(id: string) {
 const introduction = (body: string) => body.split("\n\n")[1]!;
 export const instructions = introduction(section("platform").body);
 
-function russianReason(step: Awaited<ReturnType<typeof nextStep>>) {
+function russianReason(step: Awaited<ReturnType<typeof nextStep>>, scoped: boolean) {
   if (step.suggestions)
     return "Можно изучать: " + step.suggestions.map((t) => `${t.title} (${t.slug})`).join(", ");
   switch (step.id) {
@@ -24,25 +25,46 @@ function russianReason(step: Awaited<ReturnType<typeof nextStep>>) {
     case "grill-session":
       return `Продолжите «${step.title}». Без ответа: ${step.unanswered}. Ожидают оценки: ${step.waiting}.`;
     default:
+      if (scoped) return "В этом треке пока нет тем с уроками, готовых к изучению.";
       return "Пока нет тем, готовых к изучению. Проверьте предварительные требования или спланируйте следующий трек.";
   }
 }
 
-export async function guide(data: UserData) {
+export async function guide(data: UserData, track?: string) {
+  const selected = track ? await data.getTrack(isUuid(track) ? track : { slug: track }) : undefined;
+  if (track && !selected) return;
   const profileRead = data.getProfile();
-  const [step, profile] = await Promise.all([nextStep(data, profileRead), profileRead]);
+  const [step, profile, nextTopics] = await Promise.all([
+    nextStep(data, profileRead, selected?.id),
+    profileRead,
+    selected && data.nextTopicsToAuthor(selected.id),
+  ]);
   const { state, id } = step;
-  const why = profile?.preferredLanguage === "ru" ? russianReason(step) : step.why;
+  const why = profile?.preferredLanguage === "ru" ? russianReason(step, !!selected) : step.why;
   const current = section(id);
   const related: Record<string, string[]> = {
     "first-steps": ["platform"],
     "build-track-technology": ["build-track-from-repo", "lessons-and-blocks"],
     "agent-workflow": ["lessons-and-blocks"],
   };
+  const relatedSections = new Set(related[id]);
+  if (selected && (!state.topics || nextTopics?.length))
+    relatedSections.add("build-track-technology");
+  relatedSections.delete(id);
   const tools = [...introduction(current.body).matchAll(/`([a-z]+_[a-z_]+)`/g)].map((m) => m[1]);
   return {
     state,
-    nextSteps: [{ id, title: current.title, why, tools }],
-    guideSections: [current, ...(related[id] ?? []).map(section), section("rules")],
+    nextSteps: [
+      {
+        id,
+        title: current.title,
+        why,
+        tools,
+        ...(selected && step.topicId && { topicId: step.topicId }),
+        ...(selected && step.sessionId && { sessionId: step.sessionId }),
+      },
+    ],
+    ...(selected && { authoring: { track: { id: selected.id, slug: selected.slug }, nextTopics } }),
+    guideSections: [current, ...Array.from(relatedSections, section), section("rules")],
   };
 }

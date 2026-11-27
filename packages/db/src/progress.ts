@@ -1,7 +1,7 @@
 import { nextStudyTopic } from "./catalog.ts";
 import { reviewsThrough } from "./practice.ts";
 import { topicActivity } from "./activity.ts";
-import { and, count, desc, eq, isNotNull, isNull, lte, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import type { MasteryLevel } from "@startodel/core";
 import type { Transaction } from "./owned.ts";
 import type { Connection } from "./index.ts";
@@ -19,7 +19,7 @@ import {
 } from "./schema.ts";
 
 export function progressForUser(db: Connection, userId: string) {
-  function openGrillCounts(tx: Transaction) {
+  function openGrillCounts(tx: Transaction, trackId?: string) {
     return tx
       .select({
         id: grillSessions.id,
@@ -33,7 +33,13 @@ export function progressForUser(db: Connection, userId: string) {
         grillQuestions,
         and(eq(grillQuestions.userId, userId), eq(grillQuestions.sessionId, grillSessions.id)),
       )
-      .where(and(eq(grillSessions.userId, userId), eq(grillSessions.status, "open")))
+      .where(
+        and(
+          eq(grillSessions.userId, userId),
+          eq(grillSessions.status, "open"),
+          trackId ? eq(grillSessions.trackId, trackId) : undefined,
+        ),
+      )
       .groupBy(grillSessions.id)
       .orderBy(desc(grillSessions.createdAt), grillSessions.id);
   }
@@ -103,6 +109,45 @@ export function progressForUser(db: Connection, userId: string) {
     return { perTrack, dueReviewsCount };
   }
   return {
+    getNextStepState(trackId?: string) {
+      return db.transaction(
+        async (tx) => {
+          const membership = and(
+            eq(trackTopics.userId, userId),
+            trackId ? eq(trackTopics.trackId, trackId) : undefined,
+          );
+          const trackCount = await tx.$count(
+            tracks,
+            and(eq(tracks.userId, userId), trackId ? eq(tracks.id, trackId) : undefined),
+          );
+          const topicCount = trackId
+            ? await tx.$count(trackTopics, membership)
+            : await tx.$count(topics, eq(topics.userId, userId));
+          const [due] = await tx
+            .select({
+              topicId: reviewItems.topicId,
+              total: sql<number>`count(*) over ()`.mapWith(Number),
+            })
+            .from(reviewItems)
+            .where(
+              and(
+                eq(reviewItems.userId, userId),
+                lte(reviewItems.dueAt, new Date()),
+                trackId
+                  ? inArray(
+                      reviewItems.topicId,
+                      tx.select({ id: trackTopics.topicId }).from(trackTopics).where(membership),
+                    )
+                  : undefined,
+              ),
+            )
+            .orderBy(reviewItems.dueAt, reviewItems.topicId)
+            .limit(1);
+          return { trackCount, topicCount, due, openGrills: await openGrillCounts(tx, trackId) };
+        },
+        { isolationLevel: "repeatable read", accessMode: "read only" },
+      );
+    },
     getDashboard() {
       return db.transaction(
         async (tx) => {

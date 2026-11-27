@@ -397,6 +397,8 @@ export function practiceHttpTests(
       expect((await step("agent-workflow")).why).toContain("No Track Topics");
       const topic = await data.upsertTopic({ slug: "queues", title: "Queues" });
       await data.attachTopicToTrack(track.id, topic.id, 0);
+      expect((await step("agent-workflow")).suggestions).toBeUndefined();
+      await data.createLesson({ topicId: topic.id, title: "Queue delivery" });
       expect((await step("agent-workflow")).suggestions[0].id).toBe(topic.id);
       await data.recordReviewResult(topic.id, "weak");
       await env().db.$client.query("update review_items set due_at=now() where user_id=$1", [id]);

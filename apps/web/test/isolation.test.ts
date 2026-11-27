@@ -641,6 +641,8 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
         "attach_topics_to_track",
         "create_lesson",
         "create_track",
+        "delete_topic",
+        "delete_track",
         "detach_topic_from_track",
         "finish_grill",
         "get_grill",
@@ -668,6 +670,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
         "submit_grill_answer",
         "update_lesson",
         "update_profile",
+        "update_topic",
         "update_track",
         "upsert_topics",
       ]);

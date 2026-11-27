@@ -1,14 +1,18 @@
 import type { forUser } from "@startodel/db";
 
-export async function nextStep(data: ReturnType<typeof forUser>, profileRead = data.getProfile()) {
-  const [profile, progress] = await Promise.all([profileRead, data.getProgress()]);
-  const { perTrack, openGrills, dueReviewsCount, masteryDistribution } = progress;
+export async function nextStep(
+  data: ReturnType<typeof forUser>,
+  profileRead = data.getProfile(),
+  trackId?: string,
+) {
+  const [profile, progress] = await Promise.all([profileRead, data.getNextStepState(trackId)]);
+  const { trackCount, topicCount, due, openGrills } = progress;
   const state = {
     onboarded: !!profile?.onboardedAt,
-    tracks: perTrack.length,
-    topics: masteryDistribution.reduce((sum, n) => sum + n, 0),
+    tracks: trackCount,
+    topics: topicCount,
     openGrills: openGrills.length,
-    dueReviews: dueReviewsCount,
+    dueReviews: due?.total ?? 0,
   };
   if (!state.onboarded)
     return {
@@ -36,19 +40,21 @@ export async function nextStep(data: ReturnType<typeof forUser>, profileRead = d
       why: `Continue “${active.title}” (${active.id}): ${active.questionCount - active.answered} unanswered, ${active.answered - active.judged} answered and awaiting a Verdict.`,
       label: "Continue grill session",
       href: "/grills/" + active.id,
+      sessionId: active.id,
       title: active.title,
       unanswered: active.questionCount - active.answered,
       waiting: active.answered - active.judged,
     };
-  if (dueReviewsCount)
+  if (due)
     return {
       state,
       id: "review-loop",
-      why: `${dueReviewsCount} ${dueReviewsCount === 1 ? "topic is" : "topics are"} due for review.`,
+      topicId: due.topicId,
+      why: `${due.total} ${due.total === 1 ? "topic is" : "topics are"} due for review.`,
       label: "Review due topics",
       href: "/reviews",
     };
-  const suggestions = await data.suggestedTopics(15);
+  const suggestions = await data.suggestedTopics(15, trackId);
   if (suggestions.length)
     return {
       state,
@@ -59,7 +65,9 @@ export async function nextStep(data: ReturnType<typeof forUser>, profileRead = d
   return {
     state,
     id: "agent-workflow",
-    why: "No Track Topics are ready. Check for missing prerequisites or plan the next Track.",
-    prompt: "Call get_guide and help me plan my next Track.",
+    why: trackId
+      ? "No Topics with Lessons are ready to study in this Track."
+      : "No Track Topics are ready. Check for missing prerequisites or plan the next Track.",
+    ...(trackId ? {} : { prompt: "Call get_guide and help me plan my next Track." }),
   };
 }
