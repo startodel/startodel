@@ -18,7 +18,7 @@ export function registerPractice(register: Register, data: UserData, origin: str
   const sessionId = z.strictObject({ sessionId: id });
   register(
     "get_progress",
-    "Plan study using Mastery counts by level, completed (level 2+) and total Topics per Track, due review count, ten latest Quiz Attempts and open GrillSessions.",
+    "Plan study using Mastery counts by level, completed (level 2+ with every Lesson read) and total Topics per Track, due review count, ten latest Quiz Attempts and open GrillSessions.",
     empty,
     () => data.getProgress(),
   );

@@ -1,4 +1,6 @@
+import { COMPLETE_LEVEL, isTopicComplete } from "@startodel/core";
 import { Graph, layout } from "@dagrejs/dagre";
+export { COMPLETE_LEVEL };
 
 export interface BoardTopic {
   id: string;
@@ -6,6 +8,7 @@ export interface BoardTopic {
   tag: string;
   title: string;
   level: number;
+  hasUnreadLessons?: boolean;
 }
 export interface BoardEdge {
   /** The prerequisite Topic. */
@@ -13,11 +16,8 @@ export interface BoardEdge {
   /** The Topic it unlocks. */
   to: string;
 }
-/** complete: Mastery 2 or higher. blocked: a prerequisite is below 2. ready: neither. */
+/** A complete Topic has reached Mastery 2 and has no unread Lessons. */
 export type TopicState = "complete" | "ready" | "blocked";
-
-/** A Topic counts as complete at this Mastery level. The database applies the same rule. */
-export const COMPLETE_LEVEL = 2;
 
 export function topicStates(topics: BoardTopic[], edges: BoardEdge[]) {
   const level = new Map(topics.map((t) => [t.id, t.level]));
@@ -27,7 +27,11 @@ export function topicStates(topics: BoardTopic[], edges: BoardEdge[]) {
   return new Map<string, TopicState>(
     topics.map((t) => [
       t.id,
-      t.level >= COMPLETE_LEVEL ? "complete" : blocked.has(t.id) ? "blocked" : "ready",
+      isTopicComplete(t.level, !!t.hasUnreadLessons)
+        ? "complete"
+        : blocked.has(t.id)
+          ? "blocked"
+          : "ready",
     ]),
   );
 }

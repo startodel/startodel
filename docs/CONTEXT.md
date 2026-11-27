@@ -51,7 +51,7 @@ A public handle identifies a User in Public Profile and Public Track URLs. The O
 
 ## Mastery
 
-Reading every Lesson in a Topic with at least one Lesson raises Mastery from 0 to 1. When every Quiz in the Topic has a fully correct latest Quiz Attempt, Mastery rises to 2. This requires at least one Quiz. Neither rule lowers Mastery. The external agent assesses levels 3 and 4 with evidence. [ADR 0013](adr/0013-mastery-auto-raise.md)
+Reading every Lesson in a Topic with at least one Lesson raises Mastery from 0 to 1. When every Quiz in the Topic has a fully correct latest Quiz Attempt, Mastery rises to 2. This requires at least one Quiz. Neither rule lowers Mastery. The external agent assesses levels 3 and 4 with evidence. A Topic counts toward Track completion at Mastery 2 or higher when it has no unread Lessons. Adding a Lesson reopens reading while preserving earned Mastery and earlier Lesson Progress. [ADR 0013](adr/0013-mastery-auto-raise.md)
 
 ## Activity history
 

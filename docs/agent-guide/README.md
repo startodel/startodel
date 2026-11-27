@@ -14,4 +14,4 @@ Call `get_guide` on connection and after each learning step. Use the Next Step a
 
 Call `resources/list` to discover guide sections and worked examples. Fetch a linked resource with `resources/read` using its `startodel://guide/…` URI.
 
-Tool responses include JSON text and a `structuredContent` object. For a list, read `structuredContent.items`. Share the entity’s `url` with its learner. Read it from `topic.url` on `get_topic` and `session.url` on `start_grill`. On `get_track` and `list_tracks`, a Public Track also has a `publicUrl` for sharing. It uses the Owner’s public handle.
+Tool responses include JSON text and a `structuredContent` object. For a list, read `structuredContent.items`. Share the entity’s `url` with its learner. Read it from `track.url` on `get_track_graph`, `topic.url` on `get_topic` and `session.url` on `start_grill`. Lesson reads and writes return `url`. On `get_track` and `list_tracks`, a Public Track also has a `publicUrl` for sharing. It uses the Owner’s public handle.

@@ -1,14 +1,16 @@
 import { trackTopicOrder } from "./track-order.ts";
 import { forkCount, forkedFrom } from "./public.ts";
-import { TopicSlug, type MasteryLevel } from "@startodel/core";
+import { COMPLETE_LEVEL, isTopicComplete, TopicSlug, type MasteryLevel } from "@startodel/core";
 import {
   and,
   count,
+  desc,
   eq,
-  exists,
   notExists,
   getTableColumns,
   inArray,
+  isNotNull,
+  isNull,
   like,
   lt,
   lte,
@@ -16,6 +18,7 @@ import {
   or,
   sql,
 } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import type { Connection } from "./index.ts";
 import {
   ownedCatalogRow,
@@ -61,7 +64,7 @@ function blockedTopics(db: Connection | Transaction, userId: string, memberIds?:
     .where(
       and(
         eq(topicEdges.userId, userId),
-        lt(level, 2),
+        lt(level, COMPLETE_LEVEL),
         memberIds && inArray(topicEdges.toTopicId, memberIds),
       ),
     );
@@ -74,6 +77,34 @@ function topicLessons(db: Connection, userId: string) {
     .where(and(eq(lessons.userId, userId), eq(lessons.topicId, topics.id)));
 }
 
+export function topicReading(
+  db: Connection,
+  userId: string,
+  topicId: string | AnyPgColumn,
+  unreadOnly = false,
+) {
+  return db
+    .select({ id: lessons.id, readAt: lessonProgress.readAt })
+    .from(lessons)
+    .leftJoin(
+      lessonProgress,
+      and(eq(lessonProgress.userId, userId), eq(lessonProgress.lessonId, lessons.id)),
+    )
+    .where(
+      and(
+        eq(lessons.userId, userId),
+        eq(lessons.topicId, topicId),
+        unreadOnly ? isNull(lessonProgress.readAt) : undefined,
+      ),
+    );
+}
+
+function firstStudyLesson(db: Connection, userId: string, topicId: string | AnyPgColumn) {
+  return topicReading(db, userId, topicId)
+    .orderBy(sql`${lessonProgress.readAt} is not null`, lessons.position, lessons.id)
+    .limit(1);
+}
+
 function eligibleTopics(
   db: Connection,
   userId: string,
@@ -83,12 +114,16 @@ function eligibleTopics(
     trackId,
   }: { excludeDueAt?: Date; withLessons?: boolean; trackId?: string } = {},
 ) {
+  const study = firstStudyLesson(db, userId, topics.id).as("study");
+  const unread = and(isNotNull(study.id), isNull(study.readAt));
   return db
     .selectDistinct({
       id: topics.id,
       slug: topics.slug,
       title: topics.title,
       level: level.as("level"),
+      firstLessonId: sql<string | null>`${study.id}`.as("first_lesson_id"),
+      hasUnreadLesson: sql<boolean>`${unread}`.as("has_unread_lesson"),
     })
     .from(topics)
     .innerJoin(trackTopics, and(eq(trackTopics.userId, userId), eq(trackTopics.topicId, topics.id)))
@@ -96,12 +131,13 @@ function eligibleTopics(
       topicMastery,
       and(eq(topicMastery.userId, userId), eq(topicMastery.topicId, topics.id)),
     )
+    .leftJoinLateral(study, sql`true`)
     .where(
       and(
         eq(topics.userId, userId),
-        lt(level, 2),
+        or(lt(level, COMPLETE_LEVEL), unread),
         trackId ? eq(trackTopics.trackId, trackId) : undefined,
-        withLessons ? exists(topicLessons(db, userId)) : undefined,
+        withLessons ? isNotNull(study.id) : undefined,
         notInArray(topics.id, blockedTopics(db, userId)),
         excludeDueAt &&
           notInArray(
@@ -112,33 +148,19 @@ function eligibleTopics(
               .where(and(eq(reviewItems.userId, userId), lte(reviewItems.dueAt, excludeDueAt))),
           ),
       ),
-    );
-}
-
-async function firstStudyLesson(db: Connection, userId: string, topicId: string) {
-  const [lesson] = await db
-    .select({ id: lessons.id, readAt: lessonProgress.readAt })
-    .from(lessons)
-    .leftJoin(
-      lessonProgress,
-      and(eq(lessonProgress.userId, userId), eq(lessonProgress.lessonId, lessons.id)),
     )
-    .where(and(eq(lessons.userId, userId), eq(lessons.topicId, topicId)))
-    .orderBy(sql`${lessonProgress.readAt} is not null`, lessons.position, lessons.id)
-    .limit(1);
-  return lesson;
+    .orderBy(({ hasUnreadLesson }) => [desc(hasUnreadLesson), topics.slug]);
 }
 
 export async function nextStudyTopic(db: Connection, userId: string, excludeDueAt?: Date) {
-  const ready = eligibleTopics(db, userId, { excludeDueAt })
-    .orderBy(topics.slug)
-    .limit(1)
-    .as("ready");
+  const ready = eligibleTopics(db, userId, { excludeDueAt }).limit(1).as("ready");
   const [topic] = await db
     .select({
       id: ready.id,
       slug: ready.slug,
       title: ready.title,
+      firstLessonId: ready.firstLessonId,
+      allLessonsRead: sql<boolean>`${ready.firstLessonId} is not null and not ${ready.hasUnreadLesson}`,
       trackId: tracks.id,
       trackSlug: tracks.slug,
     })
@@ -147,9 +169,7 @@ export async function nextStudyTopic(db: Connection, userId: string, excludeDueA
     .innerJoin(tracks, and(eq(tracks.userId, userId), eq(tracks.id, trackTopics.trackId)))
     .orderBy(tracks.createdAt, tracks.id)
     .limit(1);
-  if (!topic) return;
-  const lesson = await firstStudyLesson(db, userId, topic.id);
-  return { ...topic, firstLessonId: lesson?.id ?? null, allLessonsRead: !!lesson?.readAt };
+  return topic;
 }
 
 async function topicsBySlug(tx: Transaction, userId: string, slugs: string[]) {
@@ -276,9 +296,7 @@ export function catalogForUser(db: Connection, userId: string) {
       };
     },
     suggestedTopics(limit: number, trackId?: string) {
-      return eligibleTopics(db, userId, { withLessons: true, trackId })
-        .orderBy(topics.slug)
-        .limit(limit);
+      return eligibleTopics(db, userId, { withLessons: true, trackId }).limit(limit);
     },
     nextTopicsToAuthor(trackId: string) {
       return db
@@ -477,9 +495,12 @@ export function catalogForUser(db: Connection, userId: string) {
           const blocked = new Set(
             (await blockedTopics(tx, userId, memberIds)).map((row) => row.id),
           );
-          const ready = members.filter((m) => m.level < 2 && !blocked.has(m.topic.id));
+          const ready = members.filter(
+            (m) =>
+              !isTopicComplete(m.level, m.readCount < m.lessonCount) && !blocked.has(m.topic.id),
+          );
           const next = ready.find((m) => m.readCount < m.lessonCount);
-          const lesson = next && (await firstStudyLesson(tx, userId, next.topic.id));
+          const [lesson] = next ? await firstStudyLesson(tx, userId, next.topic.id) : [];
           return {
             nextLesson: lesson
               ? { id: lesson.id, started: members.some((m) => m.readCount > 0) }

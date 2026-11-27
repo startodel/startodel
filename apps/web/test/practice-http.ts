@@ -103,7 +103,14 @@ export function practiceHttpTests(
             },
           ],
         },
-        { id: "exercise", type: "exercise", prompt: "Build", solution: "Private solution" },
+        {
+          id: "exercise",
+          type: "exercise",
+          prompt: "Build",
+          starterCode: "select 42",
+          language: "sql",
+          solution: "Private solution",
+        },
       ],
     }))!;
     const grill = (await data.startGrill({ title: "Delivery recall", trackId: track.id }))!;
@@ -139,6 +146,7 @@ export function practiceHttpTests(
       'href="/ru' + trackPath + '"',
     );
     expect(lessonPage).toContain("Mark as read");
+    expect(lessonPage).toMatch(/<pre\b[^>]*\bs-editor__fallback\b[^>]*>select 42<\/pre>/);
     expect(lessonPage).not.toMatch(/Private explanation|Private solution|class="s-quiz__feedback"/);
     expect((await request("/api/lessons/" + lesson.id + "/read", cookie, "POST")).status).toBe(200);
     expect(await page(lessonPath)).toContain("Marked as read");

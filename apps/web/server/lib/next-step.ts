@@ -55,12 +55,15 @@ export async function nextStep(
       href: "/reviews",
     };
   const suggestions = await data.suggestedTopics(15, trackId);
-  if (suggestions.length)
+  const study = suggestions[0];
+  if (study)
     return {
       state,
       id: "agent-workflow",
       why: "Ready to study: " + suggestions.map((t) => `${t.title} (${t.slug})`).join(", "),
       suggestions,
+      topicId: study.hasUnreadLesson ? study.id : undefined,
+      lessonId: study.hasUnreadLesson ? study.firstLessonId : undefined,
     };
   return {
     state,

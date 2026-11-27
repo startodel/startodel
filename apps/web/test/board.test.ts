@@ -42,6 +42,14 @@ test("a complete Topic stays complete when a prerequisite falls behind", () => {
   expect(states.get("b")).toBe("complete");
 });
 
+test("an unread Lesson reopens a mastered Topic while its dependents stay unlocked", () => {
+  const states = topicStates(
+    [{ ...topic("a", 3), hasUnreadLessons: true }, topic("b", 0)],
+    [{ from: "a", to: "b" }],
+  );
+  expect(Object.fromEntries(states)).toEqual({ a: "ready", b: "ready" });
+});
+
 test("study order puts every prerequisite first and keeps the given order on ties", () => {
   const shuffled = ["e", "d", "c", "b", "a"].map((id) => topics.find((t) => t.id === id)!);
   const order = studyOrder(shuffled, edges).map((t) => t.id);

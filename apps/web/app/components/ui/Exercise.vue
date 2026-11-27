@@ -7,6 +7,8 @@ const props = defineProps<{
   blockId: string;
   readOnly?: boolean;
   prompt: string;
+  starterCode?: string;
+  language?: string;
   hints?: string[];
   /** Empty until the learner reveals it. */
   solution?: string;
@@ -16,7 +18,7 @@ const props = defineProps<{
 }>();
 defineEmits<{ reveal: [] }>();
 const { t, locale } = useI18n();
-const task = computed(() => renderExercisePrompt(props.prompt, t("lesson.image")));
+const task = computed(() => renderExercisePrompt(props.prompt, t("lesson.image"), props));
 const opened = ref(0);
 const total = computed(() => props.hints?.length ?? 0);
 </script>

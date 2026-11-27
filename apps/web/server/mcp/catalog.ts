@@ -1,11 +1,15 @@
 import { LessonBlocks, TopicLookup, TopicSlug } from "@startodel/core";
 import { z } from "zod";
+import { lessonWarnings } from "./lesson-warnings";
+import { privateTrackPath } from "../../shared/locale";
 import {
   catalogKey,
   entityUrl,
   id,
   lessonLookup,
   resolveTopic,
+  resolveTrack,
+  trackRef,
   summary,
   title,
   topicRef,
@@ -114,10 +118,14 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
   );
   register(
     "get_track_graph",
-    "Read a Track with ordered Topics, Mastery, Lesson and read counts, internal edges and suggested Topics whose prerequisites all reached level 2.",
-    z.strictObject({ trackId: id }),
-    async ({ trackId }) => {
-      const graph = await data.getTrackGraph(trackId);
+    "Read a Track by track (slug or UUID) or trackId (UUID). Returns its canonical track.url, ordered Topics, Mastery, Lesson and read counts, internal edges and suggested Topics whose prerequisites all reached level 2.",
+    z
+      .strictObject({ trackId: id.optional(), track: trackRef.optional() })
+      .refine((ref) => !!ref.trackId !== !!ref.track, "Supply exactly one trackId or track"),
+    async ({ trackId, track }) => {
+      const graph = track
+        ? await resolveTrack(track, (key) => data.getTrackGraph(key))
+        : await data.getTrackGraph(trackId!);
       if (!graph) return;
       const topics = new Map(graph.topics.map((t) => [t.id, t]));
       const edges = graph.edges.map((edge) => {
@@ -133,6 +141,7 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
       });
       return {
         ...graph,
+        track: { ...graph.track, url: new URL(privateTrackPath(graph.track.slug), origin).href },
         topics: graph.topics.map((t) => ({ ...t, url: entityUrl(origin, "topics", t.id) })),
         edges,
       };
@@ -140,6 +149,10 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
   );
   function lessonLink<T extends { id: string }>(row: T) {
     return { ...row, url: entityUrl(origin, "lessons", row.id) };
+  }
+  function writtenLesson(row: NonNullable<Awaited<ReturnType<UserData["getLesson"]>>>) {
+    const warnings = lessonWarnings(row);
+    return { ...lessonLink(row), ...(warnings.length > 0 && { warnings }) };
   }
   const lessonParent = z
     .strictObject({ topic: topicRef.optional(), ...TopicLookup.shape })
@@ -158,24 +171,28 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
     "Open with 5–10 lines of code or a concrete scenario before asking for a prediction in a quiz. Put an unscored reflection in a theory Block. Save the answer and its step-by-step explanation for a later theory Block.",
     "Teach one idea per theory Block, typically 60–100 words in one or two short paragraphs. Avoid one-line stubs. Include a substantive Callout. Reserve Callouts for a tip, gotcha, production caveat or takeaway. Name the non-obvious condition and, where relevant, how to detect or address it. Never put prediction questions, Quiz prompts or Exercise prompts in a Callout.",
     "Define jargon on first use. Cite dated or versioned primary sources with labelled links and keep background reading in Track Sources. Use short, direct sentences like a colleague at a whiteboard. Cut filler.",
+    "Prefer explicit starterCode and language for a coding Exercise. Otherwise its first prompt fence supplies the starter and its language is inferred.",
     "For the sticky Lesson contents sidebar, set a short, descriptive title on major theory, callout and exercise Blocks. Use a filename for code when it fits. These titles are optional (max 120 characters). Without one, the sidebar uses a phrase from the body, or for code, its explanation or first line. A Quiz entry shows the question count and ignores its optional title. Link and video Blocks require a title.",
   ].join(" ");
   register(
     "create_lesson",
-    `Append a Lesson to a Topic. Supply topic (slug or UUID), id (Topic UUID) or slug. Returns the full Lesson. ${lessonWriting}`,
+    `Append a Lesson to a Topic. Supply topic (slug or UUID), id (Topic UUID) or slug. Returns the full Lesson with its url and any Markdown warnings. ${lessonWriting}`,
     lessonParent.safeExtend(lesson.shape),
     async ({ topic, id, slug, ...input }) => {
       const parent = await parentTopic({ topic, id, slug });
       if (!parent) return;
       const row = await data.createLesson({ ...input, topicId: parent.id });
-      if (row) return lessonLink(row);
+      if (row) return writtenLesson(row);
     },
   );
   register(
     "update_lesson",
-    `Patch a Lesson by lessonId or id. Supplying blocks replaces all Blocks. Preserve IDs across edits. Returns the full updated Lesson. ${lessonWriting}`,
+    `Patch a Lesson by lessonId or id. Supplying blocks replaces all Blocks. Preserve IDs across edits. Returns the full updated Lesson with its url and any Markdown warnings. ${lessonWriting}`,
     lessonLookup.safeExtend(lesson.partial().shape),
-    ({ lessonId, id, ...patch }) => data.updateLesson(lessonId ?? id!, patch),
+    async ({ lessonId, id, ...patch }) => {
+      const row = await data.updateLesson(lessonId ?? id!, patch);
+      if (row) return writtenLesson(row);
+    },
   );
   register(
     "get_lesson",

@@ -2,7 +2,16 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ProfilePatch, TrackLanguage, TrackLookup, TrackSlug, TrackSources } from "@startodel/core";
 import { z } from "zod";
 import { privateTrackPath } from "../../shared/locale";
-import { catalogKey, empty, id, registerTools, summary, title, type UserData } from "./register";
+import {
+  catalogKey,
+  empty,
+  id,
+  registerTools,
+  trackRef,
+  summary,
+  title,
+  type UserData,
+} from "./register";
 import { registerCatalog } from "./catalog";
 import { registerPractice } from "./practice";
 import { guide, instructions, sections } from "./guide";
@@ -110,8 +119,8 @@ export function createToolServer(data: UserData, origin: string) {
   registerPractice(register, data, origin);
   register(
     "get_guide",
-    "Call first and after a learning step. Pass track (UUID or slug) for counts and study, Review and GrillSession next steps within that Track. authoring.nextTopics separately lists its next one or two Topics without Lessons in Track order. Omit track for the overall study guide.",
-    z.strictObject({ track: z.union([id, TrackSlug]).optional() }),
+    "Call first and after a learning step. Pass track (UUID or slug) for counts and study, Review and GrillSession next steps within that Track. A study next step with unread material includes topicId and lessonId. authoring.nextTopics separately lists its next one or two Topics without Lessons in Track order. Omit track for the overall study guide.",
+    z.strictObject({ track: trackRef.optional() }),
     ({ track }) => guide(data, track),
   );
   for (const section of sections) {

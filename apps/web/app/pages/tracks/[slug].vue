@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { LEGAL_TERMS_VERSION, type TrackLanguage } from "@startodel/core";
-import { COMPLETE_LEVEL, topicStates } from "../../components/ui/board";
+import { topicStates } from "../../components/ui/board";
 import type { MenuItem } from "../../components/ui/Menu.vue";
 const indexTag = useIndexTag();
 
@@ -17,10 +17,11 @@ useHead({ title: () => data.value?.track.title });
 const animate = useBoardMotion();
 const topics = computed(
   () =>
-    data.value?.topics.map(({ id, title, level }, i) => ({
+    data.value?.topics.map(({ id, title, level, readCount, lessonCount }, i) => ({
       id,
       title,
       level,
+      hasUnreadLessons: readCount < lessonCount,
       tag: indexTag("topic", i + 1),
     })) ?? [],
 );
@@ -37,7 +38,9 @@ watch(
 );
 const { data: details, error: topicError, refresh: retryTopic } = await useTopicDetails(selected);
 const states = computed(() => topicStates(topics.value, edges.value));
-const completed = computed(() => topics.value.filter((t) => t.level >= COMPLETE_LEVEL).length);
+const completed = computed(
+  () => [...states.value.values()].filter((state) => state === "complete").length,
+);
 const me = useMe();
 const origin = usePublicOrigin();
 const localePath = useLocalePath();
