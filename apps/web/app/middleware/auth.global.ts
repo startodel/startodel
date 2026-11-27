@@ -9,6 +9,12 @@ import {
 } from "../../shared/locale";
 export default defineNuxtRouteMiddleware(async (to) => {
   const path = basePath(to.path);
+  if (/^\/api(?:\/|$)/i.test(path)) return;
+  if (!to.matched.length) {
+    // Let Nuxt raise its route 404 and serve the same document to browsers and crawlers.
+    if (import.meta.server) useRequestEvent()!.context.unmatchedPage = true;
+    return;
+  }
   const locale =
     to.path === "/" && useCookie(languageCookie).value === "ru" ? "ru" : pageLocale(to.path);
   const target = (value: string) => localizedPath(value, locale);
@@ -17,7 +23,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
     navigateTo({ path: target(value), query: to.query, hash: to.hash });
   if (path === "/" && loggedIn.value) return redirectEntry("/dashboard");
   if (to.path === "/" && locale === "ru") return redirectEntry("/");
-  if (/^\/api(?:\/|$)/i.test(path)) return;
   if (isPublicPage(to.path)) {
     // Keep the sealed Session's contents out of public hydration payloads.
     if (import.meta.server) session.value = null;
@@ -35,7 +40,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (!loggedIn.value) {
     me.value = undefined;
     if (/^\/login\/?$/.test(path)) return redirectEntry("/");
-    return navigateTo(target("/"));
+    return navigateTo(target("/"), { external: true, redirectCode: 302 });
   }
   const account = await fetchMe();
   me.value = account;

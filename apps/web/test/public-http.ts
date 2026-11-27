@@ -14,6 +14,11 @@ function expectPublicHtml(response: Response) {
   expect(response.headers.getSetCookie()).toEqual([]);
 }
 
+function expectNoLanding(html: string) {
+  expect(html).not.toContain('class="landing"');
+  expect(html).not.toMatch(/<link\b[^>]*\brel="canonical"/);
+}
+
 function expectSocialHead(
   html: string,
   path: string,
@@ -74,6 +79,34 @@ export function publicHttpTests(
   request: (path: string, cookie?: string, method?: string, body?: unknown) => Promise<Response>,
   signIn: (name: string) => Promise<string>,
 ) {
+  function requestPage(path: string, cookie = "", accept = "text/html") {
+    return fetch(env().origin + path, {
+      redirect: "manual",
+      headers: { accept, cookie },
+    });
+  }
+
+  test.each(["text/html", "*/*"])(
+    "unmatched pages return a localized 404 for Accept %s with or without a Session",
+    async (accept) => {
+      const session = await signIn("alice");
+      for (const prefix of ["", "/ru"]) {
+        const title = prefix ? "Страница не найдена · Стартодел" : "Page not found · Startodel";
+        for (const path of ["/@hmbanan666", "/does-not-exist", "/tracks/missing/extra"]) {
+          for (const cookie of ["", session]) {
+            const res = await requestPage(prefix + path, cookie, accept);
+            expect(res.status, prefix + path).toBe(404);
+            expect(res.headers.get("content-type")).toContain("text/html");
+            const html = await res.text();
+            expect(html).toContain(`<title>${title}</title>`);
+            expect(html).toContain('<meta name="robots" content="noindex"');
+            expectNoLanding(html);
+          }
+        }
+      }
+    },
+  );
+
   async function curriculum() {
     const { db, origin } = env();
     const a = await signIn("publisher"),
@@ -166,6 +199,33 @@ export function publicHttpTests(
       fork,
     };
   }
+  test("private pages redirect guests to the locale Landing regardless of resource existence", async () => {
+    const { track, topic, lesson } = await curriculum();
+    const missing = crypto.randomUUID();
+    for (const prefix of ["", "/ru"]) {
+      for (const path of [
+        "/dashboard",
+        "/onboarding/connect",
+        "/grills/" + missing,
+        "/reviews/" + missing + "/practice",
+        "/tracks/" + track.slug,
+        "/tracks/missing",
+        "/topics/" + topic.id,
+        "/topics/" + missing,
+        "/lessons/" + lesson.id,
+        "/lessons/" + missing,
+      ]) {
+        const res = await requestPage(prefix + path);
+        expect(res.status, prefix + path).toBe(302);
+        expect(res.headers.get("location"), prefix + path).toBe(prefix || "/");
+        expectNoLanding(await res.text());
+      }
+    }
+    const res = await requestPage("/dashboard", "startodel_language=ru");
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe("/");
+  });
+
   test("Open Graph images render only reachable public content", async () => {
     const { owner, track, lesson, hidden, privateLesson, page, b } = await curriculum();
     await owner.setTrackVisibility(track.id, true, true);
@@ -547,6 +607,8 @@ export function publicHttpTests(
         const brand = english ? "Startodel" : "Стартодел";
         expect(body).toContain(`<h1>${title}</h1>`);
         expect(body).toContain(`<title>${title} · ${brand}</title>`);
+        expect(body).toContain('<meta name="robots" content="noindex"');
+        expectNoLanding(body);
         expect(body).toContain(`<a href="${english ? "/" : "/ru"}">${brand}</a>`);
         expectIconLinks(body);
       }
