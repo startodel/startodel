@@ -77,7 +77,7 @@ function workflow(id: string) {
   return section.body;
 }
 
-test("personalization combines the questionnaire with prior knowledge and resolves uncertainty", () => {
+test("personalization sets depth and pace while preserving the requested technology and foundations", () => {
   const rules = workflow("rules");
   expect(rules).toMatch(/`get_profile`.*Onboarding Questionnaire.*already know/i);
   for (const detail of [
@@ -87,12 +87,22 @@ test("personalization combines the questionnaire with prior knowledge and resolv
     "preferred language",
     "starting Topic",
     "depth",
+    "pace",
+    "prerequisites",
     "examples",
   ])
     expect(rules).toContain(detail);
   expect(rules).toMatch(/uncertain.*confirm/i);
-  expect(rules).toMatch(/foundations.*analogy.*jargon/i);
-  expect(rules).toMatch(/experienced.*familiar.*mechanism.*tradeoffs/i);
+  expect(rules).toMatch(/analogy.*project|project.*analogy/i);
+  for (const body of [rules, workflow("build-track-technology")]) {
+    expect(body).toMatch(/from scratch.*foundations/i);
+    expect(body).toMatch(
+      /leave out another framework’s code, (?:terms|terminology).*side-by-side comparisons.*unless the learner explicitly asks.*compar/i,
+    );
+  }
+  for (const id of ["build-track-technology", "build-track-from-repo"]) {
+    expect(workflow(id)).toMatch(/comparison mode.{0,50}only when the learner explicitly asks/i);
+  }
 });
 
 test("Track design and Lesson writing require checked primary sources before authoring", () => {
@@ -143,11 +153,49 @@ test("Lesson authors show the example before the prediction and explain one idea
   expect(lesson).toMatch(/60–100 words.*(?:one or two|1–2) short paragraphs/i);
 });
 
+test("the Topic sets Lesson depth and Block count while each Theory Block carries one idea", () => {
+  for (const id of ["lessons-and-blocks", "rules"]) {
+    const body = workflow(id);
+    expect(body).toMatch(/depth and (?:number of Blocks|Block count) the Topic needs/i);
+    expect(body).toMatch(
+      /no (?:writing )?target for (?:overall )?Lesson length or (?:total )?Block count/i,
+    );
+    expect(body).not.toMatch(
+      /keep (?:each |the |a )?Lessons? (?:short|brief)|aim for \d+(?:–\d+)? (?:Blocks|minutes)/i,
+    );
+    expect(body).toMatch(/one idea per `theory` Block/i);
+    expect(body).toMatch(/avoid one-line (?:`theory` )?stubs/i);
+  }
+  expect(workflow("lessons-and-blocks")).toMatch(/schema accepts up to 200 ordered Blocks/i);
+});
+
 test("the Good vs Bad opening models a prediction the learner can actually make", () => {
   const opening = workflow("lessons-and-blocks").split("## Good vs Bad Lesson opening")[1];
   expect(opening).toMatch(/\*\*Bad\*\*.*`theory`/);
-  const good = opening.split("**Good**")[1];
-  expect(good).toMatch(/```js\n.+?```.*`callout`[^\n]+\?.*`theory`/s);
+  const good = opening.split("**Good**")[1].split("## Block checklist")[0];
+  expect(good).toMatch(/```js\n.+?```.*`quiz`[^\n]+\?.*`theory`/s);
+  expect(good).not.toMatch(/`callout`[^\n]*\?/i);
+});
+
+test("the Lesson workflow separates scored and reflective prompts from substantive Callouts", () => {
+  const lesson = workflow("lessons-and-blocks");
+  expect(lesson).toMatch(/prediction in a `quiz`.*unscored.*`theory`/i);
+  expect(lesson).toMatch(/reserve it for a tip, gotcha, production caveat or takeaway/i);
+  expect(lesson).toMatch(/non-obvious condition.*detect or address/i);
+  expect(lesson).toMatch(
+    /never put (?:a )?prediction questions?, Quiz prompts? or Exercise prompts? in a Callout/i,
+  );
+});
+
+test("authors can label major Blocks for the sticky Lesson contents sidebar", () => {
+  const lesson = workflow("lessons-and-blocks");
+  expect(lesson).toMatch(
+    /sticky Lesson contents sidebar.*short.*`title`.*major.*Theory, Callout and Exercise/i,
+  );
+  expect(lesson).toMatch(/filename.*Code Block.*timers\.cjs/i);
+  expect(lesson).toMatch(/optional.*120 characters/i);
+  expect(lesson).toMatch(/falls back.*body.*code explanation.*first line of code/i);
+  expect(lesson).toMatch(/Quiz.*question count.*ignores.*`title`/i);
 });
 
 test("Lesson prose defines terms, labels sources and sounds like a colleague at a whiteboard", () => {

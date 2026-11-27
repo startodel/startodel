@@ -265,10 +265,8 @@ try {
   await owner.setMastery(by.runtime.id, 3);
   const guide = await readFile("docs/agent-guide/references/browser-tasks.md", "utf8");
   const blocks = JSON.parse(guide.split("```json\n")[1].split("\n```")[0]);
-  const titles = { order: "timers.js", latency: "When the timer is late", trace: "Move the save" };
-  for (const block of blocks) {
-    if (titles[block.id]) block.title = titles[block.id];
-  }
+  // Exercise the outline fallback for an older Theory Block alongside authored titles.
+  delete blocks.find((b) => b.id === "order-trace").title;
   const lesson = await owner.createLesson({
     topicId: by.tasks.id,
     title: "When does a timer run?",
@@ -298,7 +296,7 @@ try {
     assert.equal(await header.locator(".s-page-header__description").count(), 0);
     assert.deepEqual(
       (await header.locator(".s-badge").allTextContents()).slice(0, 2),
-      prefix ? ["7 мин", "9 блоков"] : ["7 min", "9 Blocks"],
+      prefix ? ["8 мин", "9 блоков"] : ["8 min", "9 Blocks"],
     );
     assert.equal(await header.locator(".s-mastery").count(), isPublic ? 0 : 1);
     if (isPublic) {
@@ -315,9 +313,9 @@ try {
     const outline = page.locator(".s-index");
     assert.ok(await outline.isVisible());
     assert.deepEqual(await outline.locator(".s-index__title").allTextContents(), [
-      "You’re testing two messages in the browser console.",
+      "Two messages from one click",
       "timers.js",
-      "Which message will you see first?",
+      prefix ? "Тест · 1 вопрос" : "Quiz · 1 question",
       "The console shows sync first.",
       "When the timer is late",
       blocks.find((b) => b.id === "docs").title,
@@ -464,7 +462,8 @@ try {
     await route.fulfill({ response, json });
   });
   await page.getByRole("link", { name: lesson.title }).click();
-  await page.locator(".s-quiz").waitFor();
+  const timersQuiz = page.locator("#lesson-block-timers .s-quiz");
+  await timersQuiz.waitFor();
   assert.ok(enriched);
   const projected = await page.evaluate((id) => {
     const payload = Object.values(window.useNuxtApp().payload.data).find(
@@ -486,9 +485,9 @@ try {
   await page.getByText("Show solution", { exact: true }).click();
   await page.locator(".s-exercise__solution.is-open").waitFor();
   assert.equal(reveals, 1);
-  await page.getByRole("radio", { name: /\bsync$/ }).check();
-  await page.getByRole("button", { name: "Submit answers" }).click();
-  await page.getByText("1 of 1 correct").waitFor();
+  await timersQuiz.getByRole("radio", { name: /\bsync$/ }).check();
+  await timersQuiz.getByRole("button", { name: "Submit answers" }).click();
+  await timersQuiz.getByText("1 of 1 correct").waitFor();
   const [read] = await Promise.all([
     page.waitForResponse(
       (r) => r.url() === origin + lessonApi + "/read" && r.request().method() === "POST",
@@ -582,14 +581,16 @@ try {
   await page.getByRole("link", { name: "Practice quiz" }).waitFor();
   await shot("pr9-reviews");
   await page.getByRole("link", { name: "Practice quiz" }).click();
-  await page
-    .locator(".s-quiz")
-    .getByRole("radio", { name: /\bsync$/ })
-    .check();
+  async function answerPracticeQuiz() {
+    const practice = page.locator(".s-quiz");
+    await practice.getByRole("radio", { name: /message from the last line$/ }).check();
+    await practice.getByRole("radio", { name: /\bsync$/ }).check();
+  }
+  await answerPracticeQuiz();
   await shot("pr9-review-practice");
   if (cascade) await checkCascade(page, "/reviews/" + by.tasks.id + "/practice");
   await page.getByRole("button", { name: "Submit Practice Quiz" }).click();
-  await page.locator(".outcome__title").filter({ hasText: "1 of 1 correct" }).waitFor();
+  await page.locator(".outcome__title").filter({ hasText: "2 of 2 correct" }).waitFor();
   if (cascade) await checkCascade(page, "/reviews/" + by.tasks.id + "/practice");
   await page.locator('.s-rail a[href="/progress"]').click();
   await page.getByRole("heading", { name: "Progress", exact: true }).waitFor();
@@ -762,15 +763,12 @@ try {
     await shot("pr12-ru-track");
     await visit("/ru/reviews");
     await page.getByRole("link", { name: by.tasks.title, exact: true }).waitFor();
-    await page.getByText("Тренировочный тест: 1 из 1 верно", { exact: true }).waitFor();
+    await page.getByText("Тренировочный тест: 2 из 2 верно", { exact: true }).waitFor();
     await shot("pr12-ru-grill-or-reviews");
 
     // Exercise the real submission handler and check the message visible after each response.
     await page.getByRole("link", { name: "Тренировочный тест", exact: true }).click();
-    await page
-      .locator(".s-quiz")
-      .getByRole("radio", { name: /\bsync$/ })
-      .check();
+    await answerPracticeQuiz();
     await page.route("**/api/reviews/*/practice", (route) => route.continue({ postData: "{}" }), {
       times: 1,
     });
@@ -852,7 +850,7 @@ try {
       await route.fulfill({ response, json });
     });
     await page.getByRole("link", { name: lesson.title }).click();
-    await page.getByText("Fork this track to practice").waitFor();
+    await page.locator("#lesson-block-timers").getByText("Fork this track to practice").waitFor();
     assert.equal(await page.getByText("Show solution", { exact: true }).count(), 0);
     const preview = await page.evaluate(() =>
       Object.values(window.useNuxtApp().payload.data).find((entry) => entry?.blocks),

@@ -147,12 +147,32 @@ export function learningMcpTests(
       const { tools } = await client.listTools();
       for (const name of ["create_lesson", "update_lesson"]) {
         const description = tools.find((tool) => tool.name === name)?.description;
+        expect(description, name).toMatch(
+          /schema accepts up to 200 ordered Blocks with unique IDs/i,
+        );
+        expect(description, name).toMatch(
+          /Topic needs.*no writing target for Lesson length or Block count/i,
+        );
+        expect(description, name).toMatch(/avoid one-line stubs/i);
+        expect(description, name).toMatch(
+          /leave out another framework’s code, terminology.*side-by-side comparisons unless the learner explicitly asks/i,
+        );
         expect(description, name).toMatch(/code.*scenario.*before.*prediction/i);
+        expect(description, name).toMatch(/prediction in a quiz.*unscored.*theory Block/i);
+        expect(description, name).toMatch(/Callouts for.*tip.*gotcha.*takeaway/i);
+        expect(description, name).toMatch(
+          /never put prediction questions, Quiz prompts or Exercise prompts in a Callout/i,
+        );
         expect(description, name).toMatch(/answer.*later theory Block/i);
         expect(description, name).toMatch(/one idea per theory Block/i);
         expect(description, name).toMatch(/jargon on first use/i);
         expect(description, name).toMatch(/labelled links.*Track Sources/i);
         expect(description, name).toMatch(/short, direct sentences.*filler/i);
+        expect(description, name).toMatch(
+          /sticky Lesson contents sidebar.*major theory, callout and exercise Blocks.*filename/i,
+        );
+        expect(description, name).toMatch(/optional.*120 characters/i);
+        expect(description, name).toMatch(/Quiz.*question count.*ignores.*title/i);
       }
     });
 
@@ -196,7 +216,7 @@ export function learningMcpTests(
       expect(blocks.map((b: { type: string }) => b.type)).toEqual([
         "theory",
         "code",
-        "callout",
+        "quiz",
         "theory",
         "callout",
         "link",
@@ -206,8 +226,17 @@ export function learningMcpTests(
       ]);
       expect(blocks[0].markdown).not.toMatch(/predict|which.*first|\?/i);
       expect(blocks[1]).not.toHaveProperty("explanation");
-      expect(blocks[2].markdown).toMatch(/which.*first\?/i);
+      expect(blocks[2].id).toBe("prediction");
+      expect(blocks[2].questions[0].prompt).toMatch(/which.*first\?/i);
       expect(blocks[3].markdown).toMatch(/`sync` first/);
+      expect(blocks[4]).toMatchObject({ id: "latency", variant: "production" });
+      expect(blocks[4].markdown).toMatch(/Performance panel/);
+      expect(blocks[4].markdown).not.toMatch(/which message|pick an order|predict/i);
+      expect(blocks[1].title).toMatch(/\.js$/);
+      for (const block of [blocks[0], blocks[3], blocks[4], blocks[8]]) {
+        expect(block.title).toMatch(/\S/);
+        expect(block.title.length).toBeLessThanOrEqual(120);
+      }
       async function step(id: string) {
         const guide = await call("get_guide");
         expect(guide.nextSteps[0]).toMatchObject({
@@ -295,7 +324,7 @@ export function learningMcpTests(
         blocks,
       });
       expect(await call("get_lesson", { lessonId })).toMatchObject({ blocks, url: lessonUrl });
-      // A replacement drops omitted Blocks while keeping the Quiz ID for subsequent attempts.
+      // A replacement drops omitted Blocks while keeping the Quiz IDs for subsequent attempts.
       const replacement = blocks.slice(1);
       expect(await call("update_lesson", { lessonId, blocks: replacement })).toMatchObject({
         blocks: replacement,
@@ -339,12 +368,18 @@ export function learningMcpTests(
       );
       await call("update_profile", { preferredLanguage: "en" });
       expect(
+        await call("record_quiz_result", { lessonId, blockId: "prediction", answers: [1] }),
+      ).toMatchObject({ correct: 1, total: 1, source: "mcp", mastery: 1 });
+      expect(
         await call("record_quiz_result", { lessonId, blockId: "timers", answers: [1] }),
       ).toMatchObject({ correct: 1, total: 1, source: "mcp", mastery: 2 });
       expect(await call("get_progress")).toMatchObject({
         masteryDistribution: [1, 0, 2, 0, 0],
         perTrack: [{ trackId, completed: 1, total: 2 }],
-        recentQuizAttempts: [{ lessonId }],
+        recentQuizAttempts: [
+          { lessonId, blockId: "timers" },
+          { lessonId, blockId: "prediction" },
+        ],
         dueReviewsCount: 0,
         openGrills: [],
       });

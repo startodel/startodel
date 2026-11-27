@@ -126,11 +126,17 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
     return { ...row, url: entityUrl(origin, "lessons", row.id) };
   }
   const lesson = z.strictObject({ title, summary, blocks: LessonBlocks });
-  const lessonWriting =
-    "Open with 5–10 lines of code or a concrete scenario before asking for a prediction. Save the answer and its step-by-step explanation for a later theory Block. Teach one idea per theory Block in about 60–100 words. Define jargon on first use. Cite primary sources with labelled links and keep background reading in Track Sources. Use short, direct sentences like a colleague at a whiteboard. Cut filler. Give theory, callout and exercise Blocks short outline titles. Set a code Block’s title to its filename when available.";
+  const lessonWriting = [
+    "The schema accepts up to 200 ordered Blocks with unique IDs. Choose the depth and number of Blocks the Topic needs. Set no writing target for Lesson length or Block count.",
+    "Use get_profile and what you already know to set depth, pace and prerequisite review. Teach the requested foundations with examples from the learner’s project or domain. Leave out another framework’s code, terminology and side-by-side comparisons unless the learner explicitly asks to compare in this conversation.",
+    "Open with 5–10 lines of code or a concrete scenario before asking for a prediction in a quiz. Put an unscored reflection in a theory Block. Save the answer and its step-by-step explanation for a later theory Block.",
+    "Teach one idea per theory Block, typically 60–100 words in one or two short paragraphs. Avoid one-line stubs. Include a substantive Callout. Reserve Callouts for a tip, gotcha, production caveat or takeaway. Name the non-obvious condition and, where relevant, how to detect or address it. Never put prediction questions, Quiz prompts or Exercise prompts in a Callout.",
+    "Define jargon on first use. Cite dated or versioned primary sources with labelled links and keep background reading in Track Sources. Use short, direct sentences like a colleague at a whiteboard. Cut filler.",
+    "For the sticky Lesson contents sidebar, set a short, descriptive title on major theory, callout and exercise Blocks. Use a filename for code when it fits. These titles are optional (max 120 characters). Without one, the sidebar uses a phrase from the body, or for code, its explanation or first line. A Quiz entry shows the question count and ignores its optional title. Link and video Blocks require a title.",
+  ].join(" ");
   register(
     "create_lesson",
-    `Append a Lesson to a Topic by slug or ID. Supply up to 200 ordered Blocks with unique IDs. Returns the full Lesson. ${lessonWriting}`,
+    `Append a Lesson to a Topic by slug or ID. Returns the full Lesson. ${lessonWriting}`,
     lesson.extend({ topic: topicRef }),
     async ({ topic, ...input }) => {
       const parent = await resolveTopic(data, topic);
@@ -141,7 +147,7 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
   );
   register(
     "update_lesson",
-    `Patch a Lesson by ID. Supplying blocks replaces all Blocks. Send up to 200 ordered Blocks with unique IDs and preserve IDs across edits. Returns the full updated Lesson. ${lessonWriting}`,
+    `Patch a Lesson by ID. Supplying blocks replaces all Blocks. Preserve IDs across edits. Returns the full updated Lesson. ${lessonWriting}`,
     lesson.partial().extend({ lessonId: id }),
     ({ lessonId, ...patch }) => data.updateLesson(lessonId, patch),
   );
