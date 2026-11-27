@@ -2,7 +2,7 @@
 
 The five installable skills cover onboarding, technology Tracks, repository Tracks, GrillSessions and Reviews. Both Track skills teach comparison and deep-dive modes, then guide the agent through writing a Lesson. The repository workflow adds a trace through source and tests at a real revision.
 
-Each folder under [skills](skills/) contains a generated `SKILL.md` with workflow steps and shared rules. The Track skills also include the worked seven-Block Lesson under `references/`. Edit the [agent guide](../../docs/agent-guide/README.md) and run `pnpm guide:build && pnpm skills:build` at the repository root to update the MCP resources and installable skills together.
+Each folder under [skills](skills/) contains a generated `SKILL.md` with workflow steps and shared rules. The Track skills also include a worked Lesson using all seven Block types under `references/`. Edit the [agent guide](../../docs/agent-guide/README.md) and run `pnpm guide:build && pnpm skills:build` at the repository root to update the MCP resources and installable skills together.
 
 ## Install
 
