@@ -2,6 +2,7 @@ import { expect, test } from "vite-plus/test";
 import {
   Block,
   LessonBlocks,
+  publicBlock,
   TopicSlug,
   TrackSources,
   TrackLanguage,
@@ -42,6 +43,8 @@ test.each([
   ["exercise", { prompt: "Try it", solution: "Done", hints: ["Hint"] }, { prompt: "Try it" }],
 ])("validates %s Blocks", (type, valid, invalid) => {
   expect(Block.safeParse({ id: "one", type, ...valid }).success).toBe(true);
+  const titled = Block.parse({ id: "one", type, ...valid, title: "Timer callbacks" });
+  expect(publicBlock(titled)).toMatchObject({ title: "Timer callbacks" });
   expect(Block.safeParse({ id: "one", type, ...invalid }).success).toBe(false);
 });
 

@@ -56,9 +56,9 @@ function publicTrack(db: Connection, login: string, slug: string) {
 // Anonymous Lesson queries discard practice keys inside PostgreSQL. WITH ORDINALITY
 // preserves the authored order of both Blocks and questions.
 const previewBlocks = sql<PublicBlock[]>`(select coalesce(jsonb_agg(case b->>'type'
-  when 'quiz' then jsonb_build_object('type','quiz','id',b->'id','questions',
+  when 'quiz' then jsonb_strip_nulls(jsonb_build_object('type','quiz','id',b->'id','title',b->'title','questions',
     (select jsonb_agg(jsonb_build_object('prompt',q->'prompt','options',q->'options') order by qi)
-     from jsonb_array_elements(b->'questions') with ordinality as questions(q,qi)))
+     from jsonb_array_elements(b->'questions') with ordinality as questions(q,qi))))
   when 'exercise' then b - 'solution'
   else b end order by bi),'[]'::jsonb)
   from jsonb_array_elements(${lessons.blocks}) with ordinality as blocks(b,bi))`;

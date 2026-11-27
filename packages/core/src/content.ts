@@ -55,6 +55,7 @@ const id = z
   .regex(/^[A-Za-z0-9_-]+$/);
 const markdown = z.string().min(1).max(50_000);
 const title = z.string().min(1).max(500);
+const shortTitle = z.string().trim().min(1).max(120).optional();
 const videoUrl = httpUrl.pipe(
   z.string().refine((value) => {
     const url = new URL(value);
@@ -81,10 +82,11 @@ const question = z
   });
 
 export const Block = z.discriminatedUnion("type", [
-  z.strictObject({ type: z.literal("theory"), id, markdown }),
+  z.strictObject({ type: z.literal("theory"), id, title: shortTitle, markdown }),
   z.strictObject({
     type: z.literal("code"),
     id,
+    title: shortTitle,
     language: z.string().min(1).max(100),
     code: markdown,
     explanation: markdown.optional(),
@@ -92,6 +94,7 @@ export const Block = z.discriminatedUnion("type", [
   z.strictObject({
     type: z.literal("callout"),
     id,
+    title: shortTitle,
     variant: z.enum(["gotcha", "production", "tip"]),
     markdown,
   }),
@@ -100,11 +103,13 @@ export const Block = z.discriminatedUnion("type", [
   z.strictObject({
     type: z.literal("quiz"),
     id,
+    title: shortTitle,
     questions: z.array(question).min(1).max(maxQuizQuestions),
   }),
   z.strictObject({
     type: z.literal("exercise"),
     id,
+    title: shortTitle,
     prompt: markdown,
     solution: markdown,
     hints: z.array(markdown).max(20).optional(),

@@ -9,24 +9,26 @@ export type PublicBlock =
     });
 
 export function publicBlock(block: PublicBlock): PublicBlock {
-  const { id, type } = block;
+  const { id, type, title } = block;
   switch (type) {
     case "quiz":
       return {
         type,
         id,
+        title,
         questions: block.questions.map(({ prompt, options }) => ({ prompt, options })),
       };
     case "exercise":
-      return { type, id, prompt: block.prompt, hints: block.hints };
+      return { type, id, title, prompt: block.prompt, hints: block.hints };
     case "theory":
-      return { type, id, markdown: block.markdown };
+      return { type, id, title, markdown: block.markdown };
     case "callout":
-      return { type, id, variant: block.variant, markdown: block.markdown };
+      return { type, id, title, variant: block.variant, markdown: block.markdown };
     case "code":
       return {
         type,
         id,
+        title,
         code: block.code,
         language: block.language,
         explanation: block.explanation,
