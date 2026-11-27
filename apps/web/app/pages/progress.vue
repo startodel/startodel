@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isTopicComplete } from "@startodel/core";
 import { privateTrackPath } from "../../shared/locale";
 definePageMeta({ layout: "app" });
 const { t, locale } = useI18n();
@@ -22,7 +23,8 @@ const levels = computed(() => trackLevels(data.value?.perTopic ?? []));
 const summary = computed(() => {
   const topics = data.value?.perTopic ?? [];
   return {
-    complete: topics.filter((topic) => topic.level >= 2).length,
+    complete: topics.filter((topic) => isTopicComplete(topic.level, topic.read < topic.lessons))
+      .length,
     read: topics.reduce((count, topic) => count + topic.read, 0),
     answers: data.value?.activity.filter((a) => a.kind === "Grill answer").length ?? 0,
     reviews: data.value?.activity.filter((a) => a.kind === "Review result").length ?? 0,

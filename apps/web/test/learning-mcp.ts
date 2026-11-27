@@ -526,8 +526,97 @@ export function learningMcpTests(
       });
     });
 
-    test("Lesson and Topic Tools accept explicit IDs and slugs alongside their existing inputs", async () => {
+    test("Lesson writes save the content and report advisory Markdown warnings", async () => {
       const { call } = await connect();
+      await call("upsert_topics", { topics: [{ slug: "markup", title: "Markup" }] });
+      const exercise = {
+        type: "exercise",
+        id: "element",
+        prompt: "Try <App />",
+        solution: "Done",
+        starterCode: "<App />",
+        language: "tsx",
+      };
+      const saved = await call("create_lesson", {
+        topic: "markup",
+        title: "Markup",
+        blocks: [exercise],
+      });
+      expect(saved).toMatchObject({
+        blocks: [exercise],
+        warnings: [expect.stringContaining("element")],
+      });
+      const blocks = [{ type: "theory", id: "syntax", markdown: "Use `print(`x`)`." }];
+      expect(await call("update_lesson", { id: saved.id, blocks })).toMatchObject({
+        blocks,
+        warnings: [expect.stringContaining("syntax")],
+      });
+      expect((await call("get_lesson", { id: saved.id })).blocks).toEqual(blocks);
+      expect(await call("update_lesson", { id: saved.id, blocks: [] })).not.toHaveProperty(
+        "warnings",
+      );
+    });
+
+    test("a new unread Lesson reopens study in a previously completed Topic", async () => {
+      const { call } = await connect();
+      await call("update_profile", { markOnboarded: true });
+      const track = await call("create_track", { title: "Runtime" });
+      const { tasks: topicId } = await call("upsert_topics", {
+        topics: [{ slug: "tasks", title: "Tasks" }],
+      });
+      await call("attach_topics_to_track", { trackId: track.id, slugs: ["tasks"] });
+      const first = await call("create_lesson", {
+        topic: "tasks",
+        title: "Queues",
+        blocks: [
+          {
+            type: "quiz",
+            id: "q",
+            questions: [{ prompt: "First?", options: ["A", "B"], correctIndex: 0 }],
+          },
+        ],
+      });
+      const read = await call("mark_lesson_read", { id: first.id });
+      const attempt = await call("record_quiz_result", {
+        id: first.id,
+        blockId: "q",
+        answers: [0],
+      });
+      expect(attempt.mastery).toBe(2);
+      expect((await call("get_progress")).perTrack).toMatchObject([{ completed: 1 }]);
+
+      const added = await call("create_lesson", {
+        topic: "tasks",
+        title: "Scheduling",
+        blocks: [],
+      });
+      for (const scope of [{}, { track: track.slug }]) {
+        expect((await call("get_guide", scope)).nextSteps[0]).toMatchObject({
+          id: "agent-workflow",
+          topicId,
+          lessonId: added.id,
+        });
+      }
+      expect(await call("get_track_graph", { trackId: track.id })).toMatchObject({
+        nextLesson: { id: added.id },
+        suggestedNextTopics: [{ id: topicId }],
+        topics: [{ level: 2, readCount: 1, lessonCount: 2 }],
+      });
+      expect(await call("list_lessons", { topic: "tasks" })).toMatchObject([
+        { id: first.id, readAt: read.readAt },
+        { id: added.id, readAt: null },
+      ]);
+      expect(await call("get_progress")).toMatchObject({
+        perTrack: [{ completed: 0 }],
+        recentQuizAttempts: [{ id: attempt.id, correct: 1 }],
+      });
+      await call("mark_lesson_read", { id: added.id });
+      expect((await call("get_progress")).perTrack).toMatchObject([{ completed: 1 }]);
+      expect((await call("get_track_graph", { trackId: track.id })).nextLesson).toBeNull();
+    });
+
+    test("Lesson and Topic Tools accept explicit IDs and slugs alongside their existing inputs", async () => {
+      const { call, user } = await connect();
       const { tasks: id } = await call("upsert_topics", {
         topics: [{ slug: "tasks", title: "Tasks" }],
       });
@@ -541,6 +630,18 @@ export function learningMcpTests(
       expect(
         await call("update_track", { slug: track.slug, description: "Practice" }),
       ).toMatchObject({ id: track.id, description: "Practice" });
+      const graph = await call("get_track_graph", { trackId: track.id });
+      expect(graph.track.url).toBe(environment().publicOrigin + "/tracks/runtime");
+      for (const ref of [track.slug, track.id]) {
+        expect(await call("get_track_graph", { track: ref })).toEqual(graph);
+      }
+      const legacySlug = randomUUID();
+      await environment().db.$client.query("update tracks set slug=$1 where id=$2 and user_id=$3", [
+        legacySlug,
+        track.id,
+        user.id,
+      ]);
+      expect((await call("get_track_graph", { track: legacySlug })).track.id).toBe(track.id);
       const first = await call("create_lesson", { id, title: "Timers", blocks: [] });
       const second = await call("create_lesson", { slug: "tasks", title: "Events", blocks: [] });
       for (const ref of [{ id }, { slug: "tasks" }, { topic: "tasks" }])
@@ -550,7 +651,7 @@ export function learningMcpTests(
         ]);
       expect(
         await call("update_lesson", { id: first.id, summary: "Timers revised" }),
-      ).toMatchObject({ id: first.id });
+      ).toMatchObject({ id: first.id, url: first.url });
       expect(await call("get_lesson", { id: first.id })).toEqual(
         await call("get_lesson", { lessonId: first.id }),
       );
@@ -798,6 +899,8 @@ export function learningMcpTests(
           ["detach_topic_from_track", { trackId, slug: "shared" }],
           ["detach_topic_from_track", { trackId: mine.id, slug }],
           ["get_track_graph", { trackId }],
+          ["get_track_graph", { track: trackId }],
+          ["get_track_graph", { track: foreign ? track.slug : "absent" }],
           ["create_lesson", { topic, title: "X", blocks: [] }],
           ["list_lessons", { topic }],
           ["get_lesson", { lessonId }],
@@ -859,6 +962,8 @@ export function learningMcpTests(
         ["record_review_result", { topic: "sql", verdict: "wrong" }],
         ["set_mastery", { topic: "sql", level: 5 }],
         ["update_profile", { yearsOfExperience: 61 }],
+        ["get_track_graph", {}],
+        ["get_track_graph", { trackId: id, track: "ambiguous" }],
         ["get_track", {}],
         ["get_track", { id, slug: "ambiguous" }],
         ["get_topic", {}],

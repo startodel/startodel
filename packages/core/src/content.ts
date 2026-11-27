@@ -112,6 +112,8 @@ export const Block = z.discriminatedUnion("type", [
     title: shortTitle,
     prompt: markdown,
     solution: markdown,
+    starterCode: z.string().max(50_000).optional(),
+    language: z.string().min(1).max(100).optional(),
     hints: z.array(markdown).max(20).optional(),
   }),
 ]);

@@ -1,7 +1,6 @@
-import { isUuid } from "@startodel/core";
 import { nextStep } from "../lib/next-step";
 import sections from "./guide.generated.json";
-import type { UserData } from "./register";
+import { resolveTrack, type UserData } from "./register";
 export { sections };
 
 function section(id: string) {
@@ -31,7 +30,7 @@ function russianReason(step: Awaited<ReturnType<typeof nextStep>>, scoped: boole
 }
 
 export async function guide(data: UserData, track?: string) {
-  const selected = track ? await data.getTrack(isUuid(track) ? track : { slug: track }) : undefined;
+  const selected = track ? await resolveTrack(track, data.getTrack) : undefined;
   if (track && !selected) return;
   const profileRead = data.getProfile();
   const [step, profile, nextTopics] = await Promise.all([
@@ -60,7 +59,8 @@ export async function guide(data: UserData, track?: string) {
         title: current.title,
         why,
         tools,
-        ...(selected && step.topicId && { topicId: step.topicId }),
+        ...((selected || step.lessonId) && step.topicId && { topicId: step.topicId }),
+        ...(step.lessonId && { lessonId: step.lessonId }),
         ...(selected && step.sessionId && { sessionId: step.sessionId }),
       },
     ],

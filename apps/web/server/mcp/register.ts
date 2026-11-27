@@ -1,10 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { forUser } from "@startodel/db";
-import { TopicSlug } from "@startodel/core";
+import { isUuid, TopicSlug, TrackSlug } from "@startodel/core";
 import { z } from "zod";
 
 export type UserData = ReturnType<typeof forUser>;
 export const id = z.guid();
+export const trackRef = z.union([id, TrackSlug]);
 export const topicRef = z.union([id, TopicSlug]).describe("Topic Slug or ID in your Topic Catalog");
 export const lessonLookup = z
   .strictObject({ id: id.optional(), lessonId: id.optional() })
@@ -25,6 +26,17 @@ export async function resolveTopic(data: UserData, ref: string) {
     if (topic) return topic;
   }
   return data.getTopicBySlug(ref);
+}
+
+export async function resolveTrack<T>(
+  ref: string,
+  read: (key: string | { slug: string }) => Promise<T | undefined>,
+) {
+  if (isUuid(ref)) {
+    const track = await read(ref);
+    if (track) return track;
+  }
+  return read({ slug: ref });
 }
 
 export function entityUrl(origin: string, collection: "topics" | "lessons" | "grills", id: string) {

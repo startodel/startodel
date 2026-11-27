@@ -50,6 +50,20 @@ test.each([
   expect(Block.safeParse({ id: "one", type, ...invalid }).success).toBe(false);
 });
 
+test("Exercise editor fields survive validation and the learner-facing projection", () => {
+  const exercise = { id: "e", type: "exercise", prompt: "Edit this.", solution: "Answer" };
+  for (const fields of [
+    {},
+    { starterCode: "" },
+    { language: "css" },
+    { starterCode: "x", language: "ts" },
+  ]) {
+    const block = Block.parse({ ...exercise, ...fields });
+    expect(publicBlock(block)).toMatchObject({ prompt: exercise.prompt, ...fields });
+    expect(publicBlock(block)).not.toHaveProperty("solution");
+  }
+});
+
 test("recognizes only the supported YouTube video URLs", () => {
   const valid = [
     "https://youtu.be/abc",

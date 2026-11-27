@@ -48,6 +48,19 @@ test("an Exercise lifts its first fenced starter into the editor and keeps the s
   expect(result.after).toContain('<code class="language-text">Saved');
 });
 
+test("structured Exercise fields override the fenced starter and language independently", () => {
+  const source = "Read this example.\n\n```py\nprint(1)\n```";
+  const task = (fields: { starterCode?: string; language?: string }) =>
+    renderExercisePrompt(source, "Image:", fields);
+  expect(task({ starterCode: "select 1", language: "sql" })).toMatchObject({
+    code: "select 1",
+    language: "sql",
+    before: expect.stringContaining("print(1)"),
+  });
+  expect(task({ starterCode: "" })).toMatchObject({ code: "", language: "python" });
+  expect(task({ language: "ts" })).toMatchObject({ code: "print(1)", language: "typescript" });
+});
+
 test("an Exercise without a fence starts with an empty JavaScript editor", () => {
   expect(renderExercisePrompt("Try `answer()`.", "Image:")).toEqual({
     before: "<p>Try <code>answer()</code>.</p>\n",

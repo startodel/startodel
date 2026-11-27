@@ -61,7 +61,7 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     expect(await next(track.id)).toBeNull();
   });
 
-  test("Track learning skips empty, blocked and mastered Topics", async () => {
+  test("Track learning skips empty and blocked Topics and offers unread Lessons at any Mastery", async () => {
     const track = await alice.createTrack("Scheduling");
     const next = async () => (await alice.getTrackGraph(track.id))?.nextLesson;
     expect(await next()).toBeNull();
@@ -74,7 +74,9 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     expect(await next()).toBeNull();
     await alice.setMastery(clocks.id, 2);
     expect(await next()).toEqual({ id: lesson.id, started: false });
-    await alice.setMastery(timers.id, 2);
+    await alice.setMastery(timers.id, 4);
+    expect(await next()).toEqual({ id: lesson.id, started: false });
+    await alice.markLessonRead(lesson.id);
     expect(await next()).toBeNull();
   });
 

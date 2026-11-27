@@ -35,22 +35,28 @@ export function markdownOutlinePhrase(source: string) {
 }
 
 /** Lift the first fence out of the rendered prompt, keeping reference links and later examples intact. */
-export function renderExercisePrompt(source: string, imageLabel: string) {
+export function renderExercisePrompt(
+  source: string,
+  imageLabel: string,
+  { starterCode, language }: { starterCode?: string; language?: string } = {},
+) {
   const env = { imageLabel };
   const tokens = md.parse(source, env);
   const index = tokens.findIndex((token) => token.type === "fence");
-  const [fence] = index < 0 ? [] : tokens.splice(index, 1);
+  const fence = tokens[index];
+  const liftFence = !!fence && starterCode === undefined;
+  if (liftFence) tokens.splice(index, 1);
   // A nested fence belongs to a list or quote. Finish rendering that container before the editor.
-  let split = fence ? index : tokens.length;
+  let split = liftFence ? index : tokens.length;
   while (split < tokens.length && (tokens[split]!.level > 0 || tokens[split]!.nesting === -1))
     split++;
-  const code = fence?.content.replace(/\n$/, "") ?? "";
-  const info = fence?.info.trim().split(/\s+/)[0]?.toLowerCase();
+  const code = starterCode ?? fence?.content.replace(/\n$/, "") ?? "";
+  const info = (language ?? fence?.info)?.trim().split(/\s+/)[0]?.toLowerCase();
   return {
     before: md.renderer.render(tokens.slice(0, split), md.options, env),
     after: md.renderer.render(tokens.slice(split), md.options, env),
     code,
-    language: exerciseLanguage(info, code),
+    language: exerciseLanguage(info, language === undefined ? code : ""),
   };
 }
 

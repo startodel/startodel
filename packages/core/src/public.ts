@@ -20,7 +20,15 @@ export function publicBlock(block: PublicBlock): PublicBlock {
         questions: block.questions.map(({ prompt, options }) => ({ prompt, options })),
       };
     case "exercise":
-      return { type, id, title, prompt: block.prompt, hints: block.hints };
+      return {
+        type,
+        id,
+        title,
+        prompt: block.prompt,
+        hints: block.hints,
+        starterCode: block.starterCode,
+        language: block.language,
+      };
     case "theory":
       return { type, id, title, markdown: block.markdown };
     case "callout":

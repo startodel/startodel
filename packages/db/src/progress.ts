@@ -1,8 +1,8 @@
-import { nextStudyTopic } from "./catalog.ts";
+import { nextStudyTopic, topicReading } from "./catalog.ts";
 import { reviewsThrough } from "./practice.ts";
 import { topicActivity } from "./activity.ts";
-import { and, count, desc, eq, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
-import type { MasteryLevel } from "@startodel/core";
+import { and, count, desc, eq, inArray, isNotNull, isNull, lte, notExists, sql } from "drizzle-orm";
+import { COMPLETE_LEVEL, type MasteryLevel } from "@startodel/core";
 import type { Transaction } from "./owned.ts";
 import type { Connection } from "./index.ts";
 import {
@@ -81,6 +81,7 @@ export function progressForUser(db: Connection, userId: string) {
     return { kind: "plan" } as const;
   }
   async function dashboard(tx: Transaction, now = new Date()) {
+    const fullyRead = notExists(topicReading(tx, userId, trackTopics.topicId, true));
     const perTrack = await tx
       .select({
         trackId: tracks.id,
@@ -88,7 +89,10 @@ export function progressForUser(db: Connection, userId: string) {
         language: tracks.language,
         title: tracks.title,
         total: count(trackTopics.topicId),
-        completed: sql<number>`count(*) filter (where ${topicMastery.level} >= 2)`.mapWith(Number),
+        completed:
+          sql<number>`count(*) filter (where ${topicMastery.level} >= ${COMPLETE_LEVEL} and ${fullyRead})`.mapWith(
+            Number,
+          ),
       })
       .from(tracks)
       .leftJoin(

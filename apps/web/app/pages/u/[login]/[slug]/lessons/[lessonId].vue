@@ -89,6 +89,8 @@ const index = computed(
           :lesson-id="data.id"
           :block-id="b.id"
           :prompt="b.prompt"
+          :starter-code="b.starterCode"
+          :language="b.language"
           :hints="b.hints"
           read-only
         />

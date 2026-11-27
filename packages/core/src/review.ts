@@ -26,6 +26,12 @@ export function scheduleReview(
   return { box, dueAt: new Date(now.getTime() + REVIEW_INTERVAL_DAYS[box] * 86_400_000) };
 }
 
+export const COMPLETE_LEVEL = 2;
+
+export function isTopicComplete(level: number, hasUnreadLessons: boolean) {
+  return level >= COMPLETE_LEVEL && !hasUnreadLessons;
+}
+
 /** The highest level supported by the Topic's current reading and Quiz evidence. */
 export function lessonMastery(lessons: number, read: number, quizzes: number, passed: number) {
   if (quizzes > 0 && passed === quizzes) return 2;
