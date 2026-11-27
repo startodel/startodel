@@ -52,7 +52,6 @@ const hostName = (url: string) => new URL(url).hostname;
       <div v-if="data.tracks.length" class="s-columns" style="--s-col: 20rem">
         <UiTrackCard
           v-for="track in filtered"
-          :language="track.language"
           :key="track.slug"
           :to="trackPath(track.slug)"
           :title="track.title"

@@ -12,27 +12,18 @@ const count = computed(() => {
 <template>
   <div class="s-legend">
     <p class="s-legend__readout">
-      <span
-        ><strong>{{ $n(count.complete) }}</strong>
-        {{ $t("board.liveOf", { total: $n(topics.length) }) }}</span
-      >
+      <span>{{
+        $t("board.masteredOf", { ...countArgs(count.complete), total: $n(topics.length) })
+      }}</span>
       <span aria-hidden="true">·</span>
       <span>{{ $t("count.ready", countArgs(count.ready)) }}</span>
       <span aria-hidden="true">·</span>
       <span>{{ $t("count.blocked", countArgs(count.blocked)) }}</span>
     </p>
     <ul v-if="keys" class="s-legend__keys" :aria-label="$t('board.legend')">
-      <li>
-        <svg width="28" height="8" aria-hidden="true">
-          <path d="M1 4h26" class="s-trace is-live" /></svg
-        >{{ $t("board.signal") }}
-      </li>
-      <li>
-        <svg width="28" height="8" aria-hidden="true"><path d="M1 4h26" class="s-trace" /></svg
-        >{{ $t("board.noSignal") }}
-      </li>
-      <li><i class="s-legend__key is-ready" />{{ $t("topicState.ready") }}</li>
-      <li><i class="s-legend__key is-blocked" />{{ $t("topicState.blocked") }}</li>
+      <li><i class="s-legend__key is-complete" />{{ $t("board.mastered") }}</li>
+      <li><i class="s-legend__key is-ready" />{{ $t("board.available") }}</li>
+      <li><i class="s-legend__key is-blocked" />{{ $t("board.locked") }}</li>
     </ul>
   </div>
 </template>
@@ -54,10 +45,6 @@ const count = computed(() => {
   flex-wrap: wrap;
   column-gap: var(--s-2);
 }
-.s-legend__readout strong {
-  color: var(--s-ink);
-  font-weight: 600;
-}
 .s-legend__keys {
   display: flex;
   flex-wrap: wrap;
@@ -73,6 +60,9 @@ const count = computed(() => {
   width: 0.875rem;
   height: 0.625rem;
   border-radius: 1px;
+}
+.s-legend__key.is-complete {
+  background: var(--s-copper-fill);
 }
 .s-legend__key.is-ready {
   border: 1.5px solid var(--s-copper-fill);

@@ -14,12 +14,14 @@ import {
   sampleQuestions,
   sampleReviews,
   sampleTopicLessons,
-  sampleTopics,
+  sampleBoardTopics,
   sampleTracks,
   sampleUser,
   sampleWeek,
   screenPath,
 } from "../../components/showcase/sample";
+const indexTag = useIndexTag();
+const sampleTopics = sampleBoardTopics(indexTag);
 definePageMeta({ middleware: "design" });
 useHead({ title: "Design components" });
 const sections = [
@@ -132,7 +134,7 @@ const quizResult: QuizResult = {
 };
 const solution = ref<string>();
 const lessons = sampleTopicLessons.map((l, i) => ({
-  id: l.tag,
+  id: l.id,
   title: l.title,
   blocks: l.blocks,
   minutes: l.minutes,
@@ -542,7 +544,7 @@ const prompt =
           ><strong>Live</strong>
           <p class="s-muted">The one thing to do next.</p></UiCard
         >
-        <UiCard tag="T03" :to="{ hash: '#surfaces' }"
+        <UiCard :tag="indexTag('topic', 3)" :to="{ hash: '#surfaces' }"
           ><strong>Link card</strong>
           <p class="s-muted">The whole plate is the target.</p></UiCard
         >
@@ -550,11 +552,8 @@ const prompt =
       <ShowcaseSpecimen label="Card · header and footer" layout="grid">
         <UiCard padding="md">
           <template #header
-            ><span class="s-label">L02 · Lesson</span><span class="push" /><UiBadge
-              tone="verdigris"
-              icon="check"
-              >read</UiBadge
-            ></template
+            ><span class="s-label">{{ indexTag("lesson", 2) }} · Lesson</span
+            ><span class="push" /><UiBadge tone="verdigris" icon="check">read</UiBadge></template
           >
           <p class="card-title">How narrowing follows control flow</p>
           <p class="s-muted">7 blocks · 12 min</p>
@@ -596,7 +595,7 @@ const prompt =
       >
         <UiPageHeader
           title="How narrowing follows control flow"
-          kicker="T03 · L02 · Lesson"
+          :kicker="indexTag('topic', 3) + ' · ' + indexTag('lesson', 2) + ' · Lesson'"
           voice="content"
         >
           <template #meta
@@ -713,7 +712,7 @@ const prompt =
         <UiCollapsible v-model:open="hintOpen" title="Hint 1" icon="info">
           <p>Measure the gap between the tick you asked for and the tick you got.</p>
         </UiCollapsible>
-        <UiCollapsible title="T04 · Timers and scheduling">
+        <UiCollapsible :title="indexTag('topic', 4) + ' · Timers and scheduling'">
           <template #meta>3 Lessons</template>
           <UiLessonList :lessons="lessons" />
         </UiCollapsible>
@@ -792,7 +791,7 @@ const prompt =
               label: 'TypeScript internals',
               to: { hash: '#navigation' },
             },
-            { label: 'T03 Control flow narrowing' },
+            { label: indexTag('topic', 3) + ' Control flow narrowing' },
           ]"
         />
       </ShowcaseSpecimen>
@@ -1057,29 +1056,29 @@ const prompt =
       <ShowcaseSpecimen label="Topic card" layout="grid">
         <UiTopicCard
           title="Timers and scheduling"
-          tag="T04"
+          :tag="indexTag('topic', 4)"
           slug="node/timers"
           :level="2"
           state="complete"
           :lessons="{ read: 3, total: 3 }"
           due="Review in 2 days"
-          :after="['T02']"
+          :after="[indexTag('topic', 2)]"
         />
         <UiTopicCard
           title="Streams and backpressure"
-          tag="T06"
+          :tag="indexTag('topic', 6)"
           :level="0"
           state="ready"
           :lessons="{ read: 0, total: 0 }"
-          :after="['T02', 'T05']"
+          :after="[indexTag('topic', 2), indexTag('topic', 5)]"
           :to="{ hash: '#board' }"
         />
         <UiTopicCard
           title="Profiling in production"
-          tag="T12"
+          :tag="indexTag('topic', 12)"
           :level="0"
           state="blocked"
-          :after="['T09', 'T11']"
+          :after="[indexTag('topic', 9), indexTag('topic', 11)]"
         />
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Topic details" layout="stack">
@@ -1099,7 +1098,6 @@ const prompt =
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Track strip" note="One cell per Topic" layout="stack">
         <UiTrackStrip
-          language="en"
           v-for="t in sampleTracks"
           :key="t.id"
           :title="t.title"
@@ -1220,7 +1218,7 @@ const prompt =
           :number="11"
           :total="15"
           :prompt="grillPrompt"
-          :topic="{ tag: 'T06', title: 'Streams and backpressure' }"
+          :topic="{ tag: indexTag('topic', 6), title: 'Streams and backpressure' }"
         >
           <UiGrillAnswer id="specimen-answer" v-model="draft" @submit="draft = ''" />
         </UiGrillQuestion>
@@ -1261,9 +1259,9 @@ const prompt =
       <ShowcaseSpecimen label="Review card" layout="stack">
         <UiReviewCard
           v-for="r in reviewCards"
-          :key="r.tag"
+          :key="r.ordinal"
           :title="r.title"
-          :tag="r.tag"
+          :tag="indexTag('topic', r.ordinal)"
           :track="r.track"
           :level="r.level"
           :box="r.box"
@@ -1305,7 +1303,6 @@ const prompt =
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Track card" layout="grid">
         <UiTrackCard
-          language="en"
           title="Node.js runtime internals"
           :to="{ hash: '#public' }"
           description="From the call stack to production profiling: how Node.js spends time and memory."
@@ -1315,7 +1312,6 @@ const prompt =
           updated="3 days ago"
         />
         <UiTrackCard
-          language="en"
           title="Node.js internals for SRE"
           :to="{ hash: '#public' }"
           :owner="{ login: 'lena', name: 'Lena Orlova' }"

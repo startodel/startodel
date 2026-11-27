@@ -153,3 +153,13 @@ test("the compact board uses the smaller part size", () => {
     boardModel(topics, edges).width,
   );
 });
+
+test("siblings stack in teaching order regardless of TopicEdge insertion order", () => {
+  for (const links of [edges, [...edges].reverse()]) {
+    const { nodes } = layoutBoard(topics, links);
+    const b = nodes.find((node) => node.id === "b")!;
+    const c = nodes.find((node) => node.id === "c")!;
+    expect(b.x).toBe(c.x);
+    expect(b.y).toBeLessThan(c.y);
+  }
+});

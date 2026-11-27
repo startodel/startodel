@@ -97,7 +97,6 @@ const { language, options, filtered } = useTrackLanguageFilter(() => data.value?
             <div class="rows">
               <UiTrackStrip
                 v-for="track in filtered"
-                :language="track.language"
                 :key="track.trackId"
                 :title="track.title"
                 :levels="levels.get(track.trackId) ?? []"

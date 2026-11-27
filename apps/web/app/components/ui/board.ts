@@ -101,6 +101,12 @@ export function layoutBoard(
 
   const centre = new Map(topics.map((t) => [t.id, graph.node(t.id) as Point]));
   const ranks = [...new Set([...centre.values()].map((p) => round(p.x)))].sort((a, b) => a - b);
+  // Reassign the occupied slots in each column, leaving long-edge passageways clear.
+  for (const x of ranks) {
+    const column = [...centre.values()].filter((point) => round(point.x) === x);
+    const slots = column.map((point) => point.y).sort((a, b) => a - b);
+    column.forEach((point, i) => (point.y = slots[i]!));
+  }
   const rankOf = (x: number) => ranks.findIndex((rank) => Math.abs(rank - x) < 1);
 
   // Each trace is a list of waypoints: the source, one point per rank it passes, the target.

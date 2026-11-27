@@ -661,7 +661,7 @@ export function publicHttpTests(
                 (prefix ? "Публичный трек · Стартодел" : "Public Track · Startodel") +
                 "</title>",
             );
-            expect(html).toContain(prefix ? "Граф тем" : "Track Graph");
+            expect(html).toContain(prefix ? "Карта тем" : "Topic map");
           }
           if (suffix.includes("/lessons/")) {
             expect(main).toContain('class="s-block"');

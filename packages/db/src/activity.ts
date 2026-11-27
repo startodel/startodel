@@ -1,3 +1,4 @@
+import { rankedTrackTopics } from "./track-order.ts";
 import { sql } from "drizzle-orm";
 import type { MasteryLevel } from "@startodel/core";
 import type { Transaction } from "./owned.ts";
@@ -20,7 +21,7 @@ type TopicProgress = {
   id: string;
   title: string;
   level: MasteryLevel;
-  tracks: { id: string; title: string }[];
+  tracks: { id: string; title: string; ordinal: number }[];
   read: number;
   lessons: number;
   lastActivity: Date | null;
@@ -45,9 +46,10 @@ export async function topicActivity(tx: Transaction, userId: string) {
   );
   const { rows: perTopic } = await tx.execute<TopicProgress>(sql`${events},
     latest as (select "topicId",max(at) as at from activity group by "topicId"),
+    ranked as (${rankedTrackTopics(tx, userId)}),
     membership as (
-      select m.topic_id,json_agg(json_build_object('id',t.id,'title',t.title) order by t.created_at,t.id) as tracks
-      from track_topics m join tracks t on t.user_id=${userId} and t.id=m.track_id where m.user_id=${userId} group by m.topic_id
+      select m.topic_id,json_agg(json_build_object('id',t.id,'title',t.title,'ordinal',m.ordinal) order by t.created_at,t.id) as tracks
+      from ranked m join tracks t on t.user_id=${userId} and t.id=m.track_id group by m.topic_id
     ), reading as (
       select l.topic_id,count(*)::int as lessons,count(p.read_at)::int as read
       from lessons l left join lesson_progress p on p.user_id=${userId} and p.lesson_id=l.id where l.user_id=${userId} group by l.topic_id

@@ -311,8 +311,8 @@ try {
     const crumbs = page.locator(".lesson .s-crumbs");
     assert.deepEqual(await crumbs.locator(".s-crumbs__link, .s-crumbs__here").allTextContents(), [
       track.title,
-      "T02 Tasks and timers",
-      "L01",
+      prefix ? "Т02 Tasks and timers" : "T02 Tasks and timers",
+      prefix ? "У01" : "L01",
     ]);
     assert.deepEqual(
       await crumbs
@@ -324,7 +324,7 @@ try {
     assert.equal(await header.locator("h1").textContent(), lesson.title);
     assert.equal(
       await header.locator(".s-page-header__kicker").textContent(),
-      (prefix ? "Урок" : "Lesson") + " L01 · T02 Tasks and timers",
+      (prefix ? "Урок У01 · Т02" : "Lesson L01 · T02") + " Tasks and timers",
     );
     assert.equal(await header.locator(".s-page-header__description").count(), 0);
     assert.deepEqual(
@@ -337,7 +337,7 @@ try {
         await header.getByRole("link", { name: "@" + me.handle }).getAttribute("href"),
         prefix + profilePath,
       );
-      assert.equal(await header.getByTitle(prefix ? "Язык трека" : "Track language").count(), 1);
+      assert.equal(await header.getByTitle(prefix ? "Язык трека" : "Track language").count(), 0);
       assert.equal(
         await page.locator('meta[name="description"]').getAttribute("content"),
         lesson.summary,
@@ -345,6 +345,10 @@ try {
     }
     const outline = page.locator(".s-index");
     assert.ok(await outline.isVisible());
+    assert.equal(await outline.locator("svg:not(.s-index__done)").count(), 0);
+    const refs = blocks.map((_, i) => (prefix ? "Б" : "B") + String(i + 1).padStart(2, "0"));
+    assert.deepEqual(await outline.locator(".s-index__ref").allTextContents(), refs);
+    assert.deepEqual(await page.locator(".s-block__ref").allTextContents(), refs);
     assert.deepEqual(await outline.locator(".s-index__title").allTextContents(), [
       "Two messages from one click",
       "timers.js",
@@ -373,17 +377,12 @@ try {
         const block = page.locator(anchor);
         const kind = block.locator(".s-block__kind");
         assert.equal((await kind.textContent()).trim(), label);
-        for (const icon of [
-          kind.locator("svg"),
-          outline.locator(`a[href="${anchor}"] .s-index__icon`),
-        ]) {
-          const matches = await icon.evaluate((svg, markup) => {
-            const expected = svg.cloneNode(false);
-            expected.innerHTML = markup;
-            return svg.isEqualNode(expected);
-          }, icons[variant]);
-          assert.ok(matches, id + " uses the " + variant + " glyph");
-        }
+        const matches = await kind.locator("svg").evaluate((svg, markup) => {
+          const expected = svg.cloneNode(false);
+          expected.innerHTML = markup;
+          return svg.isEqualNode(expected);
+        }, icons[variant]);
+        assert.ok(matches, id + " uses the " + variant + " glyph");
         assert.ok(await block.locator(".s-callout__kind").isHidden());
         assert.ok(await block.locator(".s-callout__body").isVisible());
         const bounds = await kind.boundingBox();
@@ -445,6 +444,17 @@ try {
       expectQuiet(),
       page.evaluate(() => window.dispatchEvent(new Event("focus"))),
     ]);
+  }
+  for (const path of ["/ru/dashboard", "/ru/progress", "/progress", "/dashboard"]) {
+    await visit(path);
+    const strip = page.locator(".s-trackstrip").filter({ hasText: track.title });
+    assert.deepEqual(
+      await strip
+        .locator(".s-trackstrip__cells i")
+        .evaluateAll((cells) => cells.map((cell) => cell.className)),
+      ["is-l3", "is-l0", "is-l0", "is-l0"],
+    );
+    assert.equal(await strip.locator(".s-badge").count(), 0);
   }
   await shot("dashboard");
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -529,6 +539,33 @@ try {
     await page.setViewportSize({ width: 1440, height: 900 });
     await less.waitFor({ state: "hidden" });
     assert.equal(await more.count(), 0);
+    const board = page.locator(".s-board");
+    const title = prefix ? "Карта тем" : "Topic map";
+    assert.equal(await board.locator(".s-board__lead").textContent(), title);
+    const parts = board.locator(".s-part");
+    const blocked = parts.filter({ hasText: "Rendering opportunities" });
+    await blocked.waitFor();
+    assert.equal(await blocked.locator(".s-part__head > svg").count(), 1);
+    assert.equal(await blocked.locator(".s-part__state").count(), 0);
+    const sibling = (tag) => parts.filter({ hasText: tag }).boundingBox();
+    const upper = await sibling(prefix ? "Т02" : "T02");
+    const lower = await sibling(prefix ? "Т03" : "T03");
+    assert.ok(upper.y < lower.y && Math.abs(upper.x - lower.x) < 1);
+    assert.deepEqual(
+      await board.locator(".s-legend__keys li").allTextContents(),
+      prefix ? ["Освоена", "Доступна", "Закрыта"] : ["Mastered", "Available", "Locked"],
+    );
+    assert.equal(
+      (await board.locator(".s-legend__readout span").allTextContents()).join(" "),
+      prefix
+        ? "Темы: 1 из 4 освоена · 2 доступны · 1 закрыта"
+        : "Topics: 1 of 4 mastered · 2 available · 1 locked",
+    );
+    const toggle = board.locator(".s-segmented__option");
+    await toggle.filter({ hasText: prefix ? "Список" : "List" }).click();
+    await board.locator(".s-tracklist").waitFor();
+    assert.equal(await board.locator(".s-board__lead").textContent(), title);
+    await toggle.filter({ hasText: prefix ? "Схема" : "Board" }).click();
     await shot("track-header-" + locale + "-1440", { fullPage: false });
   }
   async function checkTrackSources() {
@@ -934,7 +971,7 @@ try {
     await page.getByRole("banner").getByRole("button", { name: /Язык/ }).click();
     await page.getByRole("menuitem", { name: /English/ }).click();
     await page.waitForURL(origin + publicPath);
-    await page.getByRole("group", { name: "Track Graph" }).waitFor();
+    await page.getByRole("group", { name: "Topic map" }).waitFor();
     await page.locator(".s-map .s-trace").first().waitFor();
     await shot("pr12-en-public-track");
     await visit("/");
@@ -1104,11 +1141,16 @@ try {
   const noJs = await browser.newPage({ javaScriptEnabled: false });
   for (const prefix of ["", "/ru"]) {
     const path = prefix + publicPath;
+    const tag = prefix ? "Т" : "T";
     await visit(path);
     const syllabus = page.getByRole("region", {
       name: prefix ? "Программа трека" : "Course syllabus",
     });
     const head = page.locator(".public__head");
+    assert.equal(
+      await page.getByTitle(prefix ? "Язык трека" : "Track language", { exact: true }).count(),
+      0,
+    );
     assert.equal(await head.locator("h1").innerText(), track.title);
     assert.equal(await head.locator(".public__lead").innerText(), pitch);
     assert.doesNotMatch(await head.innerText(), /Read a browser trace/);
@@ -1148,12 +1190,12 @@ try {
     assert.equal(await rendering.getAttribute("aria-pressed"), "true");
     await page
       .locator("figcaption")
-      .getByRole("link", { name: /T04.*Rendering opportunities/ })
+      .getByRole("link", { name: tag + "04 · Rendering opportunities" })
       .click();
     assert.equal(new URL(page.url()).hash, "#topic-rendering");
     assert.deepEqual(
       await syllabus.locator("#topic-rendering .public__requires a").allTextContents(),
-      ["T02 · Tasks and timers", "T03 · Microtasks"],
+      [tag + "02 · Tasks and timers", tag + "03 · Microtasks"],
     );
     assert.equal(await page.locator(".public__author").getAttribute("href"), prefix + profilePath);
     await page
@@ -1166,10 +1208,10 @@ try {
       name: prefix ? "Программа трека" : "Course syllabus",
     });
     assert.deepEqual(await rendered.getByRole("heading", { level: 3 }).allTextContents(), [
-      "T01 The runtime",
-      "T02 Tasks and timers",
-      "T03 Microtasks",
-      "T04 Rendering opportunities",
+      tag + "01 The runtime",
+      tag + "02 Tasks and timers",
+      tag + "03 Microtasks",
+      tag + "04 Rendering opportunities",
     ]);
     for (const item of [lesson, paintLesson]) {
       const link = rendered.getByRole("link", { name: item.title });
@@ -1204,6 +1246,10 @@ try {
     await filter.click();
     await page.getByRole("option", { name: "RU", exact: true }).click();
     assert.equal(await page.locator("main .s-trackcard, main .s-trackstrip").count(), 1);
+    assert.equal(
+      await page.locator("main").getByTitle("Track language", { exact: true }).count(),
+      0,
+    );
     if (cascade) await checkCascade(page, path);
   }
   await page.getByRole("link", { name: second.title, exact: true }).click();

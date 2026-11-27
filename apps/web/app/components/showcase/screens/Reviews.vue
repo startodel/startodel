@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { QuizResult } from "../../ui/Quiz.vue";
 import { sampleBoxes, sampleReviews, sampleUpcoming, sampleWeek, screenPath } from "../sample";
+const indexTag = useIndexTag();
 const formatInterval = useReviewInterval();
 const props = defineProps<{ state?: string }>();
 const week = sampleWeek.map((d) => ({
@@ -89,7 +90,10 @@ const result = computed<QuizResult | undefined>(() =>
     "
   >
     <div v-if="state === 'practice' || state === 'result'" class="practice">
-      <UiPageHeader kicker="Practice Quiz · T05" title="Async functions under the hood">
+      <UiPageHeader
+        :kicker="'Practice Quiz · ' + indexTag('topic', 5)"
+        title="Async functions under the hood"
+      >
         <template #meta>
           <UiBadge icon="quiz">{{ questions.length }} questions from 2 Lessons</UiBadge>
           <UiBadge icon="box">{{ $t("review.boxFull", { interval: formatInterval(1) }) }}</UiBadge>
@@ -155,9 +159,9 @@ const result = computed<QuizResult | undefined>(() =>
             <template v-else>
               <UiReviewCard
                 v-for="r in sampleReviews"
-                :key="r.tag"
+                :key="r.ordinal"
                 :title="r.title"
-                :tag="r.tag"
+                :tag="indexTag('topic', r.ordinal)"
                 :track="r.track"
                 :level="r.level"
                 :box="r.box"
@@ -197,9 +201,11 @@ const result = computed<QuizResult | undefined>(() =>
                 { key: 'due', label: 'Due', align: 'right' },
               ]"
               :rows="sampleUpcoming"
-              :row-key="(r) => r.tag"
+              :row-key="(r) => String(r.ordinal)"
             >
-              <template #cell-tag="{ row }"><span class="s-label">{{ row.tag }}</span></template>
+              <template #cell-tag="{ row }"
+                ><span class="s-label">{{ indexTag("topic", row.ordinal) }}</span></template
+              >
               <template #cell-title="{ row }"><strong>{{ row.title }}</strong></template>
               <template #cell-box="{ row }">{{ formatInterval(row.box) }}</template>
             </UiTable>

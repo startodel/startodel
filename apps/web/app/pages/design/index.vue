@@ -2,6 +2,7 @@
 import { MASTERY_LABELS } from "@startodel/core";
 import { iconNames } from "../../components/ui/icons";
 import { colorGroups, spaceScale, typeScale } from "../../components/showcase/tokens";
+const indexTag = useIndexTag();
 definePageMeta({ middleware: "design" });
 useHead({ title: "Design foundations" });
 const sections = [
@@ -182,7 +183,7 @@ const replay = ref(0);
       <div class="voices">
         <article class="voice">
           <p class="s-label">System · Martian Mono, condensed</p>
-          <p class="voice__sample s-title">T07 · Mastery 3 of 4</p>
+          <p class="voice__sample s-title">{{ indexTag("topic", 7) }} · Mastery 3 of 4</p>
           <p class="voice__sample voice__sample--sm s-title">Очередь микрозадач 0–4</p>
           <p class="voice__note">
             Page titles, labels, designators, readouts and code. Width 75 for interface, 87.5 for

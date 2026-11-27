@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { blockIcon } from "../../../../../components/ui/lesson";
 import { publicBlock } from "@startodel/core";
+const indexTag = useIndexTag();
 definePageMeta({ layout: "site" });
 const { t } = useI18n();
 const route = useRoute();
@@ -35,6 +35,7 @@ usePublicHead(
   lesson.language,
 );
 const trail = lessonTrail(
+  indexTag,
   lesson.lessonOrdinal,
   { title: lesson.topicTitle, to: { path, hash: "#topic-" + lesson.topic } },
   { title: lesson.trackTitle, to: path, topicOrdinal: lesson.topicOrdinal },
@@ -43,7 +44,6 @@ const index = computed(
   () =>
     data.value?.blocks.map((b) => ({
       id: "lesson-block-" + b.id,
-      icon: blockIcon(b),
       title: blockOutlineTitle(b, t),
     })) ?? [],
 );
@@ -59,7 +59,6 @@ const index = computed(
       :minutes="lessonMinutes(data.blocks)"
       :block-count="data.blocks.length"
     >
-      <UiTrackLanguageBadge :language="data.language" />
       <NuxtLinkLocale v-if="data.profileEnabled" class="s-link" :to="'/u/' + login">{{
         "@" + route.params.login
       }}</NuxtLinkLocale>

@@ -1,3 +1,4 @@
+import type { IndexTag } from "../composables/useIndexTag";
 import { studyOrder, type PublicLessonSummary, type PublicTopic } from "@startodel/core";
 import type { BoardEdge } from "../components/ui/board";
 
@@ -7,6 +8,7 @@ type Topic = Pick<PublicTopic, "slug" | "title" | "summary"> & {
 
 /** The board, syllabus and Course metadata share one order and the same Lesson destinations. */
 export function publicTrackTopics(
+  indexTag: IndexTag,
   topics: Topic[],
   edges: BoardEdge[],
   lessonPath: (id: string) => string,
@@ -19,7 +21,7 @@ export function publicTrackTopics(
     id: topic.id,
     title: topic.title,
     summary: topic.summary,
-    tag: "T" + String(index + 1).padStart(2, "0"),
+    tag: indexTag("topic", index + 1),
     level: 0,
     lessons: topic.lessons.map(({ id, title }) => ({ id, title, to: lessonPath(id) })),
   }));

@@ -1,16 +1,9 @@
+import { rankedTrackTopics } from "./track-order.ts";
 import { type Block, AnswerSource, lessonMastery, LessonBlocks } from "@startodel/core";
 import { and, desc, eq, max, sql } from "drizzle-orm";
 import type { Connection } from "./index.ts";
 import { ownedId, referencedRow, type Transaction } from "./owned.ts";
-import {
-  lessons,
-  lessonProgress,
-  quizAttempts,
-  topicMastery,
-  topics,
-  tracks,
-  trackTopics,
-} from "./schema.ts";
+import { lessons, lessonProgress, quizAttempts, topicMastery, topics, tracks } from "./schema.ts";
 
 type LessonInput = {
   title: string;
@@ -205,18 +198,7 @@ export function lessonsForUser(db: Connection, userId: string) {
         )
         .where(ownedId(lessons, userId, id));
       if (!row) return;
-      // Use the same position and slug tie-break as the private Track Graph.
-      const ranked = db
-        .select({
-          trackId: trackTopics.trackId,
-          topicId: trackTopics.topicId,
-          ordinal: sql<number>`(row_number() over (partition by ${trackTopics.trackId}
-            order by ${trackTopics.position}, ${topics.slug}))::int`.as("ordinal"),
-        })
-        .from(trackTopics)
-        .innerJoin(topics, and(eq(topics.userId, userId), eq(topics.id, trackTopics.topicId)))
-        .where(eq(trackTopics.userId, userId))
-        .as("ranked");
+      const ranked = rankedTrackTopics(db, userId).as("ranked");
       const [memberships, siblings] = await Promise.all([
         db
           .select({

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { MASTERY_LABELS } from "@startodel/core";
-import { sampleEdges, sampleTopics, screenPath } from "../sample";
+import { sampleEdges, sampleBoardTopics, screenPath } from "../sample";
+const indexTag = useIndexTag();
+const sampleTopics = sampleBoardTopics(indexTag);
 const steps = [
   {
     title: "Say where you stand",

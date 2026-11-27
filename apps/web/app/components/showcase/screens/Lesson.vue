@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { blockIcon } from "../../ui/lesson";
 import type { QuizResult } from "../../ui/Quiz.vue";
 import { sampleLesson, screenPath, type SampleBlock } from "../sample";
+const indexTag = useIndexTag();
 const props = defineProps<{ state?: string }>();
 const lesson = sampleLesson;
 const quiz = lesson.blocks.find((b) => b.type === "quiz") as Extract<SampleBlock, { type: "quiz" }>;
@@ -53,7 +53,6 @@ const titles: Record<SampleBlock["type"], string> = {
 const index = computed(() =>
   lesson.blocks.map((b) => ({
     id: b.id,
-    icon: blockIcon(b),
     title: titles[b.type],
     done:
       b.type === "quiz" ? allCorrect.value : b.type === "exercise" ? !!solution.value : undefined,
@@ -80,16 +79,19 @@ onMounted(() => {
     current-track="node"
     :crumbs="[
       { label: 'Node.js runtime internals', to: screenPath('track') },
-      { label: lesson.topic.tag + ' ' + lesson.topic.title, to: screenPath('track') },
-      { label: lesson.tag },
+      {
+        label: indexTag('topic', lesson.topicOrdinal) + ' ' + lesson.topic.title,
+        to: screenPath('track'),
+      },
+      { label: indexTag('lesson', lesson.ordinal) },
     ]"
   >
     <article class="lesson">
       <UiLessonHeader
         :title="lesson.title"
-        :tag="lesson.tag"
+        :tag="indexTag('lesson', lesson.ordinal)"
         :topic-title="lesson.topic.title"
-        :topic-tag="lesson.topic.tag"
+        :topic-tag="indexTag('topic', lesson.topicOrdinal)"
         :minutes="lesson.minutes"
         :block-count="lesson.blocks.length"
       >
@@ -154,9 +156,11 @@ onMounted(() => {
             to 2.
           </UiNotice>
           <div class="s-cluster lesson__nav">
-            <UiButton icon="arrow-left" :to="screenPath('lesson')">L01 The timers phase</UiButton>
+            <UiButton icon="arrow-left" :to="screenPath('lesson')"
+              >{{ indexTag("lesson", 1) }} The timers phase</UiButton
+            >
             <UiButton variant="primary" icon-right="arrow-right" :to="screenPath('lesson')"
-              >L03 setImmediate and nextTick</UiButton
+              >{{ indexTag("lesson", 3) }} setImmediate and nextTick</UiButton
             >
           </div>
         </template>

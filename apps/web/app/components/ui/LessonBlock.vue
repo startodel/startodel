@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PublicBlock } from "@startodel/core";
 import { blockIcon } from "./lesson";
+const indexTag = useIndexTag();
 const props = defineProps<{
   /** The Block's position in the Lesson, from 1. */
   index: number;
@@ -8,7 +9,7 @@ const props = defineProps<{
   anchor?: string;
 }>();
 const { t } = useI18n();
-const designator = computed(() => "B" + String(props.index).padStart(2, "0"));
+const designator = computed(() => indexTag("block", props.index));
 const word = computed(() =>
   props.block.type === "callout"
     ? t(`callout.${props.block.variant}`)

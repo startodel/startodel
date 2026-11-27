@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { blockIcon } from "../../components/ui/lesson";
 import { privateTrackPath } from "../../../shared/locale";
 import { publicBlock } from "@startodel/core";
 import type { QuizResult } from "../../components/ui/Quiz.vue";
+const indexTag = useIndexTag();
 
 definePageMeta({ layout: "app" });
 const { t } = useI18n();
@@ -34,6 +34,7 @@ const trail = computed(() => {
   const member = track.value;
   const path = member && privateTrackPath(member.slug);
   return lessonTrail(
+    indexTag,
     lessonOrdinal,
     { title: topic.title, to: path ? { path, query: { topic: topic.id } } : "/topics/" + topic.id },
     member && {
@@ -111,7 +112,6 @@ const index = computed(
   () =>
     data.value?.lesson.blocks.map((b) => ({
       id: "lesson-block-" + b.id,
-      icon: blockIcon(b),
       title: blockOutlineTitle(b, t),
       done: results.get(b.id)?.perQuestion.every(Boolean) || solutions.has(b.id),
     })) ?? [],
@@ -199,7 +199,7 @@ const index = computed(
               :to="data.previous ? lessonLink(data.previous.id) : '/topics/' + data.topic.id"
               >{{
                 data.previous
-                  ? lessonTag(data.lessonOrdinal - 1) + " " + data.previous.title
+                  ? indexTag("lesson", data.lessonOrdinal - 1) + " " + data.previous.title
                   : $t("topic.lessons")
               }}</UiButton
             >
@@ -208,7 +208,7 @@ const index = computed(
               variant="primary"
               icon-right="arrow-right"
               :to="lessonLink(data.next.id)"
-              >{{ lessonTag(data.lessonOrdinal + 1) }} {{ data.next.title }}</UiButton
+              >{{ indexTag("lesson", data.lessonOrdinal + 1) }} {{ data.next.title }}</UiButton
             >
           </nav>
         </template>

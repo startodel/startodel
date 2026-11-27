@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const indexTag = useIndexTag();
 /** The 1200 by 630 Open Graph card. /design/og renders it for capture. */
 withDefaults(defineProps<{ title?: string; kicker?: string; footer?: string }>(), {
   title: "Learn it down to the internals.",
@@ -8,20 +9,20 @@ withDefaults(defineProps<{ title?: string; kicker?: string; footer?: string }>()
 const W = 132;
 const H = 60;
 const nodes = [
-  { id: "T01", x: 36, y: 118, level: 4 },
-  { id: "T02", x: 36, y: 352, level: 3 },
-  { id: "T03", x: 236, y: 208, level: 2 },
-  { id: "T04", x: 236, y: 442, level: 1 },
-  { id: "T05", x: 436, y: 325, level: 0 },
+  { id: 1, x: 36, y: 118, level: 4 },
+  { id: 2, x: 36, y: 352, level: 3 },
+  { id: 3, x: 236, y: 208, level: 2 },
+  { id: 4, x: 236, y: 442, level: 1 },
+  { id: 5, x: 436, y: 325, level: 0 },
 ];
 const by = Object.fromEntries(nodes.map((n) => [n.id, n]));
 const traces = (
   [
-    ["T01", "T03"],
-    ["T02", "T03"],
-    ["T02", "T04"],
-    ["T03", "T05"],
-    ["T04", "T05"],
+    [1, 3],
+    [2, 3],
+    [2, 4],
+    [3, 5],
+    [4, 5],
   ] as const
 ).map(([from, to]) => {
   const [a, b] = [by[from]!, by[to]!];
@@ -69,7 +70,9 @@ const traces = (
           class="s-og__node"
           :class="{ 'is-live': n.level >= 2, 'is-full': n.level === 4 }"
         />
-        <text x="12" y="22" class="s-og__id" :class="{ 'is-full': n.level === 4 }">{{ n.id }}</text>
+        <text x="12" y="22" class="s-og__id" :class="{ 'is-full': n.level === 4 }">
+          {{ indexTag("topic", n.id) }}
+        </text>
         <rect
           v-for="b in 4"
           :key="b"

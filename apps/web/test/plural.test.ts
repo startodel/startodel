@@ -43,6 +43,14 @@ test("Lesson counts render in the selected language", () => {
 test("Track mastery and ready and blocked counts render in the active locale", () => {
   const global = messages();
   const counts = [1, 2, 5, 0];
+  expect(
+    counts.map((count) => global.t("board.masteredOf", { count, n: String(count), total: 9 })),
+  ).toEqual([
+    "Темы: 1 из 9 освоена",
+    "Темы: 2 из 9 освоены",
+    "Темы: 5 из 9 освоено",
+    "Темы: 0 из 9 освоено",
+  ]);
   const totals = { done: "0", total: "7" };
   expect(global.t("track.mastered", totals)).toBe("Освоено: 0 из 7");
   expect(counts.map((count) => global.t("count.ready", { count, n: String(count) }))).toEqual([
@@ -59,13 +67,17 @@ test("Track mastery and ready and blocked counts render in the active locale", (
   ]);
   global.locale.value = "en";
   expect(global.t("track.mastered", totals)).toBe("Mastered: 0 of 7");
-  expect(global.t("count.ready", 1)).toBe("1 ready");
-  expect(global.t("count.blocked", 6)).toBe("6 blocked");
+  expect(global.t("count.ready", 1)).toBe("1 available");
+  expect(global.t("count.blocked", 6)).toBe("6 locked");
 });
 
 test("Lesson headers and Quiz and Exercise outlines follow the interface locale", () => {
   const global = messages();
-  const tags = { tag: "L03", topicTag: "T02", topicTitle: "Timers" };
+  const tags = () => ({
+    tag: global.t("indexPrefix.lesson") + "03",
+    topicTag: global.t("indexPrefix.topic") + "02",
+    topicTitle: "Timers",
+  });
   const quiz = (count: number) =>
     blockOutlineTitle(
       {
@@ -77,12 +89,12 @@ test("Lesson headers and Quiz and Exercise outlines follow the interface locale"
     );
   const exercise = () =>
     blockOutlineTitle({ type: "exercise", id: "e", title: "Timers", prompt: "Try it" }, global.t);
-  expect(global.t("lesson.kicker", tags)).toBe("Урок L03 · T02 Timers");
+  expect(global.t("lesson.kicker", tags())).toBe("Урок У03 · Т02 Timers");
   expect(global.t("lesson.minutes", { n: 3 })).toBe("3 мин");
   expect([1, 2, 5].map(quiz)).toEqual(["Тест · 1 вопрос", "Тест · 2 вопроса", "Тест · 5 вопросов"]);
   expect(exercise()).toBe("Задача: Timers");
   global.locale.value = "en";
-  expect(global.t("lesson.kicker", tags)).toBe("Lesson L03 · T02 Timers");
+  expect(global.t("lesson.kicker", tags())).toBe("Lesson L03 · T02 Timers");
   expect(global.t("lesson.minutes", { n: 3 })).toBe("3 min");
   expect([1, 2].map(quiz)).toEqual(["Quiz · 1 question", "Quiz · 2 questions"]);
   expect(exercise()).toBe("Exercise: Timers");

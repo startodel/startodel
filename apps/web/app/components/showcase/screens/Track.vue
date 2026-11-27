@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { topicStates } from "../../ui/board";
-import { sampleEdges, sampleTopicLessons, sampleTopics, sampleTrack, screenPath } from "../sample";
+import {
+  sampleEdges,
+  sampleTopicLessons,
+  sampleBoardTopics,
+  sampleTrack,
+  screenPath,
+} from "../sample";
+const indexTag = useIndexTag();
+const sampleTopics = sampleBoardTopics(indexTag);
 const selected = ref<string | undefined>("t04");
 const { push: notify } = useToast();
 const states = topicStates(sampleTopics, sampleEdges);
@@ -17,7 +25,7 @@ const unlocks = computed(() =>
 );
 const lessons = computed(() =>
   sampleTopicLessons.slice(0, topic.value?.lessons ?? 0).map((l, i) => ({
-    id: l.tag,
+    id: l.id,
     title: l.title,
     blocks: l.blocks,
     minutes: l.minutes,
@@ -92,12 +100,8 @@ const actions = [
         v-model:selected="selected"
         :topics="sampleTopics"
         :edges="sampleEdges"
-        :label="sampleTrack.title + ' board'"
-      >
-        <template #lead>
-          <span class="s-label">Board · press a Topic to inspect it</span>
-        </template>
-      </UiTrackBoard>
+        :label="$t('track.graph')"
+      />
 
       <div class="s-split" style="--s-aside: 22rem">
         <section v-if="topic" class="s-stack" style="--s-gap: var(--s-5)" aria-live="polite">
