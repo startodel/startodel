@@ -77,7 +77,7 @@ function selectAction(id: string) {
 }
 async function saveLanguage(language: TrackLanguage) {
   await $fetch(`/api/tracks/${data.value!.track.id}`, { method: "PATCH", body: { language } });
-  await Promise.all([refresh(), refreshNuxtData(["rail-tracks", "dashboard"])]);
+  await Promise.all([refresh(), refreshDashboard()]);
 }
 async function save() {
   if (!data.value || !canSave.value || saving.value) return;
@@ -91,7 +91,7 @@ async function save() {
         ...(agree.value ? { acceptTerms: true } : {}),
       },
     });
-    await refresh();
+    await Promise.all([refresh(), refreshDashboard()]);
     open.value = false;
   } catch {
     saveError.value = true;

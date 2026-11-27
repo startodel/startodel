@@ -1,6 +1,6 @@
 // Run from the workspace root after building the app. PLAYWRIGHT_MODULE may point to a local installation.
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
-import { checkLessonInteractions } from "./lesson-screenshots.mjs";
+import { checkLessonInteractions, checkSidebarProgress } from "./lesson-screenshots.mjs";
 import { checkCascade } from "./cascade.mjs";
 import { icons } from "../app/components/ui/icons.ts";
 import { localGitHub } from "./github.ts";
@@ -1289,6 +1289,7 @@ try {
       await checkCascade(page, prefix + "/settings");
     }
   }
+  await checkSidebarProgress(page, owner, origin);
   assert.deepEqual(errors, []);
 } finally {
   await browser?.close();

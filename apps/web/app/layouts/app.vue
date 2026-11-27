@@ -11,10 +11,7 @@ const collapsed = useCookie<boolean>("startodel-rail-collapsed", {
   sameSite: "lax",
   maxAge: 60 * 60 * 24 * 365,
 });
-const [{ data: catalog }, { data: dashboard }] = await Promise.all([
-  useFetch("/api/tracks", { key: "rail-tracks" }),
-  useFetch("/api/dashboard", { key: "dashboard" }),
-]);
+const { data: dashboard } = await useDashboard();
 const items = computed<NavItem[]>(() => [
   {
     id: "dashboard",
@@ -34,16 +31,15 @@ const items = computed<NavItem[]>(() => [
   { id: "progress", label: t("nav.progress"), icon: "progress", to: "/progress" },
   { id: "settings", label: t("nav.settings"), icon: "settings", to: "/settings" },
 ]);
-const tracks = computed(() => {
-  const progress = new Map(dashboard.value?.tracks.map((track) => [track.trackId, track.percent]));
-  return catalog.value?.map(({ id, slug, title, language }) => ({
-    id: slug,
+const tracks = computed(() =>
+  dashboard.value?.tracks.map(({ trackSlug, title, language, percent }) => ({
+    id: trackSlug,
     language,
     title,
-    to: privateTrackPath(slug),
-    percent: progress.get(id) ?? 0,
-  }));
-});
+    to: privateTrackPath(trackSlug),
+    percent,
+  })),
+);
 const navigation = computed(() => appNavigation(route.path, items.value, tracks.value));
 </script>
 <template>
