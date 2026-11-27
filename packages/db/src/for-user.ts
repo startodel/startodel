@@ -1,3 +1,4 @@
+import { ownedCatalogRow, type CatalogKey } from "./owned.ts";
 import { forkTrack } from "./fork.ts";
 import { trackWrites } from "./track-writes.ts";
 import { practiceForUser } from "./practice.ts";
@@ -18,6 +19,14 @@ export function forUser(db: Connection, userId: string) {
   const ownTracks = eq(tracks.userId, userId);
   const ownTrack = (id: string) => and(ownTracks, eq(tracks.id, id));
 
+  async function getTrack(key: CatalogKey) {
+    const [track] = await db
+      .select()
+      .from(tracks)
+      .where(ownedCatalogRow(tracks, userId, key));
+    return track;
+  }
+
   const catalog = catalogForUser(db, userId);
   const lessons = lessonsForUser(db, userId);
   const mastery = masteryForUser(db, userId);
@@ -25,13 +34,13 @@ export function forUser(db: Connection, userId: string) {
     forkTrack: (login: string, slug: string) => forkTrack(db, userId, login, slug),
     ...catalog,
     ...trackWrites(db, userId),
-    async getTopicDetails(id: string) {
-      const topic = await catalog.getTopic(id);
+    async getTopicDetails(key: CatalogKey) {
+      const topic = await catalog.getTopic(key);
       if (!topic) return undefined;
       const [assessment, summaries, related] = await Promise.all([
-        mastery.getMastery(id),
-        lessons.listLessonSummaries(id),
-        catalog.relatedTopics(id),
+        mastery.getMastery(topic.id),
+        lessons.listLessonSummaries(topic.id),
+        catalog.relatedTopics(topic.id),
       ]);
       return {
         topic,
@@ -79,31 +88,22 @@ export function forUser(db: Connection, userId: string) {
     listTracks() {
       return db.select().from(tracks).where(ownTracks).orderBy(tracks.createdAt, tracks.id);
     },
-    async getTrackBySlug(slug: string) {
-      const [track] = await db
-        .select()
-        .from(tracks)
-        .where(and(ownTracks, eq(tracks.slug, slug)));
-      return track;
-    },
-    async getTrack(id: string) {
-      const [track] = await db.select().from(tracks).where(ownTrack(id));
-      return track;
-    },
-    deleteTrack(id: string) {
+    getTrack,
+    getTrackBySlug: (slug: string) => getTrack({ slug }),
+    deleteTrack(key: CatalogKey) {
       return db.transaction(async (tx) => {
         // Block new references until existing GrillSessions have been detached.
         const [track] = await tx
           .select({ id: tracks.id })
           .from(tracks)
-          .where(ownTrack(id))
+          .where(ownedCatalogRow(tracks, userId, key))
           .for("update");
         if (!track) return undefined;
         await tx
           .update(grillSessions)
           .set({ trackId: null, updatedAt: new Date() })
-          .where(and(eq(grillSessions.userId, userId), eq(grillSessions.trackId, id)));
-        await tx.delete(tracks).where(ownTrack(id));
+          .where(and(eq(grillSessions.userId, userId), eq(grillSessions.trackId, track.id)));
+        await tx.delete(tracks).where(ownTrack(track.id));
         return track;
       });
     },

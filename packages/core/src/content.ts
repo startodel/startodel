@@ -133,3 +133,14 @@ export const TrackSlug = z
   .string()
   .max(120)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+
+function lookup(slug: z.ZodString) {
+  return z
+    .strictObject({ id: z.guid().optional(), slug: slug.optional() })
+    .refine(
+      (ref) => (ref.id !== undefined) !== (ref.slug !== undefined),
+      "Supply exactly one id or slug",
+    );
+}
+export const TrackLookup = lookup(TrackSlug);
+export const TopicLookup = lookup(TopicSlug);

@@ -85,7 +85,7 @@ export function learningMcpTests(
       });
       expect(
         await call("record_quiz_result", {
-          lessonId: lesson.id,
+          id: lesson.id,
           blockId: "q",
           answers: questions.map((q) => q.correctIndex),
         }),
@@ -294,7 +294,7 @@ export function learningMcpTests(
       });
       expect(await call("list_topics", { prefix: "js/" })).toMatchObject([
         { slug: "js/tasks", level: 0, url: publicOrigin + "/topics/" + ids["js/tasks"] },
-        { slug: "js/timers", level: 0 },
+        { slug: "js/timers", level: 0, lessonCount: 0 },
       ]);
       const edges = [
         { from: "js/tasks", to: "js/timers" },
@@ -338,7 +338,13 @@ export function learningMcpTests(
       const graph = await call("get_track_graph", { trackId });
       expect(graph).toMatchObject({
         topics: [
-          { slug: "js/tasks", lessonCount: 1, readCount: 1, level: 1 },
+          {
+            slug: "js/tasks",
+            url: publicOrigin + "/topics/" + ids["js/tasks"],
+            lessonCount: 1,
+            readCount: 1,
+            level: 1,
+          },
           { slug: "js/timers", lessonCount: 0, readCount: 0 },
         ],
         edges: [
@@ -356,7 +362,7 @@ export function learningMcpTests(
       expect(await call("get_topic", { id: ids["js/tasks"] })).toMatchObject({
         topic: { url: publicOrigin + "/topics/" + ids["js/tasks"] },
         mastery: { level: 1 },
-        lessons: [{ id: lessonId }],
+        lessons: [{ id: lessonId, url: lessonUrl }],
         prerequisites: [{ slug: "system" }],
         dependents: [{ slug: "js/timers" }],
       });
@@ -447,6 +453,215 @@ export function learningMcpTests(
       await call("remove_edge", edges[0]);
       await call("detach_topic_from_track", { trackId, slug: "js/timers" });
       expect((await call("get_track_graph", { trackId })).topics).toHaveLength(1);
+    });
+
+    test("a Track guide separates the next Lesson batch from study, Reviews and GrillSessions", async () => {
+      const { call, user } = await connect();
+      await call("update_profile", { markOnboarded: true });
+      const old = await call("create_track", { title: "Old" });
+      const course = await call("create_track", { title: "New" });
+      const ids = await call("upsert_topics", {
+        topics: ["old", "planned", "intro", "last", "extra"].map((slug) => ({ slug, title: slug })),
+      });
+      await call("attach_topics_to_track", { trackId: old.id, slugs: ["old", "extra"] });
+      await call("attach_topics_to_track", {
+        trackId: course.id,
+        slugs: ["intro", "planned", "last"],
+      });
+      await call("create_lesson", { topic: "old", title: "Earlier", blocks: [] });
+      const global = await call("get_guide");
+      expect(global.nextSteps[0].why).toBe("Ready to study: old (old)");
+      await call("start_grill", { trackId: old.id, title: "Older Grill" });
+      await call("start_grill", { title: "General Grill" });
+      await call("record_review_result", { topic: "old", verdict: "weak" });
+      await environment().db.$client.query(
+        "update review_items set due_at=now() where user_id=$1",
+        [user.id],
+      );
+
+      const scoped = await call("get_guide", { track: course.slug });
+      expect(await call("get_guide", { track: course.id })).toEqual(scoped);
+      expect(scoped.state).toEqual({
+        onboarded: true,
+        tracks: 1,
+        topics: 3,
+        dueReviews: 0,
+        openGrills: 0,
+      });
+      expect(scoped.nextSteps[0].why).toBe(
+        "No Topics with Lessons are ready to study in this Track.",
+      );
+      expect(scoped.guideSections.map((s: { id: string }) => s.id)).toContain(
+        "build-track-technology",
+      );
+      expect(scoped.authoring).toMatchObject({
+        track: { id: course.id, slug: course.slug },
+        nextTopics: [{ id: ids.intro }, { id: ids.planned }],
+      });
+      await call("create_lesson", { topic: "intro", title: "New Lesson", blocks: [] });
+      await call("add_edges", { edges: [{ from: "old", to: "intro" }] });
+      expect((await call("get_guide", { track: course.id })).nextSteps[0].why).not.toContain(
+        "Ready to study",
+      );
+      await call("set_mastery", { topic: "old", level: 2 });
+      const resumed = await call("get_guide", { track: course.id });
+      expect(resumed.nextSteps[0].why).toBe("Ready to study: intro (intro)");
+      expect(resumed.authoring.nextTopics).toMatchObject([{ id: ids.planned }, { id: ids.last }]);
+      for (const topic of ["planned", "last"])
+        await call("create_lesson", { topic, title: "Study", blocks: [] });
+      expect((await call("get_guide", { track: course.id })).authoring.nextTopics).toEqual([]);
+      await call("record_review_result", { topic: "intro", verdict: "weak" });
+      await environment().db.$client.query(
+        "update review_items set due_at=now() where user_id=$1",
+        [user.id],
+      );
+      expect(await call("get_guide", { track: course.id })).toMatchObject({
+        state: { dueReviews: 1 },
+        nextSteps: [{ id: "review-loop", topicId: ids.intro }],
+      });
+      const { session } = await call("start_grill", { trackId: course.id, title: "Course Grill" });
+      expect(await call("get_guide", { track: course.id })).toMatchObject({
+        state: { openGrills: 1 },
+        nextSteps: [{ id: "grill-session", sessionId: session.id }],
+      });
+    });
+
+    test("Lesson and Topic Tools accept explicit IDs and slugs alongside their existing inputs", async () => {
+      const { call } = await connect();
+      const { tasks: id } = await call("upsert_topics", {
+        topics: [{ slug: "tasks", title: "Tasks" }],
+      });
+      expect(await call("update_topic", { id, summary: "An event loop" })).toMatchObject({ id });
+      expect(await call("update_topic", { slug: "tasks", title: "Tasks revised" })).toMatchObject({
+        id,
+        title: "Tasks revised",
+        summary: "An event loop",
+      });
+      const track = await call("create_track", { title: "Runtime" });
+      expect(
+        await call("update_track", { slug: track.slug, description: "Practice" }),
+      ).toMatchObject({ id: track.id, description: "Practice" });
+      const first = await call("create_lesson", { id, title: "Timers", blocks: [] });
+      const second = await call("create_lesson", { slug: "tasks", title: "Events", blocks: [] });
+      for (const ref of [{ id }, { slug: "tasks" }, { topic: "tasks" }])
+        expect(await call("list_lessons", ref)).toMatchObject([
+          { id: first.id },
+          { id: second.id },
+        ]);
+      expect(
+        await call("update_lesson", { id: first.id, summary: "Timers revised" }),
+      ).toMatchObject({ id: first.id });
+      expect(await call("get_lesson", { id: first.id })).toEqual(
+        await call("get_lesson", { lessonId: first.id }),
+      );
+      expect(await call("mark_lesson_read", { id: first.id })).toMatchObject({
+        lessonId: first.id,
+      });
+      expect(await call("list_topics")).toMatchObject([{ id, lessonCount: 2 }]);
+    });
+
+    test("deleting a Track preserves shared and detached Topics, Lessons and GrillSessions", async () => {
+      const { call } = await connect();
+      const first = await call("create_track", { title: "First" });
+      const second = await call("create_track", { title: "Second" });
+      const ids = await call("upsert_topics", {
+        topics: [
+          { slug: "shared", title: "Shared" },
+          { slug: "solo", title: "Solo" },
+        ],
+      });
+      await call("attach_topics_to_track", { trackId: first.id, slugs: ["shared", "solo"] });
+      await call("attach_topics_to_track", { trackId: second.id, slugs: ["shared"] });
+      await call("add_edges", { edges: [{ from: "solo", to: "shared" }] });
+      const lesson = await call("create_lesson", { topic: "shared", title: "Read me", blocks: [] });
+      await call("mark_lesson_read", { lessonId: lesson.id });
+      const { session } = await call("start_grill", { trackId: first.id, title: "Recall" });
+      expect(await call("delete_track", { slug: first.slug })).toEqual({ id: first.id });
+      expect(await call("get_track", { id: first.id }, true)).toEqual({ error: "Not found" });
+      expect(await call("get_grill", { sessionId: session.id })).toMatchObject({ trackId: null });
+      expect(await call("get_track_graph", { trackId: second.id })).toMatchObject({
+        topics: [{ id: ids.shared, lessonCount: 1, readCount: 1 }],
+      });
+      expect(await call("get_topic", { slug: "solo" })).toMatchObject({
+        dependents: [{ id: ids.shared }],
+      });
+      expect(await call("delete_track", { id: second.id })).toEqual({ id: second.id });
+      expect(await call("delete_track", { id: second.id }, true)).toEqual({ error: "Not found" });
+    });
+
+    test("deleting a Topic removes its memberships, edges, Lessons, practice and progress", async () => {
+      const { call, user } = await connect();
+      const ids = await call("upsert_topics", {
+        topics: ["before", "middle", "after"].map((slug) => ({ slug, title: slug })),
+      });
+      const tracks = [];
+      for (const title of ["First", "Second"]) {
+        const track = await call("create_track", { title });
+        tracks.push(track.id);
+        await call("attach_topics_to_track", {
+          trackId: track.id,
+          slugs: ["before", "middle", "after"],
+        });
+      }
+      await call("add_edges", {
+        edges: [
+          { from: "before", to: "middle" },
+          { from: "middle", to: "after" },
+        ],
+      });
+      const lesson = await call("create_lesson", {
+        topic: "middle",
+        title: "Recall",
+        blocks: [
+          {
+            id: "q",
+            type: "quiz",
+            questions: [{ prompt: "Pick one", options: ["A", "B"], correctIndex: 0 }],
+          },
+        ],
+      });
+      await call("mark_lesson_read", { lessonId: lesson.id });
+      await call("record_quiz_result", { lessonId: lesson.id, blockId: "q", answers: [0] });
+      await call("record_review_result", { topic: "middle", verdict: "weak" });
+      const { session } = await call("start_grill", { title: "Recall" });
+      await call("add_grill_questions", {
+        sessionId: session.id,
+        questions: [
+          { prompt: "Recall middle", topic: "middle" },
+          { prompt: "Recall after", topic: "after" },
+        ],
+      });
+      async function storedProgress() {
+        const result = await environment().db.$client.query(
+          `select
+            (select count(*)::int from lesson_progress where user_id=$1 and lesson_id=$2) as reads,
+            (select count(*)::int from review_items where user_id=$1 and topic_id=$3) as reviews,
+            (select count(*)::int from topic_mastery where user_id=$1 and topic_id=$3) as mastery`,
+          [user.id, lesson.id, ids.middle],
+        );
+        return result.rows[0];
+      }
+      expect(await storedProgress()).toEqual({ reads: 1, reviews: 1, mastery: 1 });
+      expect(await call("delete_topic", { slug: "middle" })).toEqual({ id: ids.middle });
+      expect(await storedProgress()).toEqual({ reads: 0, reviews: 0, mastery: 0 });
+      for (const trackId of tracks) {
+        expect(await call("get_track_graph", { trackId })).toMatchObject({
+          topics: [{ id: ids.before }, { id: ids.after }],
+          edges: [],
+        });
+      }
+      expect(await call("get_lesson", { lessonId: lesson.id }, true)).toEqual({
+        error: "Not found",
+      });
+      expect(await call("get_grill", { sessionId: session.id })).toMatchObject({
+        questions: [{ topicId: ids.after }],
+      });
+      expect(await call("get_progress")).toMatchObject({
+        recentQuizAttempts: [],
+        masteryDistribution: [2, 0, 0, 0, 0],
+      });
+      expect(await call("delete_topic", { id: ids.middle }, true)).toEqual({ error: "Not found" });
+      expect(await call("delete_topic", { id: ids.before })).toEqual({ id: ids.before });
     });
 
     test("foreign and absent references give identical errors and every Tool preserves the other Owner's rows", async () => {
@@ -566,6 +781,15 @@ export function learningMcpTests(
         }
         const cases: [string, Record<string, unknown>][] = [
           ["get_track", { slug: foreign ? track.slug : "absent" }],
+          ["get_guide", { track: trackId }],
+          ["get_guide", { track: foreign ? track.slug : "absent" }],
+          ["delete_track", { id: trackId }],
+          ["delete_track", { slug: foreign ? track.slug : "absent" }],
+          ["delete_topic", { id: topic }],
+          ["delete_topic", { slug }],
+          ["update_topic", { id: topic, title: "X" }],
+          ["update_topic", { slug, summary: null }],
+          ["update_track", { slug: foreign ? track.slug : "absent", title: "X" }],
           ["get_topic", { id: topic }],
           ["get_topic", { slug }],
           ["remove_edge", { from: "shared", to: slug }],
@@ -603,6 +827,10 @@ export function learningMcpTests(
       expect((await a.call("get_grill", { sessionId: mineGrill.id })).questions).toEqual([]);
       expect((await a.call("get_track_graph", { trackId: mine.id })).topics).toEqual([]);
       expect((await a.call("get_topic", { slug: "shared" })).dependents).toEqual([]);
+      const sameSlug = await a.call("create_track", { title: track.title });
+      expect(sameSlug.slug).toBe(track.slug);
+      expect(await a.call("delete_track", { slug: track.slug })).toEqual({ id: sameSlug.id });
+      expect(await a.call("delete_topic", { slug: "shared" })).toEqual({ id: shared });
       expect(await snapshot()).toEqual(before);
     });
 
@@ -635,6 +863,15 @@ export function learningMcpTests(
         ["get_track", { id, slug: "ambiguous" }],
         ["get_topic", {}],
         ["get_topic", { id, slug: "sql" }],
+        ["delete_track", {}],
+        ["delete_topic", { id, slug: "sql" }],
+        ["delete_topic", { id, ownerId: id }],
+        ["update_topic", { title: "X" }],
+        ["get_lesson", {}],
+        ["update_lesson", { id, lessonId: randomUUID(), title: "X" }],
+        ["mark_lesson_read", {}],
+        ["list_lessons", { id, topic: "sql" }],
+        ["create_lesson", { id: "sql", title: "X", blocks: [] }],
       ];
       for (const [name, args] of cases) {
         const result = CallToolResultSchema.parse(await client.callTool({ name, arguments: args }));

@@ -6,6 +6,14 @@ import { z } from "zod";
 export type UserData = ReturnType<typeof forUser>;
 export const id = z.guid();
 export const topicRef = z.union([id, TopicSlug]).describe("Topic Slug or ID in your Topic Catalog");
+export const lessonLookup = z
+  .strictObject({ id: id.optional(), lessonId: id.optional() })
+  .refine((ref) => !!ref.id !== !!ref.lessonId, "Supply exactly one id or lessonId");
+
+export function catalogKey({ id, slug }: { id?: string; slug?: string }) {
+  return id ?? { slug: slug! };
+}
+
 export const title = z.string().regex(/\S/, "Expected nonempty text");
 export const empty = z.strictObject({});
 export const summary = z.string().nullable().optional();

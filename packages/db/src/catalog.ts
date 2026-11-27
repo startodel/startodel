@@ -4,6 +4,8 @@ import {
   and,
   count,
   eq,
+  exists,
+  notExists,
   getTableColumns,
   inArray,
   like,
@@ -14,7 +16,13 @@ import {
   sql,
 } from "drizzle-orm";
 import type { Connection } from "./index.ts";
-import { ownedId, referencedRow, type Transaction } from "./owned.ts";
+import {
+  ownedCatalogRow,
+  type CatalogKey,
+  ownedId,
+  referencedRow,
+  type Transaction,
+} from "./owned.ts";
 import {
   lessonProgress,
   reviewItems,
@@ -58,7 +66,22 @@ function blockedTopics(db: Connection | Transaction, userId: string, memberIds?:
     );
 }
 
-function eligibleTopics(db: Connection, userId: string, excludeDueAt?: Date) {
+function topicLessons(db: Connection, userId: string) {
+  return db
+    .select({ id: lessons.id })
+    .from(lessons)
+    .where(and(eq(lessons.userId, userId), eq(lessons.topicId, topics.id)));
+}
+
+function eligibleTopics(
+  db: Connection,
+  userId: string,
+  {
+    excludeDueAt,
+    withLessons,
+    trackId,
+  }: { excludeDueAt?: Date; withLessons?: boolean; trackId?: string } = {},
+) {
   return db
     .selectDistinct({
       id: topics.id,
@@ -76,6 +99,8 @@ function eligibleTopics(db: Connection, userId: string, excludeDueAt?: Date) {
       and(
         eq(topics.userId, userId),
         lt(level, 2),
+        trackId ? eq(trackTopics.trackId, trackId) : undefined,
+        withLessons ? exists(topicLessons(db, userId)) : undefined,
         notInArray(topics.id, blockedTopics(db, userId)),
         excludeDueAt &&
           notInArray(
@@ -90,7 +115,10 @@ function eligibleTopics(db: Connection, userId: string, excludeDueAt?: Date) {
 }
 
 export async function nextStudyTopic(db: Connection, userId: string, excludeDueAt?: Date) {
-  const ready = eligibleTopics(db, userId, excludeDueAt).orderBy(topics.slug).limit(1).as("ready");
+  const ready = eligibleTopics(db, userId, { excludeDueAt })
+    .orderBy(topics.slug)
+    .limit(1)
+    .as("ready");
   const [topic] = await db
     .select({
       id: ready.id,
@@ -131,6 +159,13 @@ type TopicInput = { slug: string; title: string; summary?: string | null };
 
 export function catalogForUser(db: Connection, userId: string) {
   const owned = eq(topics.userId, userId);
+  async function getTopic(key: CatalogKey) {
+    const [topic] = await db
+      .select()
+      .from(topics)
+      .where(ownedCatalogRow(topics, userId, key));
+    return topic;
+  }
   async function resolveTopic(tx: Transaction, ref: string) {
     const slug = eq(topics.slug, ref);
     const isId = /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i.test(ref);
@@ -192,7 +227,14 @@ export function catalogForUser(db: Connection, userId: string) {
     },
     listTopicsWithMastery(prefix = "") {
       return db
-        .select({ ...getTableColumns(topics), level })
+        .select({
+          ...getTableColumns(topics),
+          level,
+          lessonCount: db.$count(
+            lessons,
+            and(eq(lessons.userId, userId), eq(lessons.topicId, topics.id)),
+          ),
+        })
         .from(topics)
         .leftJoin(
           topicMastery,
@@ -227,8 +269,25 @@ export function catalogForUser(db: Connection, userId: string) {
         dependents: rows.filter((r) => r.fromId === id).map((r) => r.topic),
       };
     },
-    suggestedTopics(limit: number) {
-      return eligibleTopics(db, userId).orderBy(topics.slug).limit(limit);
+    suggestedTopics(limit: number, trackId?: string) {
+      return eligibleTopics(db, userId, { withLessons: true, trackId })
+        .orderBy(topics.slug)
+        .limit(limit);
+    },
+    nextTopicsToAuthor(trackId: string) {
+      return db
+        .select({ id: topics.id, slug: topics.slug, title: topics.title })
+        .from(trackTopics)
+        .innerJoin(topics, and(owned, eq(topics.id, trackTopics.topicId)))
+        .where(
+          and(
+            eq(trackTopics.userId, userId),
+            eq(trackTopics.trackId, trackId),
+            notExists(topicLessons(db, userId)),
+          ),
+        )
+        .orderBy(trackTopics.position, topics.slug)
+        .limit(2);
     },
     addEdges(edges: { from: string; to: string }[]) {
       return db.transaction(async (tx) => {
@@ -291,22 +350,23 @@ export function catalogForUser(db: Connection, userId: string) {
         }));
       });
     },
-    async getTopic(id: string) {
-      return (
-        await db
-          .select()
-          .from(topics)
-          .where(ownedId(topics, userId, id))
-      )[0];
+    async updateTopic(key: CatalogKey, patch: { title?: string; summary?: string | null }) {
+      const [topic] = await db
+        .update(topics)
+        .set({ title: patch.title, summary: patch.summary, updatedAt: new Date() })
+        .where(ownedCatalogRow(topics, userId, key))
+        .returning();
+      return topic;
     },
-    async getTopicBySlug(slug: string) {
-      return (
-        await db
-          .select()
-          .from(topics)
-          .where(and(owned, eq(topics.slug, slug)))
-      )[0];
+    async deleteTopic(key: CatalogKey) {
+      const [deleted] = await db
+        .delete(topics)
+        .where(ownedCatalogRow(topics, userId, key))
+        .returning({ id: topics.id });
+      return deleted;
     },
+    getTopic,
+    getTopicBySlug: (slug: string) => getTopic({ slug }),
     listTopics() {
       return db.select().from(topics).where(owned).orderBy(topics.slug);
     },
@@ -376,17 +436,13 @@ export function catalogForUser(db: Connection, userId: string) {
           .returning()
       )[0];
     },
-    getTrackGraph(ref: string | { slug: string }) {
+    getTrackGraph(ref: CatalogKey) {
       return db.transaction(
         async (tx) => {
           const [track] = await tx
             .select({ ...getTableColumns(tracks), forkCount, forkedFrom })
             .from(tracks)
-            .where(
-              typeof ref === "string"
-                ? ownedId(tracks, userId, ref)
-                : and(eq(tracks.userId, userId), eq(tracks.slug, ref.slug)),
-            );
+            .where(ownedCatalogRow(tracks, userId, ref));
           if (!track) return undefined;
           const members = await tx
             .select({

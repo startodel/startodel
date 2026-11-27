@@ -1,8 +1,10 @@
-import { LessonBlocks, TopicSlug } from "@startodel/core";
+import { LessonBlocks, TopicLookup, TopicSlug } from "@startodel/core";
 import { z } from "zod";
 import {
+  catalogKey,
   entityUrl,
   id,
+  lessonLookup,
   resolveTopic,
   summary,
   title,
@@ -34,7 +36,7 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
   );
   register(
     "list_topics",
-    "Search your Topic Catalog by optional literal slug prefix. Returns Topics with Mastery levels (0 if unassessed).",
+    "Search your Topic Catalog by optional literal slug prefix. Returns Topics with lessonCount and Mastery levels (0 if unassessed).",
     z.strictObject({
       prefix: z
         .string()
@@ -51,18 +53,28 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
   register(
     "get_topic",
     "Inspect a Topic by exactly one slug or ID. Returns its Mastery, Lesson summaries, prerequisites and dependents.",
-    z
-      .strictObject({ slug: TopicSlug.optional(), id: id.optional() })
-      .refine((r) => (r.slug !== undefined) !== (r.id !== undefined), "Supply a slug or an ID"),
-    async ({ slug, id }) => {
-      const topicId = id ?? (await data.getTopicBySlug(slug!))?.id;
-      const details = topicId && (await data.getTopicDetails(topicId));
+    TopicLookup,
+    async (ref) => {
+      const details = await data.getTopicDetails(catalogKey(ref));
       if (details)
         return {
           ...details,
+          lessons: details.lessons.map(lessonLink),
           topic: { ...details.topic, url: entityUrl(origin, "topics", details.topic.id) },
         };
     },
+  );
+  register(
+    "update_topic",
+    "Revise the title or summary of an existing Topic across its Tracks. Identify it by exactly one id or slug. Omit summary to preserve it or pass null to clear it.",
+    TopicLookup.safeExtend({ title: title.optional(), summary }),
+    ({ id, slug, ...patch }) => data.updateTopic(catalogKey({ id, slug }), patch),
+  );
+  register(
+    "delete_topic",
+    "Permanently delete a Topic from your Topic Catalog and every Track by exactly one id or slug. Removes its memberships, prerequisite edges, Lessons, Lesson Progress, Quiz Attempts, Mastery, ReviewItem and linked Grill Questions. To remove only a membership, use detach_topic_from_track.",
+    TopicLookup,
+    (ref) => data.deleteTopic(catalogKey(ref)),
   );
   register(
     "add_edges",
@@ -119,11 +131,25 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
           toTitle: to.title,
         };
       });
-      return { ...graph, edges };
+      return {
+        ...graph,
+        topics: graph.topics.map((t) => ({ ...t, url: entityUrl(origin, "topics", t.id) })),
+        edges,
+      };
     },
   );
   function lessonLink<T extends { id: string }>(row: T) {
     return { ...row, url: entityUrl(origin, "lessons", row.id) };
+  }
+  const lessonParent = z
+    .strictObject({ topic: topicRef.optional(), ...TopicLookup.shape })
+    .refine(
+      (ref) => [ref.topic, ref.id, ref.slug].filter(Boolean).length === 1,
+      "Supply exactly one topic, id or slug",
+    );
+  function parentTopic({ topic, id, slug }: z.infer<typeof lessonParent>) {
+    if (topic) return resolveTopic(data, topic);
+    return data.getTopic(catalogKey({ id, slug }));
   }
   const lesson = z.strictObject({ title, summary, blocks: LessonBlocks });
   const lessonWriting = [
@@ -136,10 +162,10 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
   ].join(" ");
   register(
     "create_lesson",
-    `Append a Lesson to a Topic by slug or ID. Returns the full Lesson. ${lessonWriting}`,
-    lesson.extend({ topic: topicRef }),
-    async ({ topic, ...input }) => {
-      const parent = await resolveTopic(data, topic);
+    `Append a Lesson to a Topic. Supply topic (slug or UUID), id (Topic UUID) or slug. Returns the full Lesson. ${lessonWriting}`,
+    lessonParent.safeExtend(lesson.shape),
+    async ({ topic, id, slug, ...input }) => {
+      const parent = await parentTopic({ topic, id, slug });
       if (!parent) return;
       const row = await data.createLesson({ ...input, topicId: parent.id });
       if (row) return lessonLink(row);
@@ -147,25 +173,25 @@ export function registerCatalog(register: Register, data: UserData, origin: stri
   );
   register(
     "update_lesson",
-    `Patch a Lesson by ID. Supplying blocks replaces all Blocks. Preserve IDs across edits. Returns the full updated Lesson. ${lessonWriting}`,
-    lesson.partial().extend({ lessonId: id }),
-    ({ lessonId, ...patch }) => data.updateLesson(lessonId, patch),
+    `Patch a Lesson by lessonId or id. Supplying blocks replaces all Blocks. Preserve IDs across edits. Returns the full updated Lesson. ${lessonWriting}`,
+    lessonLookup.safeExtend(lesson.partial().shape),
+    ({ lessonId, id, ...patch }) => data.updateLesson(lessonId ?? id!, patch),
   );
   register(
     "get_lesson",
-    "Read one full Lesson with ordered Blocks before teaching or editing it.",
-    z.strictObject({ lessonId: id }),
-    async ({ lessonId }) => {
-      const row = await data.getLesson(lessonId);
+    "Read one full Lesson by lessonId or id with ordered Blocks before teaching or editing it.",
+    lessonLookup,
+    async ({ lessonId, id }) => {
+      const row = await data.getLesson(lessonId ?? id!);
       if (row) return lessonLink(row);
     },
   );
   register(
     "list_lessons",
-    "Find a Topic's Lessons by Topic Slug or ID. Returns ordered summaries with read timestamps.",
-    z.strictObject({ topic: topicRef }),
-    async ({ topic }) => {
-      const parent = await resolveTopic(data, topic);
+    "Find a Topic's Lessons. Supply topic (slug or UUID), id (Topic UUID) or slug. Returns ordered summaries with read timestamps.",
+    lessonParent,
+    async (ref) => {
+      const parent = await parentTopic(ref);
       if (parent) return (await data.listLessonSummaries(parent.id)).map(lessonLink);
     },
   );

@@ -1,6 +1,7 @@
 import { LEGAL_TERMS_VERSION, TrackLanguage, TrackSlug, TrackSources } from "@startodel/core";
 import { and, eq } from "drizzle-orm";
 import type { Connection } from "./index.ts";
+import { ownedCatalogRow, type CatalogKey } from "./owned.ts";
 import { profiles, tracks, users } from "./schema.ts";
 import { reservedTrackSlug, trackSlugFromTitle } from "./track-slug.ts";
 
@@ -59,7 +60,7 @@ export function trackWrites(db: Connection, userId: string) {
         if (track) return track;
       }
     },
-    async updateTrack(id: string, input: string | Partial<TrackInput>) {
+    async updateTrack(key: CatalogKey, input: string | Partial<TrackInput>) {
       const patch = fields(typeof input === "string" ? { title: input } : input);
       if (patch.slug && reservedTrackSlug(patch.slug)) throw new RangeError("Reserved Track Slug");
       const [track] = await db
@@ -68,7 +69,7 @@ export function trackWrites(db: Connection, userId: string) {
           ...patch,
           updatedAt: new Date(),
         })
-        .where(ownTrack(id))
+        .where(ownedCatalogRow(tracks, userId, key))
         .returning();
       return track;
     },

@@ -4,6 +4,7 @@ import {
   entityUrl,
   empty,
   id,
+  lessonLookup,
   limit,
   resolveTopic,
   title,
@@ -15,7 +16,6 @@ import {
 export function registerPractice(register: Register, data: UserData, origin: string) {
   const questionId = z.strictObject({ questionId: id });
   const sessionId = z.strictObject({ sessionId: id });
-  const lessonId = z.strictObject({ lessonId: id });
   register(
     "get_progress",
     "Plan study using Mastery counts by level, completed (level 2+) and total Topics per Track, due review count, ten latest Quiz Attempts and open GrillSessions.",
@@ -33,18 +33,19 @@ export function registerPractice(register: Register, data: UserData, origin: str
   );
   register(
     "record_quiz_result",
-    "Submit one zero-based option index per Quiz question (1–10). Returns the stored scored Quiz Attempt with MCP Answer Source and the resulting Topic Mastery.",
-    lessonId.extend({
+    "Identify the Lesson by lessonId or id and submit one zero-based option index per Quiz question (1–10). Returns the stored scored Quiz Attempt with MCP Answer Source and the resulting Topic Mastery.",
+    lessonLookup.safeExtend({
       blockId: z.string().min(1).max(64),
       answers: QuizAnswers,
     }),
-    ({ lessonId, blockId, answers }) => data.recordQuizAttempt(lessonId, blockId, answers, "mcp"),
+    ({ lessonId, id, blockId, answers }) =>
+      data.recordQuizAttempt(lessonId ?? id!, blockId, answers, "mcp"),
   );
   register(
     "mark_lesson_read",
-    "Mark a Lesson as read when the learner confirms. Returns Lesson Progress with the read time and resulting Topic Mastery.",
-    lessonId,
-    ({ lessonId }) => data.markLessonRead(lessonId),
+    "Mark a Lesson by lessonId or id as read when the learner confirms. Returns Lesson Progress with the read time and resulting Topic Mastery.",
+    lessonLookup,
+    ({ lessonId, id }) => data.markLessonRead(lessonId ?? id!),
   );
   register(
     "list_due_reviews",

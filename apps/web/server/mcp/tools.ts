@@ -1,8 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ProfilePatch, TrackLanguage, TrackSlug, TrackSources } from "@startodel/core";
+import { ProfilePatch, TrackLanguage, TrackLookup, TrackSlug, TrackSources } from "@startodel/core";
 import { z } from "zod";
 import { privateTrackPath } from "../../shared/locale";
-import { empty, id, registerTools, summary, title, type UserData } from "./register";
+import { catalogKey, empty, id, registerTools, summary, title, type UserData } from "./register";
 import { registerCatalog } from "./catalog";
 import { registerPractice } from "./practice";
 import { guide, instructions, sections } from "./guide";
@@ -47,14 +47,9 @@ export function createToolServer(data: UserData, origin: string) {
   register(
     "get_track",
     "Read one of your Tracks by exactly one UUID id or Track slug. Returns its content language, canonical url and, when published at your login, publicUrl.",
-    z
-      .strictObject({ id: id.optional(), slug: TrackSlug.optional() })
-      .refine(
-        (ref) => (ref.id !== undefined) !== (ref.slug !== undefined),
-        "Supply exactly one Track id or slug",
-      ),
-    async ({ id, slug }) => {
-      const track = id ? await data.getTrack(id) : await data.getTrackBySlug(slug!);
+    TrackLookup,
+    async (ref) => {
+      const track = await data.getTrack(catalogKey(ref));
       if (track) return trackLinks(track, track.public ? await data.getPublicLogin() : undefined);
     },
   );
@@ -73,12 +68,24 @@ export function createToolServer(data: UserData, origin: string) {
   );
   register(
     "update_track",
-    "Revise a Track by ID. Set language when correcting the content language. Keep the description to one or two sentences on the learning outcome and scope. Put versioned references in sources. Supplied sources replace previous sources. Returns the updated Track.",
-    track.partial().extend({ id }),
-    async ({ id, ...patch }) => {
-      const track = await data.updateTrack(id, patch);
+    "Revise a Track by id or slug. With id, slug renames the Track. Set language when correcting the content language. Keep the description to one or two sentences on the learning outcome and scope. Put versioned references in sources. Supplied sources replace previous sources. Returns the updated Track.",
+    track
+      .partial()
+      .extend({ id: id.optional() })
+      .refine((ref) => !!(ref.id || ref.slug), "Supply a Track id or slug"),
+    async ({ id, slug, ...patch }) => {
+      const track = await data.updateTrack(catalogKey({ id, slug }), {
+        ...patch,
+        slug: id ? slug : undefined,
+      });
       if (track) return trackLinks(track, track.public ? await data.getPublicLogin() : undefined);
     },
+  );
+  register(
+    "delete_track",
+    "Delete your Track by exactly one id or slug. Removes its memberships and detaches its GrillSessions. All Topics stay in your Topic Catalog, including those used only by this Track. Their Lessons, progress and prerequisites are preserved.",
+    TrackLookup,
+    (ref) => data.deleteTrack(catalogKey(ref)),
   );
   register(
     "set_track_visibility",
@@ -103,9 +110,9 @@ export function createToolServer(data: UserData, origin: string) {
   registerPractice(register, data, origin);
   register(
     "get_guide",
-    "Call first and after completing a learning step. Returns your current counts, recommended next steps and relevant guide sections.",
-    empty,
-    () => guide(data),
+    "Call first and after a learning step. Pass track (UUID or slug) for counts and study, Review and GrillSession next steps within that Track. authoring.nextTopics separately lists its next one or two Topics without Lessons in Track order. Omit track for the overall study guide.",
+    z.strictObject({ track: z.union([id, TrackSlug]).optional() }),
+    ({ track }) => guide(data, track),
   );
   for (const section of sections) {
     server.registerResource(
