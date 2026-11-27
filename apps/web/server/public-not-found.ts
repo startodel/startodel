@@ -7,7 +7,7 @@ export default defineNitroErrorHandler(async (error, event) => {
   if (error.statusCode !== 404) return;
   const path = getRequestURL(event).pathname;
   const json = path.startsWith("/api/public/") || path.startsWith("/og/");
-  if (!json && !basePath(path).startsWith("/u/")) return;
+  if (!json && !event.context.unmatchedPage && !basePath(path).startsWith("/u/")) return;
   const lang = pageLocale(path);
   const { brand, common, legal } = lang === "en" ? en : ru;
   const body = json
@@ -15,6 +15,7 @@ export default defineNitroErrorHandler(async (error, event) => {
     : `<!doctype html><html lang="${lang}">
 <head>
 <meta charset="utf-8">
+<meta name="robots" content="noindex">
 <title>${common.notFound} · ${brand}</title>
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg">
