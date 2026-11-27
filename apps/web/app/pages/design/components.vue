@@ -1111,12 +1111,16 @@ const prompt =
         written by an agent is untrusted: Markdown is escaped, links are HTTP(S) only, and a video
         loads nothing until it is played.</template
       >
-      <ShowcaseSpecimen label="Lesson block · theory and callout" layout="stack">
-        <UiLessonBlock :index="1" kind="theory">
+      <ShowcaseSpecimen
+        label="Lesson block · theory and callout"
+        layout="stack"
+        class="lesson-blocks"
+      >
+        <UiLessonBlock :index="1" :block="blockOf('theory')">
           <UiProse :markdown="theoryMarkdown" />
         </UiLessonBlock>
-        <UiLessonBlock :index="3" kind="callout" label="gotcha">
-          <UiCallout kind="gotcha"><UiProse :markdown="calloutMarkdown" size="sm" /></UiCallout>
+        <UiLessonBlock :index="3" :block="blockOf('callout')">
+          <UiProse :markdown="calloutMarkdown" size="sm" />
         </UiLessonBlock>
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Callout · kinds" layout="stack">
@@ -1358,6 +1362,9 @@ const prompt =
 }
 .skeleton {
   width: 14rem;
+}
+.lesson-blocks {
+  container: s-main / inline-size;
 }
 .timeline {
   list-style: none;

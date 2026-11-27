@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { blockIcon } from "../../components/ui/lesson";
 import { privateTrackPath } from "../../../shared/locale";
 import { publicBlock } from "@startodel/core";
 import type { QuizResult } from "../../components/ui/Quiz.vue";
@@ -106,7 +107,7 @@ const index = computed(
   () =>
     data.value?.lesson.blocks.map((b) => ({
       id: "lesson-block-" + b.id,
-      kind: b.type,
+      icon: blockIcon(b),
       title: blockOutlineTitle(b, t),
       done: results.get(b.id)?.perQuestion.every(Boolean) || solutions.has(b.id),
     })) ?? [],
@@ -136,8 +137,7 @@ const index = computed(
           v-for="(b, i) in data.lesson.blocks"
           :key="b.id"
           :index="i + 1"
-          :kind="b.type"
-          :label="b.type === 'callout' ? $t(`callout.${b.variant}`) : undefined"
+          :block="b"
           :anchor="'lesson-block-' + b.id"
         >
           <UiProse v-if="b.type === 'theory'" :markdown="b.markdown" />
@@ -145,9 +145,7 @@ const index = computed(
             <UiCodeBlock :title="b.title" :code="b.code" :language="b.language" />
             <UiProse v-if="b.explanation" :markdown="b.explanation" size="sm" />
           </template>
-          <UiCallout v-else-if="b.type === 'callout'" :kind="b.variant"
-            ><UiProse :markdown="b.markdown" size="sm"
-          /></UiCallout>
+          <UiProse v-else-if="b.type === 'callout'" :markdown="b.markdown" size="sm" />
           <template v-else-if="b.type === 'link' || b.type === 'video'">
             <UiResourceLink v-if="b.type === 'link'" :title="b.title" :url="b.url" />
             <UiVideoEmbed v-else :title="b.title" :url="b.url" />

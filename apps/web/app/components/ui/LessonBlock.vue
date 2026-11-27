@@ -1,30 +1,38 @@
 <script setup lang="ts">
-import { blockIcons, type BlockKind } from "./lesson";
+import type { PublicBlock } from "@startodel/core";
+import { blockIcon } from "./lesson";
 const props = defineProps<{
   /** The Block's position in the Lesson, from 1. */
   index: number;
-  kind: BlockKind;
-  /** Overrides the kind shown in the margin, for example the kind of a Callout. */
-  label?: string;
+  block: PublicBlock;
   anchor?: string;
 }>();
 const { t } = useI18n();
 const designator = computed(() => "B" + String(props.index).padStart(2, "0"));
-const word = computed(() => props.label ?? t(`block.${props.kind}`));
+const word = computed(() =>
+  props.block.type === "callout"
+    ? t(`callout.${props.block.variant}`)
+    : t(`block.${props.block.type}`),
+);
 </script>
 <template>
   <section :id="anchor" class="s-block" :aria-label="`${designator}, ${word}`">
     <p class="s-block__margin" aria-hidden="true">
       <span class="s-block__ref">{{ designator }}</span>
-      <span class="s-block__kind"><UiIcon :name="blockIcons[kind]" :size="12" />{{ word }}</span>
+      <span class="s-block__kind"><UiIcon :name="blockIcon(block)" :size="12" />{{ word }}</span>
     </p>
-    <div class="s-block__body"><slot /></div>
+    <div class="s-block__body">
+      <UiCallout v-if="block.type === 'callout'" :kind="block.variant" :show-kind="false">
+        <slot />
+      </UiCallout>
+      <slot v-else />
+    </div>
   </section>
 </template>
 <style scoped>
 .s-block {
   display: grid;
-  grid-template-columns: var(--s-block-margin, 6.5rem) minmax(0, 1fr);
+  grid-template-columns: var(--s-block-margin) minmax(0, 1fr);
   column-gap: var(--s-6);
   scroll-margin-top: 5rem;
 }
@@ -49,6 +57,7 @@ const word = computed(() => props.label ?? t(`block.${props.kind}`));
   display: inline-flex;
   align-items: center;
   gap: 0.3125rem;
+  white-space: nowrap;
 }
 .s-block__body {
   min-width: 0;

@@ -225,7 +225,7 @@ export const sampleTopicLessons = [
 export type SampleBlock =
   | { id: string; type: "theory"; markdown: string }
   | { id: string; type: "code"; language: string; title: string; code: string; explanation: string }
-  | { id: string; type: "callout"; kind: "gotcha" | "production" | "tip"; markdown: string }
+  | { id: string; type: "callout"; variant: "gotcha" | "production" | "tip"; markdown: string }
   | { id: string; type: "link"; title: string; url: string; note: string }
   | { id: string; type: "video"; title: string; url: string; note: string }
   | {
@@ -275,7 +275,7 @@ console.log("sync done", since());`,
     {
       id: "b03",
       type: "callout",
-      kind: "gotcha",
+      variant: "gotcha",
       markdown:
         "**`setTimeout(fn, 0)` is not zero.** Node.js raises any delay below 1 ms to 1 ms. Browsers clamp nested timers to 4 ms after five levels. Do not use a zero timer to order work precisely.",
     },

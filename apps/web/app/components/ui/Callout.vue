@@ -1,13 +1,17 @@
 <script setup lang="ts">
 /** A Callout Block. The icon and the word name its kind. The edge colour repeats it. */
-const props = withDefaults(defineProps<{ kind?: "gotcha" | "production" | "tip" }>(), {
-  kind: "tip",
-});
+const props = withDefaults(
+  defineProps<{ kind?: "gotcha" | "production" | "tip"; showKind?: boolean }>(),
+  {
+    kind: "tip",
+    showKind: true,
+  },
+);
 const { t } = useI18n();
 </script>
 <template>
   <aside class="s-callout" :class="'s-callout--' + props.kind">
-    <p class="s-callout__kind">
+    <p v-if="showKind" class="s-callout__kind">
       <UiIcon :name="props.kind" :size="14" />{{ t(`callout.${props.kind}`) }}
     </p>
     <div class="s-callout__body"><slot /></div>

@@ -105,6 +105,7 @@
   --s-text-5xl: 4rem;
   --s-read-size: 1.125rem;
   --s-read-measure: 68ch;
+  --s-block-margin: 7rem;
 
   /* Space on a 4px pitch. */
   --s-1: 0.25rem;

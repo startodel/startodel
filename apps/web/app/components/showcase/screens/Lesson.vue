@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BlockKind } from "../../ui/lesson";
+import { blockIcon } from "../../ui/lesson";
 import type { QuizResult } from "../../ui/Quiz.vue";
 import { sampleLesson, screenPath, type SampleBlock } from "../sample";
 const props = defineProps<{ state?: string }>();
@@ -41,10 +41,10 @@ function reveal() {
   }, 500);
 }
 
-const titles: Record<BlockKind, string> = {
+const titles: Record<SampleBlock["type"], string> = {
   theory: "Not sooner, maybe later",
   code: "timers.cjs",
-  callout: "Gotcha: the 1 ms floor",
+  callout: "The 1 ms floor",
   link: "The Node.js event loop guide",
   video: "Talk: the event loop in depth",
   quiz: "Quiz · 2 questions",
@@ -53,7 +53,7 @@ const titles: Record<BlockKind, string> = {
 const index = computed(() =>
   lesson.blocks.map((b) => ({
     id: b.id,
-    kind: b.type,
+    icon: blockIcon(b),
     title: titles[b.type],
     done:
       b.type === "quiz" ? allCorrect.value : b.type === "exercise" ? !!solution.value : undefined,
@@ -101,8 +101,7 @@ onMounted(() => {
           v-for="(b, i) in lesson.blocks"
           :key="b.id"
           :index="i + 1"
-          :kind="b.type"
-          :label="b.type === 'callout' ? b.kind : undefined"
+          :block="b"
           :anchor="b.id"
         >
           <UiProse v-if="b.type === 'theory'" :markdown="b.markdown" />
@@ -110,9 +109,7 @@ onMounted(() => {
             <UiCodeBlock :code="b.code" :language="b.language" :title="b.title" />
             <UiProse :markdown="b.explanation" size="sm" />
           </div>
-          <UiCallout v-else-if="b.type === 'callout'" :kind="b.kind">
-            <UiProse :markdown="b.markdown" size="sm" />
-          </UiCallout>
+          <UiProse v-else-if="b.type === 'callout'" :markdown="b.markdown" size="sm" />
           <UiResourceLink
             v-else-if="b.type === 'link'"
             :title="b.title"
