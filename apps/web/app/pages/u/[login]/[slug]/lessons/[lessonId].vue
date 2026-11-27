@@ -33,38 +33,48 @@ usePublicHead(
   }),
   lesson.language,
 );
+const trail = lessonTrail(
+  lesson.lessonOrdinal,
+  { title: lesson.topicTitle, to: { path, hash: "#topic-" + lesson.topic } },
+  { title: lesson.trackTitle, to: path, topicOrdinal: lesson.topicOrdinal },
+);
 const index = computed(
   () =>
     data.value?.blocks.map((b) => ({
       id: "lesson-block-" + b.id,
       kind: b.type,
-      title: "title" in b ? b.title : t(`block.${b.type}`),
+      title: blockOutlineTitle(b, t),
     })) ?? [],
 );
 </script>
 <template>
   <article v-if="data" class="s-page lesson">
-    <UiBreadcrumbs
-      :items="[
-        { label: '@' + route.params.login, to: '/u/' + login },
-        { label: data.trackTitle, to: path },
-        { label: data.title },
-      ]"
-    />
-    <UiPageHeader :title="data.title" :description="data.summary ?? undefined" voice="content"
-      ><template #meta><UiTrackLanguageBadge :language="data.language" /></template
-    ></UiPageHeader>
+    <UiBreadcrumbs :items="trail.crumbs" />
+    <UiLessonHeader
+      :title="data.title"
+      :tag="trail.tag"
+      :topic-tag="trail.topicTag"
+      :topic-title="data.topicTitle"
+      :minutes="lessonMinutes(data.blocks)"
+      :block-count="data.blocks.length"
+    >
+      <UiTrackLanguageBadge :language="data.language" />
+      <NuxtLinkLocale class="s-link" :to="'/u/' + login">{{
+        "@" + route.params.login
+      }}</NuxtLinkLocale>
+    </UiLessonHeader>
     <UiLessonLayout v-if="data.blocks.length">
       <UiLessonBlock
         v-for="(b, i) in data.blocks"
         :key="b.id"
         :index="i + 1"
         :kind="b.type"
+        :label="b.type === 'callout' ? $t(`callout.${b.variant}`) : undefined"
         :anchor="'lesson-block-' + b.id"
       >
         <UiProse v-if="b.type === 'theory'" :markdown="b.markdown" />
         <template v-else-if="b.type === 'code'">
-          <UiCodeBlock :code="b.code" :language="b.language" />
+          <UiCodeBlock :title="b.title" :code="b.code" :language="b.language" />
           <UiProse v-if="b.explanation" :markdown="b.explanation" size="sm" />
         </template>
         <UiCallout v-else-if="b.type === 'callout'" :kind="b.variant"

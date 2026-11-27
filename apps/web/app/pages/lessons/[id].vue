@@ -5,7 +5,6 @@ import type { QuizResult } from "../../components/ui/Quiz.vue";
 
 definePageMeta({ layout: "app" });
 const { t } = useI18n();
-const countArgs = useCountArgs();
 const route = useRoute();
 const url = `/api/lessons/${String(route.params.id)}` as const;
 const { data, error, refresh } = await useFetch(url, {
@@ -17,22 +16,36 @@ const { data, error, refresh } = await useFetch(url, {
 if (error.value?.statusCode === 404)
   throw createError({ statusCode: 404, message: t("common.error") });
 useHead({ title: () => data.value?.lesson.title });
-const { data: catalog } = await useFetch("/api/tracks", { key: "rail-tracks" });
 const track = computed(() => {
+  const memberships = data.value?.tracks ?? [];
   const ref = route.query.track;
-  if (typeof ref !== "string") return;
-  return (
-    catalog.value?.find((t) => t.id === ref.toLowerCase()) ??
-    catalog.value?.find((t) => t.slug === ref)
-  )?.slug;
+  if (typeof ref === "string") {
+    const match =
+      memberships.find((item) => item.id === ref.toLowerCase()) ??
+      memberships.find((item) => item.slug === ref);
+    if (match) return match;
+  }
+  return memberships[0];
 });
-const { data: topicDetails } = await useTopicDetails(computed(() => data.value?.topic.id));
-const neighbors = computed(() => {
-  const lessons = topicDetails.value?.lessons ?? [];
-  const index = lessons.findIndex((l) => l.id === data.value?.lesson.id);
-  return { previous: lessons[index - 1], next: index < 0 ? undefined : lessons[index + 1] };
+const trail = computed(() => {
+  if (!data.value) return;
+  const { topic, lessonOrdinal } = data.value;
+  const member = track.value;
+  const path = member && privateTrackPath(member.slug);
+  return lessonTrail(
+    lessonOrdinal,
+    { title: topic.title, to: path ? { path, query: { topic: topic.id } } : "/topics/" + topic.id },
+    member && {
+      title: member.title,
+      to: privateTrackPath(member.slug),
+      topicOrdinal: member.topicOrdinal,
+    },
+  );
 });
-const lessonLink = (id: string) => ({ path: "/lessons/" + id, query: { track: track.value } });
+const lessonLink = (id: string) => ({
+  path: "/lessons/" + id,
+  query: { track: track.value?.slug },
+});
 const marking = ref(false);
 const readError = ref(false);
 async function read() {
@@ -94,7 +107,7 @@ const index = computed(
     data.value?.lesson.blocks.map((b) => ({
       id: "lesson-block-" + b.id,
       kind: b.type,
-      title: "title" in b ? b.title : t(`block.${b.type}`),
+      title: blockOutlineTitle(b, t),
       done: results.get(b.id)?.perQuestion.every(Boolean) || solutions.has(b.id),
     })) ?? [],
 );
@@ -105,32 +118,18 @@ const index = computed(
       <template #actions><UiButton @click="refresh()">{{ $t("common.retry") }}</UiButton></template>
     </UiNotice>
     <UiSkeletonList v-else-if="!data" />
-    <template v-else>
-      <UiBreadcrumbs
-        :items="[
-          { label: $t('nav.dashboard'), to: '/dashboard' },
-          {
-            label: data.topic.title,
-            to: track
-              ? { path: privateTrackPath(track), query: { topic: data.topic.id } }
-              : undefined,
-          },
-          { label: data.lesson.title },
-        ]"
-      />
-      <UiPageHeader
-        :kicker="data.topic.title"
+    <template v-else-if="trail">
+      <UiBreadcrumbs :items="trail.crumbs" />
+      <UiLessonHeader
         :title="data.lesson.title"
-        :description="data.lesson.summary ?? undefined"
-        voice="content"
+        :tag="trail.tag"
+        :topic-tag="trail.topicTag"
+        :topic-title="data.topic.title"
+        :minutes="lessonMinutes(data.lesson.blocks)"
+        :block-count="data.lesson.blocks.length"
       >
-        <template #meta
-          ><UiBadge icon="lesson">{{
-            $t("count.blocks", countArgs(data.lesson.blocks.length))
-          }}</UiBadge
-          ><UiMastery :level="data.mastery" show="full"
-        /></template>
-      </UiPageHeader>
+        <UiMastery :level="data.mastery" show="full" />
+      </UiLessonHeader>
       <UiLessonLayout>
         <UiEmptyState v-if="!index.length" :title="$t('lesson.empty')" icon="lesson" />
         <UiLessonBlock
@@ -138,11 +137,12 @@ const index = computed(
           :key="b.id"
           :index="i + 1"
           :kind="b.type"
+          :label="b.type === 'callout' ? $t(`callout.${b.variant}`) : undefined"
           :anchor="'lesson-block-' + b.id"
         >
           <UiProse v-if="b.type === 'theory'" :markdown="b.markdown" />
           <template v-else-if="b.type === 'code'">
-            <UiCodeBlock :code="b.code" :language="b.language" />
+            <UiCodeBlock :title="b.title" :code="b.code" :language="b.language" />
             <UiProse v-if="b.explanation" :markdown="b.explanation" size="sm" />
           </template>
           <UiCallout v-else-if="b.type === 'callout'" :kind="b.variant"
@@ -193,16 +193,15 @@ const index = computed(
           <nav class="s-cluster lesson__nav" :aria-label="$t('topic.lessons')">
             <UiButton
               icon="arrow-left"
-              :to="
-                neighbors.previous ? lessonLink(neighbors.previous.id) : '/topics/' + data.topic.id
-              "
-              >{{ neighbors.previous?.title ?? $t("topic.lessons") }}</UiButton
+              :to="data.previous ? lessonLink(data.previous.id) : '/topics/' + data.topic.id"
+              >{{
+                data.previous
+                  ? lessonTag(data.lessonOrdinal - 1) + " " + data.previous.title
+                  : $t("topic.lessons")
+              }}</UiButton
             >
-            <UiButton
-              v-if="neighbors.next"
-              icon-right="arrow-right"
-              :to="lessonLink(neighbors.next.id)"
-              >{{ neighbors.next.title }}</UiButton
+            <UiButton v-if="data.next" icon-right="arrow-right" :to="lessonLink(data.next.id)"
+              >{{ lessonTag(data.lessonOrdinal + 1) }} {{ data.next.title }}</UiButton
             >
           </nav>
         </template>

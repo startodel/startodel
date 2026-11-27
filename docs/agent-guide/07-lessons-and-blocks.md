@@ -38,7 +38,7 @@ For the complete [browser tasks Lesson](references/browser-tasks.md), call `reso
 
 ## Block checklist
 
-Give each Block a `type` and a unique, stable `id` of 1–64 letters, digits, underscores or hyphens. Supply up to 200 ordered Blocks per Lesson.
+Give each Block a `type` and a unique, stable `id` of 1–64 letters, digits, underscores or hyphens. Supply up to 200 ordered Blocks per Lesson. Give Theory, Callout and Exercise Blocks a short, descriptive `title` for the Lesson outline. Use the filename as the Code Block’s `title`, for example `timers.cjs`. These titles are optional and accept up to 120 characters. The Quiz outline shows the question count.
 
 | Type       | Required content                                                                                                                                               |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |

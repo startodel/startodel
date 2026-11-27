@@ -2,7 +2,15 @@ import { type Block, AnswerSource, lessonMastery, LessonBlocks } from "@startode
 import { and, desc, eq, max, sql } from "drizzle-orm";
 import type { Connection } from "./index.ts";
 import { ownedId, referencedRow, type Transaction } from "./owned.ts";
-import { lessons, lessonProgress, quizAttempts, topicMastery, topics } from "./schema.ts";
+import {
+  lessons,
+  lessonProgress,
+  quizAttempts,
+  topicMastery,
+  topics,
+  tracks,
+  trackTopics,
+} from "./schema.ts";
 
 type LessonInput = {
   title: string;
@@ -196,7 +204,46 @@ export function lessonsForUser(db: Connection, userId: string) {
           and(eq(topicMastery.userId, userId), eq(topicMastery.topicId, topics.id)),
         )
         .where(ownedId(lessons, userId, id));
-      return row;
+      if (!row) return;
+      // Use the same position and slug tie-break as the private Track Graph.
+      const ranked = db
+        .select({
+          trackId: trackTopics.trackId,
+          topicId: trackTopics.topicId,
+          ordinal: sql<number>`(row_number() over (partition by ${trackTopics.trackId}
+            order by ${trackTopics.position}, ${topics.slug}))::int`.as("ordinal"),
+        })
+        .from(trackTopics)
+        .innerJoin(topics, and(eq(topics.userId, userId), eq(topics.id, trackTopics.topicId)))
+        .where(eq(trackTopics.userId, userId))
+        .as("ranked");
+      const [memberships, siblings] = await Promise.all([
+        db
+          .select({
+            id: tracks.id,
+            slug: tracks.slug,
+            title: tracks.title,
+            topicOrdinal: ranked.ordinal,
+          })
+          .from(tracks)
+          .innerJoin(ranked, eq(ranked.trackId, tracks.id))
+          .where(and(eq(tracks.userId, userId), eq(ranked.topicId, row.topic.id)))
+          .orderBy(tracks.createdAt, tracks.id),
+        db
+          .select({ id: lessons.id, title: lessons.title })
+          .from(lessons)
+          .where(and(eq(lessons.userId, userId), eq(lessons.topicId, row.topic.id)))
+          .orderBy(lessons.position, lessons.id),
+      ]);
+      const index = siblings.findIndex((lesson) => lesson.id === id);
+      if (index < 0) return;
+      return {
+        ...row,
+        tracks: memberships,
+        lessonOrdinal: index + 1,
+        previous: siblings[index - 1],
+        next: siblings[index + 1],
+      };
     },
     listLessonSummaries(topicId: string) {
       return db

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { studyOrder, topicStates, type BoardEdge, type BoardTopic } from "./board";
+import { studyOrder } from "@startodel/core";
+import { topicStates, type BoardEdge, type BoardTopic } from "./board";
 /** The Topics of a Track in study order: every prerequisite comes before the Topic it unlocks. */
 const props = defineProps<{
   topics: BoardTopic[];

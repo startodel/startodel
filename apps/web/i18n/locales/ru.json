@@ -233,6 +233,10 @@
     "end": "Зависимых тем пока нет."
   },
   "lesson": {
+    "kicker": "Урок {tag} · {topicTag} {topicTitle}",
+    "untrackedKicker": "Урок {tag} · {topicTitle}",
+    "quizOutline": "Тест · {count} вопрос | Тест · {count} вопроса | Тест · {count} вопросов",
+    "exerciseOutline": "Задача: {title}",
     "empty": "В этом уроке пока нет материалов.",
     "read": "Урок прочитан",
     "mark": "Отметить как прочитанный",
