@@ -114,6 +114,20 @@ function eligibleTopics(
     );
 }
 
+async function firstStudyLesson(db: Connection, userId: string, topicId: string) {
+  const [lesson] = await db
+    .select({ id: lessons.id, readAt: lessonProgress.readAt })
+    .from(lessons)
+    .leftJoin(
+      lessonProgress,
+      and(eq(lessonProgress.userId, userId), eq(lessonProgress.lessonId, lessons.id)),
+    )
+    .where(and(eq(lessons.userId, userId), eq(lessons.topicId, topicId)))
+    .orderBy(sql`${lessonProgress.readAt} is not null`, lessons.position, lessons.id)
+    .limit(1);
+  return lesson;
+}
+
 export async function nextStudyTopic(db: Connection, userId: string, excludeDueAt?: Date) {
   const ready = eligibleTopics(db, userId, { excludeDueAt })
     .orderBy(topics.slug)
@@ -133,16 +147,7 @@ export async function nextStudyTopic(db: Connection, userId: string, excludeDueA
     .orderBy(tracks.createdAt, tracks.id)
     .limit(1);
   if (!topic) return;
-  const [lesson] = await db
-    .select({ id: lessons.id, readAt: lessonProgress.readAt })
-    .from(lessons)
-    .leftJoin(
-      lessonProgress,
-      and(eq(lessonProgress.userId, userId), eq(lessonProgress.lessonId, lessons.id)),
-    )
-    .where(and(eq(lessons.userId, userId), eq(lessons.topicId, topic.id)))
-    .orderBy(sql`${lessonProgress.readAt} is not null`, lessons.position, lessons.id)
-    .limit(1);
+  const lesson = await firstStudyLesson(db, userId, topic.id);
   return { ...topic, firstLessonId: lesson?.id ?? null, allLessonsRead: !!lesson?.readAt };
 }
 
@@ -471,10 +476,14 @@ export function catalogForUser(db: Connection, userId: string) {
           const blocked = new Set(
             (await blockedTopics(tx, userId, memberIds)).map((row) => row.id),
           );
+          const ready = members.filter((m) => m.level < 2 && !blocked.has(m.topic.id));
+          const next = ready.find((m) => m.readCount < m.lessonCount);
+          const lesson = next && (await firstStudyLesson(tx, userId, next.topic.id));
           return {
-            suggestedNextTopics: members
-              .filter((m) => m.level < 2 && !blocked.has(m.topic.id))
-              .map((m) => m.topic),
+            nextLesson: lesson
+              ? { id: lesson.id, started: members.some((m) => m.readCount > 0) }
+              : null,
+            suggestedNextTopics: ready.map((m) => m.topic),
             track,
             topics: members.map(({ topic, ...details }) => ({ ...topic, ...details })),
             edges,

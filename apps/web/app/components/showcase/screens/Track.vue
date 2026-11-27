@@ -34,6 +34,7 @@ const blockers = computed(() =>
 const language = ref("en");
 const complete = sampleTopics.filter((t) => t.level >= 2).length;
 const actions = [
+  { id: "grill", label: "Start a Grill", icon: "grill" as const, to: screenPath("grill") },
   {
     id: "publish",
     label: "Publish",
@@ -78,11 +79,11 @@ const actions = [
           <UiForkedFrom login="mkarpov" slug="node-internals" :to="screenPath('public-track')" />
         </template>
         <template #actions>
-          <UiButton variant="primary" icon="grill" :to="screenPath('grill')"
-            >Start a Grill</UiButton
-          >
+          <UiButton variant="primary" icon="lesson" :to="screenPath('lesson')">{{
+            $t("track.continue")
+          }}</UiButton>
           <UiMenu :items="actions" @select="notify({ title: 'Mock action: ' + $event })">
-            <UiButton icon="more" label="Track actions" />
+            <UiButton icon="more" :label="$t('track.actions')" />
           </UiMenu>
         </template>
       </UiPageHeader>

@@ -184,6 +184,9 @@
     "answers": "Grill answers"
   },
   "track": {
+    "startLearning": "Start learning",
+    "continue": "Continue",
+    "actions": "Track actions",
     "topics": "Topics",
     "sources": "Track Sources",
     "graph": "Track Graph",

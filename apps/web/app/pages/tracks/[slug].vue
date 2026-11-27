@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { LEGAL_TERMS_VERSION, type TrackLanguage } from "@startodel/core";
 import { COMPLETE_LEVEL, topicStates } from "../../components/ui/board";
+import type { MenuItem } from "../../components/ui/Menu.vue";
 
 definePageMeta({ layout: "app" });
 const { t } = useI18n();
@@ -43,6 +44,19 @@ const publicPath = computed(
   () => "/u/" + encodeURIComponent(user.value?.login ?? "") + "/" + data.value?.track.slug,
 );
 const { state: copyState, copy } = useCopy();
+const publicUrl = computed(() => origin.value + localePath(publicPath.value));
+const actions = computed(() => {
+  const isPublic = data.value?.track.public;
+  const items: MenuItem[] = [
+    {
+      id: "visibility",
+      label: isPublic ? t("visibility.unpublish") : t("visibility.makePublic"),
+      icon: isPublic ? "lock" : "globe",
+    },
+  ];
+  if (isPublic) items.push({ id: "copy", label: t("visibility.copy"), icon: "copy" });
+  return items;
+});
 const open = ref(route.query.visibility === "edit");
 const agree = ref(false);
 const saving = ref(false);
@@ -52,10 +66,14 @@ const accepted = computed(
     data.value?.termsAcceptance?.version === LEGAL_TERMS_VERSION && data.value.termsAcceptance.at,
 );
 const canSave = computed(() => !!(data.value?.track.public || accepted.value || agree.value));
-function confirmVisibility() {
-  agree.value = false;
-  saveError.value = false;
-  open.value = true;
+function selectAction(id: string) {
+  if (id === "visibility") {
+    agree.value = false;
+    saveError.value = false;
+    open.value = true;
+  } else if (id === "copy") {
+    copy(publicUrl.value);
+  }
 }
 async function saveLanguage(language: TrackLanguage) {
   await $fetch(`/api/tracks/${data.value!.track.id}`, { method: "PATCH", body: { language } });
@@ -120,19 +138,23 @@ async function save() {
             "
           />
         </template>
-        <template #actions
-          ><UiButton @click="confirmVisibility">{{
-            data.track.public ? $t("visibility.unpublish") : $t("visibility.makePublic")
-          }}</UiButton></template
-        >
+        <template #actions>
+          <UiButton
+            v-if="data.nextLesson"
+            variant="primary"
+            icon="lesson"
+            :to="{ path: '/lessons/' + data.nextLesson.id, query: { track: data.track.slug } }"
+            >{{
+              data.nextLesson.started ? $t("track.continue") : $t("track.startLearning")
+            }}</UiButton
+          >
+          <UiMenu :items="actions" @select="selectAction">
+            <UiButton icon="more" :label="$t('track.actions')" />
+          </UiMenu>
+        </template>
       </UiPageHeader>
       <div v-if="data.track.public" class="s-cluster">
-        <NuxtLinkLocale :to="publicPath" class="s-link">{{
-          origin + localePath(publicPath)
-        }}</NuxtLinkLocale>
-        <UiButton icon="copy" @click="copy(origin + localePath(publicPath))">{{
-          $t("visibility.copy")
-        }}</UiButton>
+        <NuxtLinkLocale :to="publicPath" class="s-link">{{ publicUrl }}</NuxtLinkLocale>
         <span role="status">{{
           copyState === "copied"
             ? $t("common.copied")
