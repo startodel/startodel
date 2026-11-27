@@ -39,6 +39,45 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     }
   });
 
+  test("Track learning starts and continues with the first unread Lesson in Track order", async () => {
+    const track = await alice.createTrack("Runtime");
+    const other = await alice.createTrack("Scheduling");
+    const queues = await alice.upsertTopic({ slug: "queues", title: "Queues" });
+    const clocks = await alice.upsertTopic({ slug: "clocks", title: "Clocks" });
+    await alice.attachTopics(track.id, ["queues", "clocks"]);
+    await alice.attachTopics(other.id, ["clocks"]);
+    const later = (await alice.createLesson({ topicId: queues.id, title: "Drain", position: 20 }))!;
+    const first = (await alice.createLesson({ topicId: queues.id, title: "Fill", position: 10 }))!;
+    const last = (await alice.createLesson({ topicId: clocks.id, title: "Ticks" }))!;
+    const next = async (id: string) => (await alice.getTrackGraph(id))?.nextLesson;
+
+    expect(await next(track.id)).toEqual({ id: first.id, started: false });
+    await alice.markLessonRead(first.id);
+    expect(await next(track.id)).toEqual({ id: later.id, started: true });
+    expect(await next(other.id)).toEqual({ id: last.id, started: false });
+    await alice.markLessonRead(later.id);
+    expect(await next(track.id)).toEqual({ id: last.id, started: true });
+    await alice.markLessonRead(last.id);
+    expect(await next(track.id)).toBeNull();
+  });
+
+  test("Track learning skips empty, blocked and mastered Topics", async () => {
+    const track = await alice.createTrack("Scheduling");
+    const next = async () => (await alice.getTrackGraph(track.id))?.nextLesson;
+    expect(await next()).toBeNull();
+    const clocks = await alice.upsertTopic({ slug: "clocks", title: "Clocks" });
+    const timers = await alice.upsertTopic({ slug: "timers", title: "Timers" });
+    await alice.attachTopics(track.id, ["timers"]);
+    expect(await next()).toBeNull();
+    const lesson = (await alice.createLesson({ topicId: timers.id, title: "Timer delay" }))!;
+    await alice.addEdge(clocks.id, timers.id);
+    expect(await next()).toBeNull();
+    await alice.setMastery(clocks.id, 2);
+    expect(await next()).toEqual({ id: lesson.id, started: false });
+    await alice.setMastery(timers.id, 2);
+    expect(await next()).toBeNull();
+  });
+
   test("Lesson navigation ranks memberships, prerequisites and sparse Lesson positions", async () => {
     const first = await alice.createTrack("Timers");
     const second = await alice.createTrack("Runtime");

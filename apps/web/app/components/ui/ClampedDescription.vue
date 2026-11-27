@@ -39,21 +39,25 @@ watch(
     <p ref="paragraph" :id="id" class="s-description" :class="{ 'is-clamped': !expanded }">
       {{ text }}
     </p>
-    <UiButton
+    <button
       v-if="overflows"
-      variant="ghost"
-      size="sm"
+      type="button"
+      class="s-link s-description__toggle"
       :aria-expanded="expanded"
       :aria-controls="id"
       @click="expanded = !expanded"
-      >{{ expanded ? $t("ui.showLess") : $t("ui.showMore") }}</UiButton
     >
+      {{ expanded ? $t("ui.showLess") : $t("ui.showMore") }}
+    </button>
   </div>
 </template>
 <style scoped>
 .s-description {
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+.s-description__toggle {
+  font-size: var(--s-text-sm);
 }
 .s-description.is-clamped {
   display: -webkit-box;

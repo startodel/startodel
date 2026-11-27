@@ -106,12 +106,13 @@ try {
   );
   await mkdir(directory, { recursive: true });
   const pr12 = process.argv.includes("--pr12");
-  const shot = async (name) => {
+  const shot = async (name, { fullPage = true } = {}) => {
     if (cascade) return;
     if (pr12 && !name.startsWith("pr12-")) return;
     if (process.argv.includes("--pr11") && !name.startsWith("pr11-")) return;
     if (
       !name.startsWith("lesson-") &&
+      !name.startsWith("track-header-") &&
       !name.startsWith("pr12-") &&
       !name.startsWith("pr11-") &&
       !name.startsWith("pr9-") &&
@@ -120,7 +121,7 @@ try {
       return;
     await page.screenshot({
       path: directory + "/" + name + ".png",
-      fullPage: true,
+      fullPage,
       animations: "disabled",
     });
     console.log(name);
@@ -367,8 +368,8 @@ try {
   await sources.waitFor();
   assert.equal(await sources.getByRole("link").count(), 5);
   assert.equal(await sources.getByRole("button").count(), 0);
-  const more = page.getByRole("button", { name: "Show more", exact: true });
-  assert.equal(await more.count(), 0);
+  const header = page.locator(".s-page-header");
+  assert.equal(await header.getByRole("button", { name: "Show more", exact: true }).count(), 0);
 
   const editLanguage = (tag) =>
     page.getByRole("button", { name: "Change Track language (" + tag + ")" });
@@ -393,26 +394,57 @@ try {
   const pitch =
     "Trace the browser event loop from a timer callback through the microtask queue to the next paint. Use the performance timeline to explain why a busy page misses a frame.";
   await owner.updateTrack(track.id, { description: pitch, sources: { docs } });
-  await visit("/tracks/" + track.slug);
-  async function checkPrivateDescription() {
+  for (const prefix of ["/ru", ""]) {
+    const locale = prefix ? "ru" : "en";
+    await visit(prefix + "/tracks/" + track.slug);
     await page.setViewportSize({ width: 390, height: 900 });
-    const description = page.getByText(pitch, { exact: true });
+    await page.evaluate(() => document.fonts.ready);
+    const start = header.getByRole("link", { name: prefix ? "Начать обучение" : "Start learning" });
+    assert.equal(
+      await start.getAttribute("href"),
+      prefix + "/lessons/" + lesson.id + "?track=" + track.slug,
+    );
+    const actions = header.getByRole("button", {
+      name: prefix ? "Действия с треком" : "Track actions",
+    });
+    assert.ok(await actions.isVisible());
+    const more = header.getByRole("button", {
+      name: prefix ? "Показать полностью" : "Show more",
+      exact: true,
+    });
+    const less = header.getByRole("button", {
+      name: prefix ? "Свернуть" : "Show less",
+      exact: true,
+    });
+    const description = header.getByText(pitch, { exact: true });
     await more.waitFor();
+    assert.equal(await more.getAttribute("aria-expanded"), "false");
+    assert.equal(await more.getAttribute("aria-controls"), await description.getAttribute("id"));
+    const textLeft = (el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return range.getClientRects()[0].left;
+    };
+    assert.ok(
+      Math.abs((await more.evaluate(textLeft)) - (await description.evaluate(textLeft))) < 1,
+    );
     const clipped = () => description.evaluate((el) => el.scrollHeight > el.clientHeight);
     assert.ok(await clipped());
     const collapsedHeight = await description.evaluate(
       (el) => el.clientHeight / parseFloat(getComputedStyle(el).lineHeight),
     );
     assert.ok(Math.abs(collapsedHeight - 3) < 0.1);
-    await more.click();
+    await shot("track-header-" + locale + "-390", { fullPage: false });
+    await more.press("Enter");
     assert.equal(await clipped(), false);
-    const less = page.getByRole("button", { name: "Show less", exact: true });
+    assert.equal(await less.getAttribute("aria-expanded"), "true");
     await less.click();
     assert.ok(await clipped());
     await more.click();
     await page.setViewportSize({ width: 1440, height: 900 });
     await less.waitFor({ state: "hidden" });
     assert.equal(await more.count(), 0);
+    await shot("track-header-" + locale + "-1440", { fullPage: false });
   }
   async function checkTrackSources() {
     const links = sources.getByRole("link");
@@ -428,7 +460,6 @@ try {
     await sources.getByRole("button", { name: "Show less" }).click();
     assert.equal(await links.count(), 5);
   }
-  await checkPrivateDescription();
   await checkTrackSources();
   const node = page
     .locator(".vue-flow__node")
@@ -461,7 +492,7 @@ try {
     enriched = true;
     await route.fulfill({ response, json });
   });
-  await page.getByRole("link", { name: lesson.title }).click();
+  await header.getByRole("link", { name: "Start learning" }).click();
   const timersQuiz = page.locator("#lesson-block-timers .s-quiz");
   await timersQuiz.waitFor();
   assert.ok(enriched);
@@ -508,7 +539,15 @@ try {
     await checkLesson(prefix, false);
   }
   await page.setViewportSize({ width: 375, height: 812 });
+  const nextLesson = await owner.createLesson({
+    topicId: by.microtasks.id,
+    title: "Promise callbacks",
+  });
   await visit("/tracks/" + track.slug);
+  assert.equal(
+    await header.getByRole("link", { name: "Continue", exact: true }).getAttribute("href"),
+    "/lessons/" + nextLesson.id + "?track=" + track.slug,
+  );
   await page.locator(".s-tracklist__row").filter({ hasText: "Tasks and timers" }).click();
   await page.getByRole("link", { name: lesson.title }).waitFor();
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
@@ -674,6 +713,7 @@ try {
     for (const path of [
       "/ru/dashboard",
       "/dashboard",
+      "/design/screens/track",
       "/settings",
       "/tracks/" + track.slug,
       "/topics/" + by.tasks.id,
@@ -759,7 +799,7 @@ try {
     await shot("pr12-ru-dashboard");
     await trackLink.click();
     await page.locator(".s-canvas .s-trace").first().waitFor();
-    await page.getByRole("button", { name: "Открыть доступ" }).waitFor();
+    await header.getByRole("button", { name: "Действия с треком" }).waitFor();
     await shot("pr12-ru-track");
     await visit("/ru/reviews");
     await page.getByRole("link", { name: by.tasks.title, exact: true }).waitFor();
@@ -807,10 +847,12 @@ try {
     await visit("/");
     await page.waitForURL(origin + "/ru");
   }
-  if (process.argv.includes("--pr11")) {
+  if (!cascade && !pr12) {
     await page.setViewportSize({ width: 1440, height: 900 });
     await visit("/tracks/" + track.slug);
-    await page.getByRole("button", { name: "Make public" }).click();
+    const actions = header.getByRole("button", { name: "Track actions" });
+    await actions.click();
+    await page.getByRole("menuitem", { name: "Make public" }).click();
     await page.getByRole("dialog").waitFor();
     await shot("pr11-publish-dialog");
     assert.ok(await page.getByRole("button", { name: "Publish", exact: true }).isDisabled());
@@ -818,7 +860,20 @@ try {
       .getByRole("checkbox", { name: "I agree to the Publishing rules and Terms of Use" })
       .check();
     await page.getByRole("button", { name: "Publish", exact: true }).click();
-    await page.getByRole("button", { name: "Copy public URL" }).waitFor();
+    const permalink = origin + "/u/bob/" + track.slug;
+    await page.getByRole("link", { name: permalink, exact: true }).waitFor();
+    await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin });
+    await actions.click();
+    await page.getByRole("menuitem", { name: "Copy public URL" }).click();
+    assert.equal(await page.evaluate(() => navigator.clipboard.readText()), permalink);
+    await actions.click();
+    await page.getByRole("menuitem", { name: "Make private" }).click();
+    await page
+      .getByRole("dialog", { name: "Make this Track private?" })
+      .getByRole("button", { name: "Cancel" })
+      .click();
+  }
+  if (process.argv.includes("--pr11")) {
     const publicPath = "/u/bob/" + track.slug;
     await visit("/terms?lang=en");
     await page.getByRole("heading", { name: "Terms of Use", exact: true }).waitFor();
