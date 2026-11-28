@@ -65,6 +65,7 @@ The order goes from pages with the least data and risk to the ones with the most
 | 9   | `/tracks/[slug]`, `/topics/[id]`                                          | `app`   | `track`                                    | `TrackGraph.client` → `UiTrackBoard`; `TopicPanel` → `UiTopicCard`, `UiLessonList`; `TrackVisibility` → `UiModal` with `UiCheckbox`                                                  |
 | 10  | `/grills`, `/grills/[id]`                                                 | `app`   | `grill`                                    | list and specimen share `UiGrillRow` for the date, title and status. Session and specimen share `UiGrillBench`, `UiGrillAnswer`, `UiGrillJudgment` and `UiGrillSummary`              |
 | 11  | `/u/[login]`, `/u/[login]/[slug]`, `/u/[login]/[slug]/lessons/[lessonId]` | `site`  | `public-profile`, `public-track`, `lesson` | `ForkedFrom` → `UiForkedFrom`; page markup → `UiTrackMap` with `outline`, `UiForkButton`, `UiTrackCard`, `UiLessonList`                                                              |
+| 12  | `/signin`, `/signin/link`                                                 | `focus` | `signin`                                   | The page and specimen share `UiSignInPanel` for the email and GitHub-only states. Settings uses `UiSignInMethods`.                                                                   |
 
 Notes for single steps:
 
@@ -110,3 +111,5 @@ The design entry point imports `reset.css` for element defaults. `UiRoot` retain
 - `pnpm check`, `pnpm test` and `pnpm build` pass.
 - `apps/web/test/cascade.mjs` reports no order-dependent declarations for the page.
 - The page looks the same in `pnpm dev` and in the production build.
+
+Run `node apps/web/test/screenshots.mjs --signin --cascade` for the Sign-in flow at 390px and 1440px. After `pnpm build`, run with `--signin` to exercise code and link sign-in in the browser, capture both rendered emails, and check the GitHub-only page on a production server without SMTP. Set `SCREENSHOT_DIR` for the output directory.

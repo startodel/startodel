@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { screens } from "../../../components/showcase/screens";
 import {
+  ShowcaseScreensSignin,
   ShowcaseScreensConnect,
   ShowcaseScreensDashboard,
   ShowcaseScreensGrill,
@@ -17,6 +18,7 @@ import {
 } from "#components";
 definePageMeta({ middleware: "design" });
 const views = {
+  signin: ShowcaseScreensSignin,
   landing: ShowcaseScreensLanding,
   "public-track": ShowcaseScreensPublicTrack,
   "public-profile": ShowcaseScreensPublicProfile,

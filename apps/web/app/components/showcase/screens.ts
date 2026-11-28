@@ -11,6 +11,19 @@ export interface ScreenInfo {
 }
 export const screens: ScreenInfo[] = [
   {
+    id: "signin",
+    title: "Sign in",
+    group: "Getting started",
+    route: "/signin",
+    note: "Email and GitHub sign-in.",
+    states: [
+      { id: "email", label: "Email" },
+      { id: "code", label: "Code" },
+      { id: "expired", label: "Expired link" },
+      { id: "unavailable", label: "Email unavailable" },
+    ],
+  },
+  {
     id: "landing",
     title: "Landing",
     group: "Public",

@@ -6,7 +6,7 @@ const logout = useLogout();
 </script>
 <template>
   <UiRoot>
-    <UiFocusLayout home="/dashboard" :width="connect ? 'md' : 'sm'">
+    <UiFocusLayout :home="user ? '/dashboard' : '/'" :width="connect ? 'md' : 'sm'">
       <template #actions>
         <UiButton v-if="connect" variant="ghost" size="sm" to="/dashboard">{{
           $t("agent.skip")
@@ -20,9 +20,10 @@ const logout = useLogout();
             $t("nav.logout")
           }}</UiButton>
         </template>
+        <UiLanguageSwitcher v-else />
       </template>
       <slot />
-      <template v-if="!connect" #footer>{{ $t("onboarding.privacy") }}</template>
+      <template v-if="!connect && user" #footer>{{ $t("onboarding.privacy") }}</template>
     </UiFocusLayout>
   </UiRoot>
 </template>

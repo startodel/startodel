@@ -1,7 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { CallToolResultSchema } from "@modelcontextprotocol/sdk/types.js";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { fork, type ChildProcess } from "node:child_process";
 import { once } from "node:events";
 import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createDatabase, forUser } from "@startodel/db";
 import en from "../i18n/locales/en.json";
 import ru from "../i18n/locales/ru.json";
+import { emailHttpTests, type CapturedMail } from "./email-http";
 import { localGitHub } from "./github";
 import { publicHttpTests } from "./public-http";
 import { practiceHttpTests } from "./practice-http";
@@ -16,6 +17,7 @@ import { learningMcpTests } from "./learning-mcp";
 
 const url = process.env.DATABASE_URL_TEST;
 describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
+  const sessionSecret = randomBytes(32).toString("hex");
   const publicOrigin = "https://startodel.example";
   let app: ChildProcess;
   let origin: string;
@@ -33,6 +35,12 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
     });
   }
 
+  const mail = new Map<string, CapturedMail>();
+  emailHttpTests(
+    () => ({ db, origin, publicOrigin, mail, githubEmail: github.email, sessionSecret }),
+    request,
+    signIn,
+  );
   publicHttpTests(() => ({ db, origin }), request, signIn);
   practiceHttpTests(() => ({ db, origin }), request, signIn);
 
@@ -65,6 +73,10 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       env: {
         ...process.env,
         DATABASE_URL: url,
+        TRUST_PROXY_IP: undefined,
+        MAIL_TRANSPORT: "capture",
+        NODE_ENV: "test",
+        SMTP_HOST: "",
         NUXT_OAUTH_GITHUB: JSON.stringify({
           clientId: "test-client",
           clientSecret: "test-secret",
@@ -73,8 +85,11 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
           apiURL: github.origin,
         }),
         NUXT_OAUTH_GITHUB_REDIRECT_URL: publicOrigin + "/auth/github",
-        NUXT_APP_SECRET: "test-only-session-password-at-least-32-characters",
+        NUXT_APP_SECRET: sessionSecret,
       },
+    });
+    app.on("message", (message: { mail?: CapturedMail }) => {
+      if (message.mail) mail.set(message.mail.to, message.mail);
     });
     const [{ port }] = await Promise.race([
       once(app, "message"),
@@ -135,12 +150,12 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
   test("guests see the Landing and logout expires the sealed Session", async () => {
     expect((await request("/")).status).toBe(200);
     for (const [path, label] of [
-      ["/ru", "Войти через GitHub"],
-      ["/", "Sign in with GitHub"],
+      ["/ru", "Войти"],
+      ["/", "Sign in"],
     ] as const) {
       const html = await (await request(path)).text();
       expect(html).toContain(label);
-      expect(html).toMatch(/<a\b[^>]*href="\/auth\/github"[^>]*>[\s\S]*?<\/a>/);
+      expect(html).toMatch(/<a\b[^>]*href="(?:\/ru)?\/signin"[^>]*>[\s\S]*?<\/a>/);
       expect(html.match(/id="s-layer"/g)).toHaveLength(1);
     }
     expect((await request("/?from=link", "startodel_language=ru")).headers.get("location")).toBe(

@@ -11,6 +11,8 @@ test.skipIf(!url)("the migrations create all learning and account tables", async
       "select tablename from pg_tables where schemaname = 'public' order by tablename",
     );
     expect(tables.rows.map((row) => row.tablename)).toEqual([
+      "auth_rate_events",
+      "email_challenges",
       "grill_questions",
       "grill_sessions",
       "lesson_progress",
@@ -141,6 +143,15 @@ test.skipIf(!url)(
         select t.user_id,s.id,t.id,1,'Why?', 'partial',now() from topics t
         join grill_sessions s on s.user_id=t.user_id where t.slug='grill'`);
       await apply("0010_progress_review_results");
+      const beforeEmail = await client.query("select id,github_id,handle from users order by id");
+      await apply("0011_email_sign_in");
+      expect(
+        (
+          await client.query(
+            "select id,github_id,handle from users where email is null order by id",
+          )
+        ).rows,
+      ).toEqual(beforeEmail.rows);
       const history = await client.query(`select t.slug,r.scheduled_for,r.verdict
         from review_results r join topics t on t.user_id=r.user_id and t.id=r.topic_id`);
       expect(history.rows).toEqual([{ slug: "review", scheduled_for: null, verdict: "partial" }]);

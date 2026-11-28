@@ -9,10 +9,17 @@ export function createDatabase(url: string) {
 }
 
 export type Database = ReturnType<typeof createDatabase>;
-export { signInWithGitHub, type GitHubIdentity } from "./sign-in.ts";
+export {
+  signInWithGitHub,
+  SignInConflict,
+  normalizeEmail,
+  type GitHubIdentity,
+} from "./sign-in.ts";
 export { forUser } from "./for-user.ts";
 export { resolveMcpToken } from "./mcp-tokens.ts";
 
 // Both the pool and an open transaction implement this query interface.
 export type Connection = Omit<Database, "$client">;
 export { publicReader } from "./public.ts";
+
+export { allowEmailRequest, issueEmailChallenge, verifyEmailChallenge } from "./email-challenge.ts";

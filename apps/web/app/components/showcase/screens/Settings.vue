@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PublicProfilePatch } from "@startodel/core";
 import type { ProfileSettings } from "../../ui/PublicProfileSettings.vue";
+import { specimenEmailActions } from "../signin";
 import { specimenSettings } from "../public-profile";
 import type { TableColumn } from "../../ui/Table.vue";
 import {
@@ -51,6 +52,18 @@ function revoke() {
         description="Your Profile, the agents that can act for you, and how Startodel looks."
       />
 
+      <section class="group" id="sign-in-settings">
+        <header class="group__head">
+          <h2 class="group__title">{{ $t("signin.methods") }}</h2>
+        </header>
+        <div class="group__body">
+          <UiSignInMethods
+            specimen
+            :methods="{ email: 'learner@example.org', github: null }"
+            :actions="specimenEmailActions"
+          />
+        </div>
+      </section>
       <section class="group" aria-labelledby="set-tokens">
         <header class="group__head">
           <h2 id="set-tokens" class="group__title">MCP Tokens</h2>

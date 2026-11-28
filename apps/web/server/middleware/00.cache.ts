@@ -22,7 +22,7 @@ export default defineHandler((event) => {
     );
   } else if (
     path !== pathname ||
-    /^\/(dashboard|settings|onboarding|tracks|lessons|topics|grills|reviews|progress|mcp|api)(\/|$)/i.test(
+    /^\/(signin|auth|dashboard|settings|onboarding|tracks|lessons|topics|grills|reviews|progress|mcp|api)(\/|$)/i.test(
       path,
     )
   ) {

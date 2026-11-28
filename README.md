@@ -8,7 +8,7 @@ You study Lessons made of typed blocks: theory, code, production callouts, links
 
 The project is free to use with your own agent. You can [self-host](#quick-start) it, or use the cloud at [startodel.ru](https://startodel.ru) with GitHub login.
 
-**Status: early.** GitHub sign-in gives each user a private profile and tracks. An external agent can build track graphs, write lessons, record progress, and run grill sessions with a personal MCP token. After sign-in, answer three questions about your stack, goals and grade, then connect your agent or skip to the dashboard. Open a Track to explore prerequisites and select a Topic. Its Lessons support reading, scored Quizzes and Exercises with hints and solutions.
+**Status: early.** Sign in with email or GitHub to open your learning workspace. An email sign-in message contains a one-time code and link, each valid for 15 minutes. An external agent can build track graphs, write lessons, record progress, and run grill sessions with a personal MCP token. After sign-in, answer three questions about your stack, goals and grade, then connect your agent or skip to the dashboard. Open a Track to explore prerequisites and select a Topic. Its Lessons support reading, scored Quizzes and Exercises with hints and solutions.
 
 - Cloud: [startodel.ru](https://startodel.ru)
 - [Connect your agent](#connect-your-agent)
@@ -122,7 +122,7 @@ To run the migration and isolation tests, set `DATABASE_URL_TEST` to a dedicated
 
 ## Deploy
 
-Run Startodel as a single Docker image with a separate PostgreSQL database. The [deployment guide](docs/deploy.md) covers Docker, Dokploy, HTTPS, GitHub sign-in and startup migrations.
+Run Startodel as a single Docker image with a separate PostgreSQL database. The [deployment guide](docs/deploy.md) covers Docker, Dokploy, HTTPS, SMTP delivery, GitHub sign-in and startup migrations.
 
 ## Connect your agent
 

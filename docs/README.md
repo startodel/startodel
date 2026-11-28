@@ -22,3 +22,4 @@
 - [ADR 0015 — Public read layer](adr/0015-public-read-layer.md) — public projections, Forks and Terms Acceptance.
 - [ADR 0016 — Internationalisation](adr/0016-internationalisation.md) — Russian and English routes, language preferences and content authorship.
 - [ADR 0017 — Design system](adr/0017-design-system.md) — tokens, themes, fonts, component placement, the behaviour layer and the showcase.
+- [ADR 0018 — Email sign-in](adr/0018-email-sign-in.md) — Email Challenges, account linking, rate limits and transactional mail.

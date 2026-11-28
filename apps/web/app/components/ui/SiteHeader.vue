@@ -42,12 +42,11 @@ defineEmits<{ signIn: [] }>();
         }}</UiButton>
         <UiButton
           v-else
-          :to="signIn"
-          :href="signIn ? undefined : '/auth/github'"
+          :to="signIn ?? '/signin'"
           target="_self"
           @click="$emit('signIn')"
           size="sm"
-          icon="github"
+          icon-right="arrow-right"
           >{{ $t("nav.signIn") }}</UiButton
         >
       </div>

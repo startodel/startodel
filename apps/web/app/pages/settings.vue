@@ -17,6 +17,34 @@ const {
   revokeToken,
 } = useMcpTokens();
 const me = useMe();
+const session = useUserSession();
+const {
+  data: methods,
+  refresh: refreshMethods,
+  error: methodsError,
+} = await useFetch("/api/sign-in");
+const { data: emailStatus } = await useFetch("/api/auth/email/status");
+const emailActions = useEmailActions(true);
+const signInError = useSignInError();
+const route = useRoute();
+const methodMessage = ref(
+  route.query.error === "conflict"
+    ? t("signin.conflict")
+    : route.query.error
+      ? t("login.error")
+      : "",
+);
+async function unlinkGitHub() {
+  methodMessage.value = "";
+  try {
+    await $fetch("/api/sign-in/github", { method: "DELETE" });
+    await refreshMethods();
+    await session.fetch();
+    me.value = await fetchMe();
+  } catch (e) {
+    methodMessage.value = signInError(e);
+  }
+}
 const {
   data: settings,
   refresh: refreshSettings,
@@ -48,6 +76,23 @@ function confirmRevoke() {
 <template>
   <div class="settings">
     <UiPageHeader :title="$t('nav.settings')" :description="$t('settings.intro')" />
+    <section class="group" id="sign-in-settings">
+      <header class="group__head"><h2 class="group__title">{{ $t("signin.methods") }}</h2></header>
+      <div class="group__body">
+        <UiSignInMethods
+          v-if="methods"
+          :methods="methods"
+          :actions="emailStatus?.available ? emailActions : undefined"
+          @changed="refreshMethods()"
+          @unlink="unlinkGitHub"
+        />
+        <UiNotice
+          v-if="methodsError || methodMessage"
+          tone="danger"
+          :title="methodMessage || $t('common.error')"
+        />
+      </div>
+    </section>
     <section class="group">
       <header class="group__head">
         <h2 class="group__title">{{ $t("token.title") }}</h2>
