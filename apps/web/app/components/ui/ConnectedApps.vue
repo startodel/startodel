@@ -1,14 +1,20 @@
 <script setup lang="ts">
-defineProps<{
-  connections: {
-    id: string;
-    name: string | null;
-    host: string;
-    createdAt: string;
-    lastUsedAt: string;
-  }[];
-  busy?: boolean;
-}>();
+import type { LinkTarget } from "./nav";
+withDefaults(
+  defineProps<{
+    connections: {
+      id: string;
+      name: string | null;
+      host: string;
+      createdAt: string;
+      lastUsedAt: string;
+    }[];
+    busy?: boolean;
+    /** Where an Owner with no Connection goes to make one. */
+    connectTo?: LinkTarget;
+  }>(),
+  { connectTo: "/onboarding/connect" },
+);
 defineEmits<{ disconnect: [id: string] }>();
 const date = useDisplayDate();
 </script>
@@ -28,7 +34,13 @@ const date = useDisplayDate();
       }}</UiButton>
     </li>
   </ul>
-  <UiEmptyState v-else :title="$t('oauth.empty')" icon="key" compact />
+  <UiEmptyState v-else :title="$t('oauth.empty')" icon="plug" compact>
+    <template #actions
+      ><UiButton size="sm" icon="plug" :to="connectTo">{{
+        $t("dashboard.connect")
+      }}</UiButton></template
+    >
+  </UiEmptyState>
 </template>
 <style scoped>
 .s-connections {
