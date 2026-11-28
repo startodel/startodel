@@ -826,7 +826,7 @@
   "access": {
     "private": "Private",
     "public": "Public",
-    "gated": "By access",
+    "gated": "By request",
     "syllabus": "Syllabus",
     "previews": "{n} preview | {n} previews",
     "readCount": "{n} read",
