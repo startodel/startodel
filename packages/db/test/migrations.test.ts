@@ -19,6 +19,7 @@ test.skipIf(!url)("the migrations create all learning and account tables", async
       "profiles",
       "quiz_attempts",
       "review_items",
+      "review_results",
       "topic_edges",
       "topic_mastery",
       "topics",
@@ -129,6 +130,20 @@ test.skipIf(!url)(
         { handle: "Mixed-Case" },
         { handle: "learner-2" },
       ]);
+      await client.query(`insert into topics(user_id,slug,title)
+        select id, slug, slug from users cross join (values ('review'),('grill')) as sample(slug)
+        where github_id=1`);
+      await client.query(`insert into review_items(user_id,topic_id,box,due_at,last_reviewed_at,last_result)
+        select user_id,id,0,now()+interval '1 day',now(),'partial' from topics`);
+      await client.query(`insert into grill_sessions(user_id,title)
+        select id,'Locks' from users where github_id=1`);
+      await client.query(`insert into grill_questions(user_id,session_id,topic_id,position,prompt,verdict,judged_at)
+        select t.user_id,s.id,t.id,1,'Why?', 'partial',now() from topics t
+        join grill_sessions s on s.user_id=t.user_id where t.slug='grill'`);
+      await apply("0010_progress_review_results");
+      const history = await client.query(`select t.slug,r.scheduled_for,r.verdict
+        from review_results r join topics t on t.user_id=r.user_id and t.id=r.topic_id`);
+      expect(history.rows).toEqual([{ slug: "review", scheduled_for: null, verdict: "partial" }]);
       const column = await client.query(
         "select is_nullable from information_schema.columns where table_schema='learning_upgrade' and table_name='tracks' and column_name='language'",
       );

@@ -15,6 +15,10 @@ const props = defineProps<{
   /** Names the table for assistive technology. */
   caption: string;
   dense?: boolean;
+  sortLocale?: string;
+  /** Apply pagination after sorting the complete data set. */
+  page?: number;
+  perPage?: number;
 }>();
 const sort = defineModel<{ key: string; dir: "asc" | "desc" } | undefined>("sort");
 const sorted = computed(() => {
@@ -27,9 +31,16 @@ const sorted = computed(() => {
     if (x == null || y == null) return x == null ? (y == null ? 0 : 1) : -1;
     return (
       sign *
-      (typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y)))
+      (typeof x === "number" && typeof y === "number"
+        ? x - y
+        : String(x).localeCompare(String(y), props.sortLocale))
     );
   });
+});
+const visibleRows = computed(() => {
+  if (!props.perPage) return sorted.value;
+  const start = ((props.page ?? 1) - 1) * props.perPage;
+  return sorted.value.slice(start, start + props.perPage);
 });
 function toggle(key: string) {
   sort.value =
@@ -78,7 +89,7 @@ const ariaSort = (key: string) =>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="row in sorted" :key="rowKey(row)">
+        <tr v-for="row in visibleRows" :key="rowKey(row)">
           <component
             :is="i ? 'td' : 'th'"
             v-for="(c, i) in columns"

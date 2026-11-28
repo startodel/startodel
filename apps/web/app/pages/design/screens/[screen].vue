@@ -45,18 +45,20 @@ const state = computed({
 });
 /** ?chrome=0 hides the showcase bar, for screenshots. */
 const chrome = computed(() => route.query.chrome !== "0");
-useHead({ title: () => "Screen · " + (screen.value?.title ?? "") });
+const { t } = useI18n();
+const title = computed(() =>
+  screen.value?.id === "progress" ? t("nav.progress") : (screen.value?.title ?? ""),
+);
+useHead({ title: () => t("showcase.screenTitle", { title: title.value }) });
 </script>
 <template>
   <ShowcaseRoot>
     <div v-if="screen" class="screen" :class="{ 'screen--bare': !chrome }">
       <header v-if="chrome" class="screen__bar">
         <NuxtLinkLocale to="/design/screens" class="screen__back"
-          ><UiIcon name="arrow-left" :size="14" />Screens</NuxtLinkLocale
+          ><UiIcon name="arrow-left" :size="14" />{{ $t("showcase.screens") }}</NuxtLinkLocale
         >
-        <p class="screen__name">
-          <strong>{{ screen.title }}</strong><span>{{ screen.route }}</span>
-        </p>
+        <p class="screen__name"><strong>{{ title }}</strong><span>{{ screen.route }}</span></p>
         <UiSelect
           v-if="screen.states"
           v-model="state"

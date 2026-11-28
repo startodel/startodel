@@ -110,6 +110,9 @@ const progress = computed(() =>
 .s-bench {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: var(--s-bench-measure);
+  margin-inline: auto;
   gap: var(--s-6);
 }
 .s-bench__head {

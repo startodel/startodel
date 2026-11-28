@@ -256,6 +256,22 @@ export const reviewItems = pgTable(
   ],
 );
 
+// Keep the due time that applied before this result rescheduled the ReviewItem.
+export const reviewResults = pgTable(
+  "review_results",
+  {
+    ...ownedColumns(),
+    topicId: uuid("topic_id").notNull(),
+    scheduledFor: time("scheduled_for"),
+    verdict: verdictColumn("verdict").notNull(),
+  },
+  (t) => [
+    parentKey(t.userId, t.topicId, topics),
+    validVerdict("review_results_verdict_check", t.verdict),
+    index("review_results_owner_time_idx").on(t.userId, t.createdAt),
+  ],
+);
+
 export const grillSessions = pgTable(
   "grill_sessions",
   {

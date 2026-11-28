@@ -207,20 +207,38 @@ const replay = ref(0);
           </p>
         </article>
       </div>
-      <ShowcaseSpecimen label="Type scale" layout="block">
-        <table class="ramp">
-          <tbody>
-            <tr v-for="[name, size, use, sampleClass] in typeScale" :key="name">
-              <th class="s-mono">--s-text-{{ name }}</th>
-              <td class="s-mono s-muted">{{ size }}</td>
-              <td>
-                <span :class="sampleClass" :style="{ fontSize: `var(--s-text-${name})` }">{{
-                  use
-                }}</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <ShowcaseSpecimen :label="$t('showcase.typeScale')" layout="block">
+        <UiTable
+          :caption="$t('showcase.typeScale')"
+          :rows="
+            typeScale.map(([name, size, sample, sampleClass]) => ({
+              name,
+              size,
+              sample,
+              sampleClass,
+            }))
+          "
+          :row-key="(row) => row.name"
+          :columns="[
+            { key: 'name', label: $t('showcase.token') },
+            { key: 'size', label: $t('showcase.size') },
+            { key: 'sample', label: $t('showcase.sample') },
+          ]"
+        >
+          <template #cell-name="{ row }"
+            ><span class="s-mono">--s-text-{{ row.name }}</span></template
+          >
+          <template #cell-size="{ row }"
+            ><span class="s-mono s-muted">{{ row.size }}</span></template
+          >
+          <template #cell-sample="{ row }"
+            ><span
+              :class="row.sampleClass"
+              :style="{ fontSize: 'var(--s-text-' + row.name + ')' }"
+              >{{ row.sample }}</span
+            ></template
+          >
+        </UiTable>
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Prose" note=".s-prose styles rendered Markdown" layout="block">
         <div class="s-prose">
@@ -495,22 +513,6 @@ const replay = ref(0);
 .voice__note {
   font-size: var(--s-text-sm);
   color: var(--s-ink-3);
-}
-.ramp {
-  width: 100%;
-  border-collapse: collapse;
-}
-.ramp :is(th, td) {
-  padding: var(--s-2) var(--s-4) var(--s-2) 0;
-  border-bottom: 1px solid var(--s-line);
-  text-align: left;
-  vertical-align: baseline;
-  font-weight: 400;
-  white-space: nowrap;
-}
-.ramp td:last-child {
-  width: 100%;
-  white-space: normal;
 }
 .ramp__sample {
   line-height: 1.15;

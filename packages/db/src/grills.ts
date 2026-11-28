@@ -260,7 +260,7 @@ export function grillsForUser(db: Connection, userId: string) {
           .where(answered)
           .returning();
         if (question?.topicId && verdict !== "strong")
-          await recordReview(tx, userId, question.topicId, verdict, feedback);
+          await recordReview(tx, userId, question.topicId, verdict, feedback, "grill");
         return question;
       });
     },

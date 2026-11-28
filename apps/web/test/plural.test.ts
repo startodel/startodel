@@ -179,3 +179,40 @@ test("Grill question tags and pad labels follow the interface locale", () => {
     vi.unstubAllGlobals();
   }
 });
+
+test("Progress localizes Topic references, mastered counts and Grill answer counts", () => {
+  const i18n = messages();
+  vi.stubGlobal("useI18n", () => i18n);
+  try {
+    const tag = useIndexTag();
+    const args = (count: number) => ({ count, n: String(count), total: "27" });
+    expect(tag("topic", 1)).toBe("Т01");
+    expect([1, 2, 11, 21, 22].map((n) => i18n.t("progress.masteredOf", args(n)))).toEqual([
+      "1 из 27 освоена",
+      "2 из 27 освоены",
+      "11 из 27 освоено",
+      "21 из 27 освоена",
+      "22 из 27 освоены",
+    ]);
+    expect([1, 2, 5, 11].map((n) => i18n.t("progress.catalog", args(n)))).toEqual([
+      "1 тема в вашем каталоге",
+      "2 темы в вашем каталоге",
+      "5 тем в вашем каталоге",
+      "11 тем в вашем каталоге",
+    ]);
+    const breakdown = () =>
+      i18n.t("progress.answerBreakdown", {
+        strong: i18n.t("progress.strong", args(21)),
+        partial: i18n.t("progress.partial", args(2)),
+        weak: i18n.t("progress.weak", args(11)),
+      });
+    expect(breakdown()).toBe("21 сильный · 2 неполных · 11 слабых");
+    i18n.locale.value = "en";
+    expect(tag("topic", 1)).toBe("T01");
+    expect(i18n.t("progress.masteredOf", args(2))).toBe("2 of 27 mastered");
+    expect(i18n.t("progress.catalog", args(1))).toBe("1 Topic in your Topic Catalog");
+    expect(breakdown()).toBe("21 strong · 2 partial · 11 weak");
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});

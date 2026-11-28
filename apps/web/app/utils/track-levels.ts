@@ -1,13 +1,20 @@
+import { studyOrder } from "@startodel/core";
+
 export function trackLevels(
-  topics: { level: number; tracks: { id: string; ordinal: number }[] }[],
+  topics: { id: string; level: number; tracks: { id: string; ordinal: number }[] }[],
+  edges: { from: string; to: string }[],
 ) {
-  const levels = new Map<string, number[]>();
+  const members = new Map<string, { id: string; level: number }[]>();
   for (const topic of topics) {
     for (const { id, ordinal } of topic.tracks) {
-      const track = levels.get(id) ?? [];
-      track[ordinal - 1] = topic.level;
-      levels.set(id, track);
+      const track = members.get(id) ?? [];
+      track[ordinal - 1] = topic;
+      members.set(id, track);
     }
   }
-  return levels;
+  return new Map(
+    [...members].map(
+      ([id, track]) => [id, studyOrder(track, edges).map((topic) => topic.level)] as const,
+    ),
+  );
 }

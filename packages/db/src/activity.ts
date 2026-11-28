@@ -14,17 +14,19 @@ type Activity = {
     | "Mastery";
   title: string;
   detail: string | null;
-  at: Date;
+  at: string;
   topicId: string | null;
 };
 type TopicProgress = {
+  ordinal: number;
+  nextReview: string | null;
   id: string;
   title: string;
   level: MasteryLevel;
   tracks: { id: string; title: string; ordinal: number }[];
   read: number;
   lessons: number;
-  lastActivity: Date | null;
+  lastActivity: string | null;
 };
 
 export async function topicActivity(tx: Transaction, userId: string) {
@@ -54,10 +56,19 @@ export async function topicActivity(tx: Transaction, userId: string) {
       select l.topic_id,count(*)::int as lessons,count(p.read_at)::int as read
       from lessons l left join lesson_progress p on p.user_id=${userId} and p.lesson_id=l.id where l.user_id=${userId} group by l.topic_id
     )
-    select t.id,t.title,coalesce(m.level,0) as level,coalesce(membership.tracks,'[]'::json) as tracks,
+    select t.id,t.title,(row_number() over (order by t.created_at,t.id))::int as ordinal,
+      r.due_at as "nextReview",coalesce(m.level,0) as level,coalesce(membership.tracks,'[]'::json) as tracks,
       coalesce(reading.lessons,0) as lessons,coalesce(reading.read,0) as read,latest.at as "lastActivity"
     from topics t left join topic_mastery m on m.user_id=${userId} and m.topic_id=t.id
+      left join review_items r on r.user_id=${userId} and r.topic_id=t.id
       left join membership on membership.topic_id=t.id left join reading on reading.topic_id=t.id
       left join latest on latest."topicId"=t.id where t.user_id=${userId} order by t.title,t.id`);
-  return { perTopic, activity };
+  return {
+    perTopic: perTopic.map((row) => ({
+      ...row,
+      lastActivity: row.lastActivity ? new Date(row.lastActivity) : null,
+      nextReview: row.nextReview ? new Date(row.nextReview) : null,
+    })),
+    activity: activity.map((row) => ({ ...row, at: new Date(row.at) })),
+  };
 }

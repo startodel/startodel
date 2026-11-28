@@ -22,7 +22,7 @@ const { push: notify } = useToast();
     :crumbs="crumbs"
     :flush="flush"
     :home="screenPath('dashboard')"
-    @logout="notify({ title: 'Signed out', text: 'This is a mock screen.' })"
+    @logout="notify({ title: $t('showcase.signedOut'), text: $t('showcase.mock') })"
   >
     <template #actions><slot name="actions" /></template>
     <slot />
