@@ -147,9 +147,18 @@ function confirmRevoke() {
             <UiAvatar :name="row.learner.handle" :src="row.learner.avatarUrl" :size="24" />
             <span class="s-grants__name">
               <bdi class="s-grants__handle">@{{ row.learner.handle }}</bdi>
-              <span v-if="narrow" class="s-grants__since">
-                {{ t("access.since", { date: displayDate(row.grantedAt) }) }}
-              </span>
+              <template v-if="narrow">
+                <span class="s-grants__since">
+                  {{ t("access.since", { date: displayDate(row.grantedAt) }) }}
+                </span>
+                <span class="s-grants__since">
+                  {{
+                    row.lastActiveAt
+                      ? t("access.lastActiveOn", { date: displayDate(row.lastActiveAt) })
+                      : t("access.never")
+                  }}
+                </span>
+              </template>
             </span>
           </span>
         </template>

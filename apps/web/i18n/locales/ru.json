@@ -869,6 +869,7 @@
     "grantedOn": "Доступ с",
     "since": "Доступ с {date}",
     "lastActive": "Последняя активность",
+    "lastActiveOn": "Активность: {date}",
     "never": "Ещё не заходил",
     "manage": "Действие",
     "revoke": "Закрыть доступ",
