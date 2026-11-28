@@ -90,6 +90,12 @@ export const icons = {
   file: path("M4 2h5.5l3 3v9H4zM9.5 2v3h3"),
   pad: dot(8, 8, 3.25),
   "pad-on": `<circle cx="8" cy="8" r="4" fill="currentColor" stroke="none"/>`,
+  comment: path("M2.5 3h11v8H7.5l-3 2.5V11h-2z"),
+  reply: path("M6.5 4 2.5 8l4 4M2.5 8h7a4 4 0 0 1 4 4v.5"),
+  unclear: dot(8, 8, 6) + path("M6.2 6.5a1.8 1.8 0 1 1 2.7 1.6c-.6.3-.9.7-.9 1.3M8 11.4v.1"),
+  "link-off": path(
+    "M7 4.5l1-1a2.8 2.8 0 0 1 4 4l-1 1M9 11.5l-1 1a2.8 2.8 0 0 1-4-4l1-1M2.5 2.5l11 11",
+  ),
 } as const;
 
 export type IconName = keyof typeof icons;
