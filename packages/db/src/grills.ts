@@ -1,4 +1,10 @@
-import { AnswerSource, DEFAULT_GRILL_SIZE, type MasteryLevel, Verdict } from "@startodel/core";
+import {
+  AnswerSource,
+  DEFAULT_GRILL_SIZE,
+  NonemptyText,
+  type MasteryLevel,
+  Verdict,
+} from "@startodel/core";
 import { and, count, desc, eq, inArray, isNotNull, isNull, lte, max, sql } from "drizzle-orm";
 import type { Connection } from "./index.ts";
 import { recordReview, reviewItemFields } from "./mastery.ts";
@@ -39,7 +45,7 @@ export function grillsForUser(db: Connection, userId: string) {
   ) {
     return connection
       .insert(grillSessions)
-      .values({ userId, trackId, title, targetSize })
+      .values({ userId, trackId, title: NonemptyText.parse(title), targetSize })
       .returning();
   }
   function rankedCandidates(tx: Transaction, trackId: string | undefined, limit: number) {
@@ -145,6 +151,14 @@ export function grillsForUser(db: Connection, userId: string) {
   return {
     startGrill(input: GrillInput) {
       return referencedRow(insertGrill(db, input));
+    },
+    async updateGrill(id: string, title: string) {
+      const [session] = await db
+        .update(grillSessions)
+        .set({ title: NonemptyText.parse(title), updatedAt: new Date() })
+        .where(ownedId(grillSessions, userId, id))
+        .returning();
+      return session;
     },
     startGrillWithCandidates(input: GrillInput) {
       return referencedRow(

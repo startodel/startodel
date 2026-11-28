@@ -526,6 +526,39 @@ export function learningMcpTests(
       });
     });
 
+    test("Grill writes keep supplied titles and warn about entity prefixes", async () => {
+      const { call } = await connect();
+      const title = "Разбор: JSX, компоненты и состояние в React 19";
+      const { session, warnings } = await call("start_grill", { title });
+      const url = environment().publicOrigin + "/grills/" + session.id;
+      expect(session).toMatchObject({ title, url });
+      expect(warnings).toEqual([expect.stringContaining("subject")]);
+      for (const prefixed of [
+        "  оПрОс — HTTP",
+        "GRILL:React",
+        "Quiz–Timers",
+        "разбор JSX",
+        "Тест",
+      ]) {
+        const result = await call("update_grill", { sessionId: session.id, title: prefixed });
+        expect(result).toMatchObject({ id: session.id, title: prefixed, url, warnings });
+      }
+      for (const subject of [
+        "JSX in React 19",
+        "Grilling techniques",
+        "Разборка механизмов",
+        "Quizlet",
+      ]) {
+        const result = await call("update_grill", { sessionId: session.id, title: subject });
+        expect(result).toMatchObject({ id: session.id, title: subject, url });
+        expect(result).not.toHaveProperty("warnings");
+        expect((await call("get_grill", { sessionId: session.id })).title).toBe(subject);
+      }
+      expect(await call("start_grill", { title: "JSX in React 19" })).not.toHaveProperty(
+        "warnings",
+      );
+    });
+
     test("Lesson writes save the content and report advisory Markdown warnings", async () => {
       const { call } = await connect();
       await call("upsert_topics", { topics: [{ slug: "markup", title: "Markup" }] });
@@ -920,6 +953,7 @@ export function learningMcpTests(
             },
           ],
           ["get_grill", { sessionId }],
+          ["update_grill", { sessionId, title: "Foreign rename" }],
           ["finish_grill", { sessionId }],
           ["submit_grill_answer", { questionId, answer: "X" }],
           ["judge_grill_answer", { questionId, verdict: "strong" }],
@@ -958,6 +992,9 @@ export function learningMcpTests(
         ["add_edges", { edges: [{ from: "sql", to: "sql" }] }],
         ["add_grill_questions", { sessionId: id, questions: Array(31).fill(question) }],
         ["add_grill_questions", { sessionId: id, questions: [{ ...question, ownerId: id }] }],
+        ["start_grill", { title: "   " }],
+        ["update_grill", { sessionId: id, title: "   " }],
+        ["update_grill", { sessionId: id, title: "Title", ownerId: id }],
         ["judge_grill_answer", { questionId: id, verdict: "excellent" }],
         ["record_review_result", { topic: "sql", verdict: "wrong" }],
         ["set_mastery", { topic: "sql", level: 5 }],

@@ -1,4 +1,4 @@
-export type IndexTag = (kind: "topic" | "lesson" | "block", ordinal: number) => string;
+export type IndexTag = (kind: "topic" | "lesson" | "block" | "question", ordinal: number) => string;
 
 export function useIndexTag(): IndexTag {
   const { t } = useI18n();

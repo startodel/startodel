@@ -301,3 +301,25 @@ test("both Track board views use the shared layout and the narrow view uses the 
   }
   expect(sourceOf("components/ui/TrackBoard.vue")).toContain("<UiTrackList");
 });
+
+test("the Grill session and its specimen use one bench for progress, summary and navigation", () => {
+  for (const file of ["pages/grills/[id].vue", "components/showcase/screens/Grill.vue"]) {
+    const view = sourceOf(file);
+    expect(view, file).toContain("<UiGrillBench");
+    expect(view, file).not.toMatch(/<UiGrillStrip|<UiVerdictTally|bench__nav/);
+  }
+  const bench = sourceOf("components/ui/GrillBench.vue");
+  for (const tag of ["UiGrillStrip", "UiGrillSummary", "UiGrillQuestion"]) {
+    expect(bench).toContain("<" + tag);
+  }
+});
+
+test("the Grill list and sessions specimen share a linked row with its date and status", () => {
+  for (const file of ["pages/grills/index.vue", "components/showcase/screens/Grill.vue"]) {
+    const view = sourceOf(file);
+    expect(view, file).toContain("<UiGrillRow");
+    expect(view, file).not.toMatch(/sessions__|grill\.stats/);
+  }
+  const row = sourceOf("components/ui/GrillRow.vue");
+  for (const tag of ["NuxtLinkLocale", "time", "h2", "UiBadge"]) expect(row).toContain("<" + tag);
+});

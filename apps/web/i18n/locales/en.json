@@ -345,8 +345,6 @@
   "grill": {
     "finished": "Finished",
     "open": "Open",
-    "openSession": "Open session",
-    "stats": "{answered} answered · {judged} judged",
     "waitingCount": "{waiting} waiting for your agent",
     "unanswered": "{count} unanswered",
     "summary": "Session summary",
@@ -354,7 +352,6 @@
     "lessons": "{title} Lessons",
     "due": "Review due {date}",
     "allStrong": "No Topics with weak or partial Verdicts.",
-    "answered": "Questions answered",
     "answer": "Your answer",
     "waiting": "Waiting for your agent",
     "feedback": "Refresh feedback",
@@ -368,7 +365,6 @@
     "add": "Your agent adds the questions for this session.",
     "intro": "Answer in your own words. Your agent reads each answer and gives feedback.",
     "load": "Could not load grill sessions.",
-    "across": "Across Tracks",
     "none": "You have no grill sessions yet.",
     "start": "Start a grill session",
     "prompt": "Call start_grill for my next round, then use add_grill_questions to add questions for me.",
@@ -377,7 +373,7 @@
     "error": "Could not save your answer. Check the current question and try again.",
     "placeholder": "Explain it as you would to a colleague who will push back.",
     "submitKeys": "{keys} to submit",
-    "once": "You submit once. Your agent judges the answer, not this page.",
+    "once": "You submit once. Your agent judges the answer.",
     "viaAgent": "via your agent",
     "viaPage": "via this page",
     "verdictTitle": "Verdict",
@@ -385,9 +381,10 @@
     "lineStrong": "Holds under load.",
     "linePartial": "Carries signal, with gaps.",
     "lineWeak": "Open circuit. Revisit this.",
-    "pad": "Question {index}, {state}",
-    "judged": "Judged",
-    "pending": "Awaiting verdict"
+    "pad": "{tag}: {state}",
+    "progress": "{answered} · {judged}",
+    "answeredOf": "{n} of {total} answered",
+    "judgedCount": "{n} judged"
   },
   "quiz": {
     "right": "Correct",
@@ -590,6 +587,7 @@
   "indexPrefix": {
     "topic": "T",
     "lesson": "L",
-    "block": "B"
+    "block": "B",
+    "question": "Q"
   }
 }

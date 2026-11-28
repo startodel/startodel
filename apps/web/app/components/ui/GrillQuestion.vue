@@ -8,13 +8,14 @@ defineProps<{
   /** The Topic the question tests, when it has one. */
   topic?: { tag?: string; title: string };
 }>();
+const indexTag = useIndexTag();
 </script>
 <template>
   <article class="s-question">
     <header class="s-question__head">
       <p class="s-question__number">
-        <span>{{ "Q" + String(number).padStart(2, "0") }}</span
-        ><span class="s-question__total">/ {{ total }}</span>
+        <span>{{ indexTag("question", number) }}</span
+        ><span class="s-question__total">/ {{ $n(total) }}</span>
       </p>
       <p v-if="topic" class="s-question__topic">
         <span v-if="topic.tag" class="s-question__tag">{{ topic.tag }}</span>{{ topic.title }}
@@ -29,20 +30,19 @@ defineProps<{
   display: grid;
   gap: var(--s-5);
   min-width: 0;
+  max-width: 44rem;
 }
 .s-question__head {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--s-2) var(--s-4);
-  padding-bottom: var(--s-3);
-  border-bottom: 1px solid var(--s-line);
 }
 .s-question__number {
   display: flex;
   align-items: baseline;
   gap: var(--s-2);
-  font: 600 var(--s-text-xl) / 1 var(--s-font-mono);
+  font: 600 var(--s-text-sm) / 1 var(--s-font-mono);
   font-stretch: 75%;
   letter-spacing: -0.02em;
   color: var(--s-copper);
@@ -59,7 +59,6 @@ defineProps<{
   display: inline-flex;
   align-items: baseline;
   gap: var(--s-2);
-  margin-left: auto;
   font-family: var(--s-font-ui);
   font-stretch: normal;
   letter-spacing: 0;
@@ -67,8 +66,7 @@ defineProps<{
   color: var(--s-ink-2);
 }
 .s-question__prompt {
-  max-width: 44rem;
-  font: 500 clamp(1.25rem, 3.4cqi, 1.625rem) / 1.35 var(--s-font-read);
+  font: 500 clamp(var(--s-text-xl), 3.4cqi, var(--s-text-2xl)) / 1.35 var(--s-font-read);
   letter-spacing: -0.012em;
   text-wrap: pretty;
 }

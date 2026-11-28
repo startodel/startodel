@@ -66,7 +66,7 @@ Each Quiz Attempt has its own row. A Grill Question retains its answer and judgm
 | Topic                    | тема                                                                          |
 | Lesson                   | урок                                                                          |
 | Quiz / Practice Quiz     | тест / тренировочный тест                                                     |
-| Grill / GrillSession     | опрос                                                                         |
+| Grill / GrillSession     | разбор                                                                        |
 | Review                   | повторение                                                                    |
 | Mastery                  | уровень освоения                                                              |
 | Mastery 0–4              | Пока не знаю · Читал · Применяю · Могу объяснить · Знаю внутреннее устройство |

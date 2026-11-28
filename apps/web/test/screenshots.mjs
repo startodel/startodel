@@ -294,12 +294,6 @@ try {
       markdown: "Compare two performance.now() readings to measure how late the callback ran.",
     },
   );
-  const lesson = await owner.createLesson({
-    topicId: by.tasks.id,
-    title: "When does a timer run?",
-    summary: "Trace a timer callback through a single browser task.",
-    blocks,
-  });
   async function checkLesson(prefix, isPublic) {
     // The original fixture has no fenced starter. Both Lesson routes still offer an empty editor.
     const editor = page.getByRole("textbox", {
@@ -445,6 +439,13 @@ try {
       page.evaluate(() => window.dispatchEvent(new Event("focus"))),
     ]);
   }
+  // The dashboard specimen above shows a ready Topic that still needs its first Lesson.
+  const lesson = await owner.createLesson({
+    topicId: by.tasks.id,
+    title: "When does a timer run?",
+    summary: "Trace a timer callback through a single browser task.",
+    blocks,
+  });
   for (const path of ["/ru/dashboard", "/ru/progress", "/progress", "/dashboard"]) {
     await visit(path);
     const strip = page.locator(".s-trackstrip").filter({ hasText: track.title });
@@ -705,6 +706,12 @@ try {
     { topicId: by.tasks.id, prompt: "Can a timer interrupt synchronous JavaScript?" },
     { topicId: by.microtasks.id, prompt: "When do pending promise callbacks run?" },
     { topicId: by.rendering.id, prompt: "What can delay the next paint?" },
+    { topicId: by.tasks.id, prompt: "How would you measure the duration of a task?" },
+    { topicId: by.microtasks.id, prompt: "What happens if a microtask queues another microtask?" },
+    {
+      topicId: by.rendering.id,
+      prompt: "When would you schedule work with requestAnimationFrame?",
+    },
   ]);
   await owner.answerGrillQuestion(weak.id, "Yes, once its delay expires.", "ui");
   await owner.judgeGrillQuestion(
@@ -790,9 +797,103 @@ try {
       await visit(path);
       if (await page.locator(".s-editor").count())
         await page.locator(".s-editor .cm-content").first().waitFor();
-      await checkCascade(page, path);
+      await checkCascade(page, new URL(path, origin).pathname);
     }
     const previousViewport = page.viewportSize();
+    const frame = (selector) =>
+      page.locator(selector).evaluate((el) => {
+        const { x, width } = el.getBoundingClientRect();
+        return { x, width };
+      });
+    async function capture(name) {
+      if (!process.env.SCREENSHOT_DIR) return;
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+      await page.screenshot({ path: directory + "/" + name + ".png", animations: "disabled" });
+    }
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await visit("/lessons/" + lesson.id);
+      await page.evaluate(() => document.fonts.ready);
+      const lessonFrame = await frame(".lesson");
+      if (width === 1440) await capture("lesson-en-1440");
+      for (const locale of ["en", "ru"]) {
+        const prefix = locale === "en" ? "" : "/ru";
+        let listFrame;
+        for (const specimen of [false, true]) {
+          await visit(
+            prefix + (specimen ? "/design/screens/grill?state=sessions&chrome=0" : "/grills"),
+          );
+          await page.evaluate(() => document.fonts.ready);
+          const activeNav = page.locator('nav a[aria-current="page"]:visible');
+          assert.equal((await activeNav.textContent()).trim(), prefix ? "Разборы" : "Grills");
+          const row = page.locator(".s-grill-row__link").first();
+          assert.ok(await row.locator("time").innerText());
+          const headingBox = await row.getByRole("heading").boundingBox();
+          const badge = row.locator(".s-badge");
+          assert.equal((await badge.textContent()).trim(), prefix ? "Разбор идёт" : "Open");
+          const badgeBox = await badge.boundingBox();
+          assert.ok(headingBox.x + headingBox.width <= badgeBox.x);
+          const bounds = await frame(".s-grill-row:first-child");
+          if (specimen) assert.deepEqual(bounds, listFrame);
+          else listFrame = bounds;
+          await capture("grills-" + (specimen ? "specimen-" : "list-") + locale + "-" + width);
+          const path = specimen ? "/design/screens/grill?chrome=0" : "/grills/" + grill.id;
+          await visit(prefix + path);
+          await page.evaluate(() => document.fonts.ready);
+          assert.deepEqual(await frame(".s-bench__head"), lessonFrame);
+          assert.deepEqual(await frame(".s-strip"), lessonFrame);
+          const progress = page.locator(".s-bench").getByRole("status");
+          if (!specimen) {
+            assert.equal(
+              await progress.innerText(),
+              prefix ? "2 ответа из 6 · 1 оценён" : "2 of 6 answered · 1 judged",
+            );
+            const submit = page.getByRole("button", {
+              name: prefix ? "Отправить ответ" : "Submit answer",
+            });
+            assert.ok(await submit.isDisabled());
+            const field = page.getByRole("textbox", { name: prefix ? "Ваш ответ" : "Your answer" });
+            await field.fill(
+              prefix
+                ? "Долгая задача в основном потоке задержит отрисовку кадра."
+                : "A long task on the main thread can delay painting the next frame.",
+            );
+            await field.blur();
+            assert.ok(await submit.isEnabled());
+          }
+          const index = specimen ? "07" : "03";
+          const tagPrefix = prefix ? "В" : "Q";
+          assert.equal(
+            await page.locator(".s-question__number span").first().innerText(),
+            tagPrefix + index,
+          );
+          for (const [pad, number] of [
+            [page.locator(".s-strip__pad").first(), "01"],
+            [page.locator(".s-strip [aria-current]"), index],
+          ]) {
+            const label = await pad.getAttribute("aria-label");
+            assert.ok(label.startsWith(tagPrefix + number + ": "));
+            assert.equal(await pad.getAttribute("title"), label);
+          }
+          const first = page.getByRole("button", {
+            name: prefix ? "К первому вопросу без ответа" : "First unanswered",
+            exact: true,
+          });
+          assert.equal(await first.count(), 0);
+          const name = "grill-" + (specimen ? "specimen-" : "session-") + locale + "-" + width;
+          await capture(name);
+          const currentPad = page.locator(".s-strip [aria-current]");
+          await currentPad.press("ArrowLeft");
+          assert.ok(await currentPad.evaluate((el) => el === document.activeElement));
+          await first.click();
+          assert.equal(await first.count(), 0);
+          assert.ok(await currentPad.evaluate((el) => el === document.activeElement));
+          console.log(
+            name + " · matches Lesson at x=" + lessonFrame.x + ", width=" + lessonFrame.width,
+          );
+        }
+      }
+    }
     await visit("/design/components");
     const standalone = page.getByRole("figure").filter({ hasText: "Callout · kinds" });
     assert.deepEqual(await standalone.locator(".s-callout__kind:visible").allInnerTexts(), [
@@ -850,6 +951,10 @@ try {
       "/ru/dashboard",
       "/dashboard",
       "/design/screens/track",
+      "/design/screens/grill",
+      "/ru/design/screens/grill",
+      "/design/screens/grill?state=sessions",
+      "/ru/design/screens/grill?state=sessions",
       "/design/screens/lesson",
       "/ru/design/screens/lesson",
       "/settings",
@@ -858,7 +963,9 @@ try {
       "/lessons/" + lesson.id,
       "/ru/lessons/" + lesson.id,
       "/grills",
+      "/ru/grills",
       "/grills/" + grill.id,
+      "/ru/grills/" + grill.id,
       "/grills/" + finished.id,
     ])
       await audit(path);

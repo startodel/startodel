@@ -668,6 +668,7 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
         "set_track_visibility",
         "start_grill",
         "submit_grill_answer",
+        "update_grill",
         "update_lesson",
         "update_profile",
         "update_topic",

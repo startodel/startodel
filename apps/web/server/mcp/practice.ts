@@ -13,6 +13,15 @@ import {
   type UserData,
 } from "./register";
 
+const grillTitleGuidance =
+  "Use only the subject as the title. Omit prefixes such as “Разбор:”, “Grill:”, “Опрос:” and “Quiz:”.";
+
+function grillTitleWarnings(value: string) {
+  return /^\s*(?:grill|quiz|разбор|опрос|тест)(?=$|[\s:\p{Pd}])/iu.test(value)
+    ? { warnings: [grillTitleGuidance] }
+    : {};
+}
+
 export function registerPractice(register: Register, data: UserData, origin: string) {
   const questionId = z.strictObject({ questionId: id });
   const sessionId = z.strictObject({ sessionId: id });
@@ -68,11 +77,27 @@ export function registerPractice(register: Register, data: UserData, origin: str
   const trackId = id.optional();
   register(
     "start_grill",
-    "Open a GrillSession, optionally for one Track. Returns the session and ranked candidate Topics. Target defaults to 15 (up to 100).",
+    "Open a GrillSession, optionally for one Track. Returns the session and ranked candidate Topics. Target defaults to 15 (up to 100). " +
+      grillTitleGuidance,
     z.strictObject({ trackId, title, targetSize: limit.default(DEFAULT_GRILL_SIZE) }),
     async (input) => {
       const grill = await data.startGrillWithCandidates(input);
-      if (grill) return { ...grill, session: grillLink(grill.session) };
+      if (grill)
+        return {
+          ...grill,
+          session: grillLink(grill.session),
+          ...grillTitleWarnings(grill.session.title),
+        };
+    },
+  );
+  register(
+    "update_grill",
+    "Rename an open or finished GrillSession by ID. Returns the updated session and its URL. " +
+      grillTitleGuidance,
+    sessionId.extend({ title }),
+    async ({ sessionId, title }) => {
+      const session = await data.updateGrill(sessionId, title);
+      if (session) return { ...grillLink(session), ...grillTitleWarnings(session.title) };
     },
   );
   register(
