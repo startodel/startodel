@@ -477,6 +477,14 @@ const prompt =
           <UiRadioGroup v-model="none" label="Experience" name="question-grade" :options="grades" />
         </UiQuestion>
       </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        id="specimen-questionnaire"
+        label="Questionnaire"
+        note="The Onboarding Questionnaire as one form. Submit it empty to see what is missing"
+        layout="block"
+      >
+        <UiQuestionnaire @submit="notify({ title: 'Answers saved', tone: 'success' })" />
+      </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Chip">
         <UiChip
           v-for="chip in chips"
@@ -874,6 +882,24 @@ const prompt =
           </UiStep>
           <UiStep title="Select “Connect”. Startodel opens: select “Allow”." />
         </UiSteps>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        id="specimen-connect-agent"
+        label="Connect an agent"
+        note="The MCP URL, the steps of each client and a personal token as the fallback"
+        layout="grid"
+      >
+        <UiConnectAgent
+          endpoint="https://startodel.com/mcp"
+          prompt="Call get_guide, then build me a Track for understanding internals."
+          :next="{ hash: '#navigation' }"
+        />
+        <UiConnectAgent
+          endpoint="https://startodel.com/mcp"
+          :connected="{ name: 'Claude' }"
+          prompt="Call get_guide, then build me a Track for understanding internals."
+          :next="{ hash: '#navigation' }"
+        />
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Site header · signed out and signed in" layout="block" flush>
         <UiSiteHeader
