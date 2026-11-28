@@ -536,6 +536,28 @@
     "failedPlain": "The caption below says what it shows.",
     "source": "Source"
   },
+  "testRunner": {
+    "label": "Test results",
+    "notRun": "Tests not run yet",
+    "idle": "Run the tests to check your solution.",
+    "running": "Running the tests",
+    "tally": "{passed} of {total} passed",
+    "error": "The code did not run",
+    "errorText": "The tests did not start: the code stopped with an error.",
+    "passed": "passed",
+    "failed": "failed",
+    "waiting": "waiting",
+    "skipped": "not run",
+    "detail": "Expected and received",
+    "expected": "Expected",
+    "received": "Received"
+  },
+  "exerciseWorkbench": {
+    "saved": "Saved",
+    "savedAt": "Saved at {time}",
+    "unsaved": "Unsaved changes",
+    "saving": "Saving"
+  },
   "topicState": {
     "complete": "live",
     "ready": "ready",

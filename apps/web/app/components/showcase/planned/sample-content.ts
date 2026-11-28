@@ -2,6 +2,8 @@
  * Sample content for the planned-component specimens, in Russian and English.
  * Nothing here is read from or written to the database.
  */
+import type { TestCase } from "../../ui/practice";
+
 const code = {
   sequential: `export async function loadDashboard(userId: string) {
   const user = await fetchUser(userId);
@@ -136,6 +138,75 @@ const ru = {
 `,
     },
   },
+  practice: {
+    runtime: "JavaScript · Web Worker",
+    sqlRuntime: "SQL · SQLite",
+    actions: {
+      run: "Запустить тесты",
+      again: "Запустить снова",
+      reset: "Сбросить к заготовке",
+      save: "Сохранить попытку",
+    },
+    states: {
+      label: "Состояние прогона",
+      idle: "Нет прогона",
+      running: "Идёт",
+      passed: "Пройден",
+      failed: "Не пройден",
+      error: "Ошибка",
+    },
+    starter: `// Верните элементы без повторов по ключу. Из одинаковых остаётся первый.
+export function uniqueBy(items, key) {
+  return items;
+}
+`,
+    attempt: `export function uniqueBy(items, key) {
+  const seen = new Set();
+  return items.filter((item) => !seen.has(item[key]) && seen.add(item[key]));
+}
+`,
+    tests: [
+      {
+        id: "empty",
+        name: "возвращает пустой массив для пустого входа",
+        result: "passed",
+        durationMs: 2,
+      },
+      {
+        id: "first",
+        name: "оставляет первый элемент из одинаковых по ключу",
+        result: "failed",
+        durationMs: 4,
+        expected: `[
+  { id: 1, name: "Ada" },
+  { id: 2, name: "Lin" },
+]`,
+        received: `[
+  { id: 1, name: "Ada" },
+  { id: 2, name: "Lin" },
+  { id: 1, name: "Ada L." },
+]`,
+      },
+      { id: "order", name: "сохраняет исходный порядок", result: "passed", durationMs: 1 },
+      { id: "pure", name: "не меняет исходный массив", result: "passed", durationMs: 1 },
+      {
+        id: "fn",
+        name: "принимает функцию вместо имени поля",
+        result: "failed",
+        durationMs: 3,
+        message: "AssertionError: expected [ …(4) ] to deeply equal [ …(2) ]",
+        expected: `["ada@example.com", "lin@example.com"]`,
+        received: `["ada@example.com", "ADA@example.com", "lin@example.com", "Lin@example.com"]`,
+      },
+    ] satisfies TestCase[],
+    syntaxError: `SyntaxError: Unexpected token '}'
+    at solution.js:4:1`,
+    sqlTests: [
+      { id: "owner", name: "возвращает уроки только одного владельца" },
+      { id: "order", name: "сортирует уроки по позиции в теме" },
+    ],
+    timeout: "Запрос остановлен: он выполнялся дольше 5 секунд.",
+  },
 };
 
 const en: typeof ru = {
@@ -223,6 +294,75 @@ Microtasks run after every task, before the next timer.`,
   image --> staging[Staging] --> prod[Production
 `,
     },
+  },
+  practice: {
+    runtime: "JavaScript · Web Worker",
+    sqlRuntime: "SQL · SQLite",
+    actions: {
+      run: "Run tests",
+      again: "Run again",
+      reset: "Reset to starter",
+      save: "Save attempt",
+    },
+    states: {
+      label: "State of the run",
+      idle: "Idle",
+      running: "Running",
+      passed: "Passed",
+      failed: "Failed",
+      error: "Error",
+    },
+    starter: `// Return the items without repeats by key. The first of each stays.
+export function uniqueBy(items, key) {
+  return items;
+}
+`,
+    attempt: `export function uniqueBy(items, key) {
+  const seen = new Set();
+  return items.filter((item) => !seen.has(item[key]) && seen.add(item[key]));
+}
+`,
+    tests: [
+      {
+        id: "empty",
+        name: "returns an empty array for an empty input",
+        result: "passed",
+        durationMs: 2,
+      },
+      {
+        id: "first",
+        name: "keeps the first of the items that share a key",
+        result: "failed",
+        durationMs: 4,
+        expected: `[
+  { id: 1, name: "Ada" },
+  { id: 2, name: "Lin" },
+]`,
+        received: `[
+  { id: 1, name: "Ada" },
+  { id: 2, name: "Lin" },
+  { id: 1, name: "Ada L." },
+]`,
+      },
+      { id: "order", name: "keeps the original order", result: "passed", durationMs: 1 },
+      { id: "pure", name: "does not change the input array", result: "passed", durationMs: 1 },
+      {
+        id: "fn",
+        name: "takes a function in place of a field name",
+        result: "failed",
+        durationMs: 3,
+        message: "AssertionError: expected [ …(4) ] to deeply equal [ …(2) ]",
+        expected: `["ada@example.com", "lin@example.com"]`,
+        received: `["ada@example.com", "ADA@example.com", "lin@example.com", "Lin@example.com"]`,
+      },
+    ] satisfies TestCase[],
+    syntaxError: `SyntaxError: Unexpected token '}'
+    at solution.js:4:1`,
+    sqlTests: [
+      { id: "owner", name: "returns the Lessons of one Owner only" },
+      { id: "order", name: "sorts the Lessons by their position in the Topic" },
+    ],
+    timeout: "The query was stopped: it ran longer than 5 seconds.",
   },
 };
 
