@@ -5,6 +5,7 @@
 - [Domain glossary](CONTEXT.md) — the terms used in Startodel's learning model.
 - [Design concept](design/CONCEPT.md) — the visual identity, its metaphor and the rules that follow from it.
 - [Design migration plan](design/MIGRATION.md) — the order in which pages move onto the design system and what to delete afterwards.
+- [Planned components](design/PLANNED.md) — interface built ahead of the roadmap features, by issue, with the words it proposes.
 - [ADR 0001 — Record architecture decisions](adr/0001-record-architecture-decisions.md) — how and why this project records decisions.
 - [ADR 0002 — Database module placement](adr/0002-database-module-placement.md) — ownership of the schema, migrations, and client.
 - [ADR 0003 — PostgreSQL and Drizzle](adr/0003-postgresql-and-drizzle.md) — database, ORM, and driver choices.

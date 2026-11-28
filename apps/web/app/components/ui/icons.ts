@@ -45,6 +45,12 @@ export const icons = {
   lock: path("M4 7.5h8v6H4zM5.5 7.5V5a2.5 2.5 0 0 1 5 0v2.5"),
   key: dot(5, 11, 2.5) + path("M6.8 9.2l6.7-6.7M11 5l2 2"),
   link: path("M6.5 9.5l3-3M7 4.5l1-1a2.8 2.8 0 0 1 4 4l-1 1M9 11.5l-1 1a2.8 2.8 0 0 1-4-4l1-1"),
+  diff: path("M8 2.5v7M4.5 6h7M4.5 12.5h7"),
+  diagram: path("M2.5 2.5h4.5V6H2.5zM9 10h4.5v3.5H9zM7 4.25h1.75l2.5 2.5V10"),
+  image: path("M2.5 3h11v10h-11zM2.5 11.5 6 8l2.5 2.5 2-2 3 3") + dot(10.5, 5.75, 1),
+  archive: path("M3.5 2.5h9v11h-9zM8 2.5V4M8 5.5V7M6.75 8.75h2.5v2.5h-2.5z"),
+  upload: path("M8 10.5v-8M4.5 6 8 2.5 11.5 6M2.5 10.5v3h11v-3"),
+  download: path("M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 10.5v3h11v-3"),
   lesson: path(
     "M2.5 3.5c2-.8 4-.8 5.5.5v9c-1.5-1.3-3.5-1.3-5.5-.5zM13.5 3.5c-2-.8-4-.8-5.5.5v9c1.5-1.3 3.5-1.3 5.5-.5z",
   ),
@@ -84,6 +90,15 @@ export const icons = {
   file: path("M4 2h5.5l3 3v9H4zM9.5 2v3h3"),
   pad: dot(8, 8, 3.25),
   "pad-on": `<circle cx="8" cy="8" r="4" fill="currentColor" stroke="none"/>`,
+  comment: path("M2.5 3h11v8H7.5l-3 2.5V11h-2z"),
+  reply: path("M6.5 4 2.5 8l4 4M2.5 8h7a4 4 0 0 1 4 4v.5"),
+  unclear: dot(8, 8, 6) + path("M6.2 6.5a1.8 1.8 0 1 1 2.7 1.6c-.6.3-.9.7-.9 1.3M8 11.4v.1"),
+  "link-off": path(
+    "M7 4.5l1-1a2.8 2.8 0 0 1 4 4l-1 1M9 11.5l-1 1a2.8 2.8 0 0 1-4-4l1-1M2.5 2.5l11 11",
+  ),
+  "lock-pad":
+    path("M1.5 7.5h7v6h-7zM3 7.5V5.5a2 2 0 0 1 4 0v2M8.5 10.5h1.75") + dot(12.25, 10.5, 2),
+  steady: path("M3.5 8h9"),
 } as const;
 
 export type IconName = keyof typeof icons;

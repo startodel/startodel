@@ -5,6 +5,7 @@ const localePath = useLocalePath();
 const pages = [
   { to: "/design", label: "Foundations" },
   { to: "/design/components", label: "Components" },
+  { to: "/design/planned", label: "Planned" },
   { to: "/design/screens", label: "Screens" },
 ];
 </script>

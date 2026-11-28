@@ -148,7 +148,7 @@ html :where(.s-root) :focus-visible {
   white-space: nowrap;
 }
 
-/* A dot-grid field. Used behind the Track board and in empty states only. */
+/* A dot-grid field. It marks a drawing surface (the Track board, a diagram) or an empty slot. */
 :where(.s-root) .s-grid {
   background-image: radial-gradient(var(--s-grid) 1px, transparent 1.2px);
   background-size: 16px 16px;
