@@ -109,6 +109,7 @@ function choose() {
 .s-upload__reason {
   max-width: 28rem;
   font-size: var(--s-text-sm);
+  text-wrap: balance;
   color: var(--s-ink-2);
 }
 .s-upload.is-over {
