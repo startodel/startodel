@@ -22,4 +22,21 @@ export { resolveMcpToken } from "./mcp-tokens.ts";
 export type Connection = Omit<Database, "$client">;
 export { publicReader } from "./public.ts";
 
-export { allowEmailRequest, issueEmailChallenge, verifyEmailChallenge } from "./email-challenge.ts";
+export {
+  allowAuthRequest,
+  allowAuthRequest as allowEmailRequest,
+  issueEmailChallenge,
+  verifyEmailChallenge,
+} from "./email-challenge.ts";
+export {
+  type AccessGrant,
+  authenticateOAuthClient,
+  beginAuthorization,
+  exchangeOAuthCode,
+  oauthClient,
+  refreshOAuthGrant,
+  registerOAuthClient,
+  revokeOAuthAccess,
+  revokeOAuthRefresh,
+  useOAuthAccess,
+} from "./oauth.ts";

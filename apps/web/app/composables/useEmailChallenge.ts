@@ -3,19 +3,26 @@ export type EmailActions = {
   verify: (id: string, code: string) => Promise<unknown>;
 };
 
-export function useEmailActions(change = false): EmailActions {
+export function useEmailActions(change = false) {
+  const destination = ref("/dashboard");
   const { locale } = useI18n();
   return {
-    request: (email) =>
+    destination,
+    request: (email: string) =>
       $fetch(change ? "/api/sign-in/email/request" : "/api/auth/email/request", {
         method: "POST",
         body: { email, locale: locale.value },
       }),
-    verify: (id, code) =>
-      $fetch(change ? "/api/sign-in/email/verify" : "/api/auth/email/verify", {
-        method: "POST",
-        body: { id, code },
-      }),
+    verify: async (id: string, code: string) => {
+      const result = await $fetch<{ consent?: string }>(
+        change ? "/api/sign-in/email/verify" : "/api/auth/email/verify",
+        {
+          method: "POST",
+          body: { id, code },
+        },
+      );
+      destination.value = result.consent ?? "/dashboard";
+    },
   };
 }
 

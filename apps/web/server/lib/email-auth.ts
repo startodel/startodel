@@ -1,6 +1,7 @@
 import { defineHandler, createError, getRequestIP, readBody, type RequestEvent } from "nuxt/server";
-import { allowEmailRequest, issueEmailChallenge, verifyEmailChallenge } from "@startodel/db";
+import { allowAuthRequest, issueEmailChallenge, verifyEmailChallenge } from "@startodel/db";
 import { z } from "zod";
+import { consentPath, pendingRequest } from "./oauth-http";
 import { database } from "./pool";
 import { mailTransportMode } from "./mail-transport";
 import { sendChallenge } from "./mail";
@@ -23,7 +24,7 @@ async function protection(event: RequestEvent, action: "request" | "verify") {
   if (!secret) throw new Error("NUXT_APP_SECRET is required");
   const ip =
     getRequestIP(event, { xForwardedFor: process.env.TRUST_PROXY_IP !== "false" }) || "unknown";
-  if (!(await allowEmailRequest(database(), secret, ip, action))) fail(429, "limited");
+  if (!(await allowAuthRequest(database(), secret, ip, action))) fail(429, "limited");
   // JSON prevents a third-party HTML form from submitting credentials or changing an address.
   if (event.req.headers.get("content-type")?.split(";")[0] !== "application/json")
     fail(415, "invalid");
@@ -69,7 +70,12 @@ export function verifyEmail(change: boolean) {
     const result = await verifyEmailChallenge(database(), secret, input.data.id, input.data, owner);
     if (result.status === "wrong") fail(400, "wrong", result.remaining);
     if (result.status !== "ok") fail(result.status === "conflict" ? 409 : 400, result.status);
-    if (!owner) await replaceUserSession(event, { user: result.user });
+    if (!owner) {
+      const session = await getUserSession(event);
+      const pending = !session.user ? pendingRequest(session) : undefined;
+      await replaceUserSession(event, { user: result.user, secure: { oauthPending: pending } });
+      if (pending) return { ok: true, consent: consentPath(pending.id) };
+    }
     return { ok: true };
   });
 }

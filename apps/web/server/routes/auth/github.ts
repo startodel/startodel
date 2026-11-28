@@ -7,6 +7,7 @@ import {
   type RequestEvent,
 } from "nuxt/server";
 import { SignInConflict } from "@startodel/db";
+import { consentPath, pendingRequest } from "../../lib/oauth-http";
 import { signIn } from "../../lib/database";
 import { requireUser } from "../../utils/require-user";
 import { languageCookie, localizedPath } from "../../../shared/locale";
@@ -50,8 +51,15 @@ const oauth = defineOAuthGitHubEventHandler({
         },
         linkOwner,
       );
-      await replaceUserSession(event, { user: account });
-      return sendRedirect(event, destination(event, linkOwner ? "/settings" : "/dashboard"));
+      const pending = !linkOwner && !session.user ? pendingRequest(session) : undefined;
+      await replaceUserSession(event, { user: account, secure: { oauthPending: pending } });
+      return sendRedirect(
+        event,
+        destination(
+          event,
+          linkOwner ? "/settings" : pending ? consentPath(pending.id) : "/dashboard",
+        ),
+      );
     } catch (error) {
       return sendRedirect(
         event,

@@ -12,6 +12,15 @@ import {
   sampleTokens,
   screenPath,
 } from "../sample";
+const sampleConnections = ref([
+  {
+    id: "sample",
+    name: "ChatGPT",
+    host: "chatgpt.com",
+    createdAt: "2026-11-20",
+    lastUsedAt: "2026-11-28",
+  },
+]);
 const props = defineProps<{ state?: string }>();
 type Token = (typeof sampleTokens)[number];
 const columns: TableColumn<Token>[] = [
@@ -52,6 +61,15 @@ function revoke() {
         description="Your Profile, the agents that can act for you, and how Startodel looks."
       />
 
+      <section id="connected-apps" class="group">
+        <header class="group__head">
+          <h2 class="group__title">{{ $t("oauth.connections") }}</h2>
+          <p class="group__text">{{ $t("oauth.appsHint") }}</p>
+        </header>
+        <div class="group__body">
+          <UiConnectedApps :connections="sampleConnections" @disconnect="sampleConnections = []" />
+        </div>
+      </section>
       <section class="group" id="sign-in-settings">
         <header class="group__head">
           <h2 class="group__title">{{ $t("signin.methods") }}</h2>

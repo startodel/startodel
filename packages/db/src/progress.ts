@@ -1,3 +1,4 @@
+import { hasOAuthConnection } from "./oauth.ts";
 import { nextStudyTopic, topicReading } from "./catalog.ts";
 import { reviewsThrough } from "./practice.ts";
 import { topicActivity } from "./activity.ts";
@@ -209,7 +210,7 @@ export function progressForUser(db: Connection, userId: string) {
             .limit(1);
           return {
             nextStep: await dashboardNextStep(tx, perTrack.length, dueReviewsCount, now),
-            hasConnectedAgent: usedTokens.length > 0,
+            hasConnectedAgent: usedTokens.length > 0 || (await hasOAuthConnection(tx, userId)),
             dueReviewsCount,
             tracks: perTrack.map((track) => ({
               ...track,

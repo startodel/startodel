@@ -678,5 +678,23 @@
     "changeExpires": "Enter this code in Settings within 15 minutes.",
     "button": "Sign in to Startodel",
     "ignore": "If you didn’t request this email, you can ignore it."
+  },
+  "oauth": {
+    "wantsAccess": "{name} wants to connect to your Startodel account",
+    "declared": "The app supplied this name when it registered.",
+    "returnsTo": "After authorization, you’ll return to",
+    "permission": "App permissions",
+    "canDo": "Read and change your learning data, including Tracks, Lessons, Grills and Reviews.",
+    "allow": "Allow",
+    "deny": "Deny",
+    "expired": "This request has expired. Start the connection again in the app.",
+    "connections": "Connected apps",
+    "appsHint": "Apps you’ve allowed to access your learning data.",
+    "empty": "No connected apps",
+    "disconnect": "Disconnect",
+    "connectedOn": "Connected {date}",
+    "usedOn": "Last used {date}",
+    "unnamed": "Unnamed app",
+    "disconnectHint": "You can disconnect this app at any time in Settings."
   }
 }

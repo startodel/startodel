@@ -44,6 +44,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     if (/^\/login\/?$/.test(path)) return redirectEntry("/");
     return navigateTo(target("/"), { external: true, redirectCode: 302 });
   }
+  if (path === "/consent") return;
   const account = await fetchMe();
   me.value = account;
   const ref = to.params.slug;
@@ -72,6 +73,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
       }
       return;
     }
+  }
+  // An OAuth Client can connect before onboarding. Its Owner must be able to disconnect it.
+  if (!account.onboarded && /^\/settings\/?$/.test(path)) {
+    const connections = await useRequestFetch()("/api/connections");
+    if (connections.length) return;
   }
   if (
     !account.onboarded &&

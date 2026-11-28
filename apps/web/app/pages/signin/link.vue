@@ -14,8 +14,11 @@ onMounted(async () => {
     return;
   }
   try {
-    await $fetch("/api/auth/email/verify", { method: "POST", body: { id, token } });
-    await navigateTo(path("/dashboard"), { external: true });
+    const result = await $fetch<{ consent?: string }>("/api/auth/email/verify", {
+      method: "POST",
+      body: { id, token },
+    });
+    await navigateTo(path(result.consent ?? "/dashboard"), { external: true });
   } catch (e) {
     unavailable.value = emailFailure(e)?.reason === "unavailable";
     message.value = errorText(e);

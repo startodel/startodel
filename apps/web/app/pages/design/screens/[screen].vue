@@ -2,6 +2,7 @@
 import { screens } from "../../../components/showcase/screens";
 import {
   ShowcaseScreensSignin,
+  ShowcaseScreensConsent,
   ShowcaseScreensConnect,
   ShowcaseScreensDashboard,
   ShowcaseScreensGrill,
@@ -19,6 +20,7 @@ import {
 definePageMeta({ middleware: "design" });
 const views = {
   signin: ShowcaseScreensSignin,
+  consent: ShowcaseScreensConsent,
   landing: ShowcaseScreensLanding,
   "public-track": ShowcaseScreensPublicTrack,
   "public-profile": ShowcaseScreensPublicProfile,
