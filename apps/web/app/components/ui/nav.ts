@@ -38,7 +38,8 @@ export function appNavigation(
   const item = items.find(({ to }) => to === "/" + section);
   const currentTrack = section === "tracks" && id ? id : undefined;
   const crumbs: { label: string; to?: LinkTarget }[] = [];
-  if (item) crumbs.push({ label: item.label });
+  if (item)
+    crumbs.push({ label: item.label, to: section === "grills" && id ? item.to : undefined });
   const track = currentTrack && tracks.find(({ id }) => id === currentTrack);
   if (track) {
     const dashboard = items.find(({ id }) => id === "dashboard");

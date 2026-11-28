@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const NonemptyText = z.string().regex(/\S/, "Expected nonempty text");
+
 export const TopicSlug = z
   .string()
   .max(120)

@@ -15,7 +15,7 @@ export function catalogKey({ id, slug }: { id?: string; slug?: string }) {
   return id ?? { slug: slug! };
 }
 
-export const title = z.string().regex(/\S/, "Expected nonempty text");
+export { NonemptyText as title } from "@startodel/core";
 export const empty = z.strictObject({});
 export const summary = z.string().nullable().optional();
 export const limit = z.int().min(1).max(100);

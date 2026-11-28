@@ -1,4 +1,5 @@
-import { expect, test } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
+import { useIndexTag } from "../app/composables/useIndexTag";
 import { russianPlural } from "../shared/locale";
 import { createRequire } from "node:module";
 import { blockOutlineTitle } from "../app/utils/lesson";
@@ -142,4 +143,39 @@ test("the outline uses authored titles, Markdown headings or compact opening tex
   const long = blockOutlineTitle({ ...theory, markdown: "Timer callbacks ".repeat(20) }, t);
   expect(long).toMatch(/^Timer callbacks .*…$/);
   expect(long.length).toBeLessThanOrEqual(52);
+});
+
+test("Grill progress counts answers and judgments independently in each locale", () => {
+  const global = messages();
+  const progress = (answered: number, judged: number) =>
+    global.t("grill.progress", {
+      answered: global.t("grill.answeredOf", { count: answered, n: String(answered), total: "25" }),
+      judged: global.t("grill.judgedCount", { count: judged, n: String(judged) }),
+    });
+  expect(progress(0, 0)).toBe("0 ответов из 25 · 0 оценено");
+  expect(progress(2, 1)).toBe("2 ответа из 25 · 1 оценён");
+  expect(progress(11, 5)).toBe("11 ответов из 25 · 5 оценено");
+  expect(progress(21, 11)).toBe("21 ответ из 25 · 11 оценено");
+  expect(progress(25, 22)).toBe("25 ответов из 25 · 22 оценены");
+  global.locale.value = "en";
+  expect(progress(2, 1)).toBe("2 of 25 answered · 1 judged");
+});
+
+test("Grill question tags and pad labels follow the interface locale", () => {
+  const global = messages();
+  vi.stubGlobal("useI18n", () => global);
+  try {
+    const indexTag = useIndexTag();
+    for (const [locale, first, state] of [
+      ["ru", "В01", "Без ответа"],
+      ["en", "Q01", "Unanswered"],
+    ]) {
+      global.locale.value = locale;
+      const tag = indexTag("question", 1);
+      expect(tag).toBe(first);
+      expect(global.t("grill.pad", { tag, state })).toBe(first + ": " + state);
+    }
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

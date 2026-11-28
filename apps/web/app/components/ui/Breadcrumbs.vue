@@ -7,12 +7,9 @@ defineProps<{ items: { label: string; to?: LinkTarget }[] }>();
     <ol class="s-crumbs__list">
       <li v-for="(item, i) in items" :key="i" class="s-crumbs__item">
         <span v-if="i" class="s-crumbs__sep" aria-hidden="true">/</span>
-        <NuxtLinkLocale
-          v-if="item.to && i < items.length - 1"
-          class="s-crumbs__link"
-          :to="item.to"
-          >{{ item.label }}</NuxtLinkLocale
-        >
+        <NuxtLinkLocale v-if="item.to" class="s-crumbs__link" :to="item.to">{{
+          item.label
+        }}</NuxtLinkLocale>
         <span
           v-else
           class="s-crumbs__here"

@@ -17,7 +17,7 @@ type Request = (
   body?: unknown,
 ) => Promise<Response>;
 
-function expectShellNavigation(html: string, href: string, label: string) {
+function expectShellNavigation(html: string, href: string, label: string, parentCrumb = false) {
   const links = html.match(/<a\b[^>]*\bs-rail__item\b[^>]*>/g) ?? [];
   const current = links.filter((link) => link.includes("is-current"));
   expect(current, href).toHaveLength(1);
@@ -25,8 +25,13 @@ function expectShellNavigation(html: string, href: string, label: string) {
   expect(links.filter((link) => link.includes('aria-current="page"'))).toEqual(current);
 
   const topBar = html.match(/<header\b[^>]*class="s-topbar"[^>]*>([\s\S]*?)<\/header>/)?.[1];
-  const crumb = topBar?.match(/class="s-crumbs__here"[^>]*>([^<]*)</)?.[1];
-  expect(crumb).toBe(label);
+  if (parentCrumb) {
+    const link = topBar?.match(/<a\b[^>]*class="s-crumbs__link"[^>]*>([^<]*)<\/a>/);
+    expect(link?.[0]).toContain('href="' + href + '"');
+    expect(link?.[1]).toBe(label);
+  } else {
+    expect(topBar?.match(/class="s-crumbs__here"[^>]*>([^<]*)</)?.[1]).toBe(label);
+  }
 }
 
 export function practiceHttpTests(
@@ -155,9 +160,24 @@ export function practiceHttpTests(
     const grillPath = "/grills/" + grill.id;
     expect(await page("/grills")).toContain('href="' + grillPath + '"');
     const grillPage = await page(grillPath);
-    expectShellNavigation(grillPage, "/grills", "Grills");
+    expectShellNavigation(grillPage, "/grills", "Grills", true);
     expect(grillPage).toContain('href="/tracks/' + track.slug + '"');
     expect(grillPage).toContain("What repeats?");
+    const renamed = "Delivery guarantees";
+    await data.updateGrill(grill.id, renamed);
+    for (const prefix of ["", "/ru"]) {
+      for (const [path, heading] of [
+        [grillPath, "h1"],
+        ["/grills", "h2"],
+      ]) {
+        const response = await request(prefix + path, cookie);
+        expect(response.status).toBe(200);
+        expect(response.headers.get("cache-control")).toContain("no-store");
+        const html = await response.text();
+        expect(html).toMatch(new RegExp("<" + heading + "[^>]*>" + renamed + "</" + heading + ">"));
+        if (path === grillPath) expect(html).toContain("<title>" + renamed);
+      }
+    }
     expect(
       (
         await request(

@@ -6,21 +6,26 @@ import type { VerdictState } from "../ui/grill";
 /** Sample data for the showcase. Nothing here is read from or written to the database. */
 export const screenPath = (screen: string) => `/design/screens/${screen}`;
 
+export const grillSessionsPath = { path: screenPath("grill"), query: { state: "sessions" } };
+
 export const sampleUser: NavUser = { name: "Alice Petrova", login: "alice" };
 
-export const sampleNav: NavItem[] = [
-  {
-    id: "dashboard",
-    label: "Dashboard",
-    short: "Home",
-    icon: "dashboard",
-    to: screenPath("dashboard"),
-  },
-  { id: "reviews", label: "Reviews", icon: "review", to: screenPath("reviews"), count: 4 },
-  { id: "grills", label: "Grills", icon: "grill", to: screenPath("grill") },
-  { id: "progress", label: "Progress", icon: "progress", to: screenPath("progress") },
-  { id: "settings", label: "Settings", icon: "settings", to: screenPath("settings") },
-];
+export function useSampleNav() {
+  const { t } = useI18n();
+  return computed<NavItem[]>(() => [
+    {
+      id: "dashboard",
+      label: t("nav.dashboard"),
+      short: t("common.home"),
+      icon: "dashboard",
+      to: screenPath("dashboard"),
+    },
+    { id: "reviews", label: t("nav.reviews"), icon: "review", to: screenPath("reviews"), count: 4 },
+    { id: "grills", label: t("nav.grills"), icon: "grill", to: grillSessionsPath },
+    { id: "progress", label: t("nav.progress"), icon: "progress", to: screenPath("progress") },
+    { id: "settings", label: t("nav.settings"), icon: "settings", to: screenPath("settings") },
+  ]);
+}
 
 export const sampleNavTracks: NavTrack[] = [
   {
@@ -342,7 +347,6 @@ In production, prefer \`perf_hooks.monitorEventLoopDelay()\`. It samples in nati
 };
 
 export interface SampleQuestion {
-  tag: string;
   topic: string;
   prompt: string;
   verdict: Exclude<VerdictState, "pending" | "none">;
@@ -352,40 +356,34 @@ export interface SampleQuestion {
 
 export const sampleQuestions: SampleQuestion[] = [
   {
-    tag: "Q01",
     topic: "t01",
     verdict: "strong",
     prompt:
       "What is an execution context? What does the engine push onto the call stack when a function is called?",
   },
   {
-    tag: "Q02",
     topic: "t02",
     verdict: "strong",
     prompt: "Name the phases of the Node.js event loop in order. What runs in each?",
   },
   {
-    tag: "Q03",
     topic: "t02",
     verdict: "partial",
     prompt:
       "Why does `setImmediate` always run before `setTimeout(fn, 0)` inside an I/O callback, but not at the top level?",
   },
   {
-    tag: "Q04",
     topic: "t03",
     verdict: "strong",
     prompt:
       "When exactly does the microtask queue drain? Compare `process.nextTick` with a promise job.",
   },
   {
-    tag: "Q05",
     topic: "t03",
     verdict: "partial",
     prompt: "How can a chain of promise jobs starve I/O? How would you detect it?",
   },
   {
-    tag: "Q06",
     topic: "t04",
     verdict: "strong",
     prompt: "A timer set for 100 ms fires at 340 ms. List the possible causes, most likely first.",
@@ -395,26 +393,22 @@ export const sampleQuestions: SampleQuestion[] = [
       "Right order, and you named the mechanism each time. To reach level 4, add that timers are checked once per loop iteration, so a slow poll phase delays them too.",
   },
   {
-    tag: "Q07",
     topic: "t04",
     verdict: "strong",
     prompt: "How does Node.js store timers, and why does that structure fit the job?",
   },
   {
-    tag: "Q08",
     topic: "t05",
     verdict: "partial",
     prompt:
       "What does `await` compile down to? How many ticks does awaiting a native promise take?",
   },
   {
-    tag: "Q09",
     topic: "t05",
     verdict: "strong",
     prompt: "Why does an unhandled rejection in an async function not crash at the throw site?",
   },
   {
-    tag: "Q10",
     topic: "t06",
     verdict: "weak",
     prompt: "Explain backpressure in a `pipeline` of streams. What does `highWaterMark` control?",
@@ -424,39 +418,31 @@ export const sampleQuestions: SampleQuestion[] = [
       "`highWaterMark` is a buffer threshold, not a chunk size. Backpressure is the signal, `write()` returning `false`, that tells the source to pause until `drain`. Read the second Lesson in Streams and backpressure again.",
   },
   {
-    tag: "Q11",
     topic: "t08",
     verdict: "strong",
     prompt: "Describe the generational heap in V8. What is promoted, and when?",
   },
   {
-    tag: "Q12",
     topic: "t08",
     verdict: "strong",
     prompt: "What makes a scavenge cheap and a mark-compact expensive?",
   },
   {
-    tag: "Q13",
     topic: "t10",
     verdict: "partial",
     prompt: "What is a hidden class? Write code that makes a call site megamorphic.",
   },
   {
-    tag: "Q14",
     topic: "t06",
     verdict: "weak",
     prompt: "What happens when you ignore the return value of `writable.write()`?",
   },
   {
-    tag: "Q15",
     topic: "t01",
     verdict: "strong",
     prompt: "How does a closure keep a variable alive after its function returns?",
   },
 ];
-
-export const sampleGrillPrompt =
-  "Judge my open GrillSession in Startodel. For each answered Grill Question, record a Verdict with a short comment, then update Mastery for the Topics you have evidence for.";
 
 export const sampleReviews = [
   {
@@ -849,34 +835,22 @@ export const sampleGrills = [
   {
     id: "g3",
     title: "Node.js runtime internals · round 3",
-    open: true,
-    answered: 7,
-    judged: 5,
-    total: 15,
-    when: "Started today",
-    verdicts: { strong: 3, partial: 2, weak: 0 },
+    status: "open",
+    createdAt: "2026-11-25T12:00:00Z",
   },
   {
     id: "g2",
     title: "Node.js runtime internals · round 2",
-    open: false,
-    answered: 15,
-    judged: 15,
-    total: 15,
-    when: "18 Nov",
-    verdicts: { strong: 9, partial: 4, weak: 2 },
+    status: "finished",
+    createdAt: "2026-11-18T12:00:00Z",
   },
   {
     id: "g1",
     title: "PostgreSQL · MVCC",
-    open: false,
-    answered: 12,
-    judged: 12,
-    total: 12,
-    when: "9 Nov",
-    verdicts: { strong: 5, partial: 5, weak: 2 },
+    status: "finished",
+    createdAt: "2026-11-09T12:00:00Z",
   },
-];
+] as const;
 
 export const sampleLegal = {
   title: "Publishing rules",

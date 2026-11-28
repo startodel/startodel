@@ -21,12 +21,19 @@ describe.each([
     ["/grills", "grills", "Grills"],
     ["/settings", "settings", "Settings"],
     ["/reviews/redelivery/practice", "reviews", "Reviews"],
-    ["/grills/recall", "grills", "Grills"],
   ])("%s selects the %s section", (path, current, label) => {
     expect(appNavigation(prefix + path, items, tracks)).toEqual({
       current,
       currentTrack: undefined,
       crumbs: [{ label }],
+    });
+  });
+
+  test("a Grill session links back to the Grills list", () => {
+    expect(appNavigation(prefix + "/grills/recall", items, tracks)).toEqual({
+      current: "grills",
+      currentTrack: undefined,
+      crumbs: [{ label: "Grills", to: "/grills" }],
     });
   });
 

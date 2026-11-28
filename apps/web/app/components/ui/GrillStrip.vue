@@ -7,29 +7,51 @@ import type { VerdictState } from "./grill";
 const props = defineProps<{ questions: { id: string; state: VerdictState }[]; label?: string }>();
 const current = defineModel<number>("current", { default: 0 });
 const { verdictWord } = useStateWords();
+const { t } = useI18n();
+const indexTag = useIndexTag();
+const pads = computed(() =>
+  props.questions.map((q, i) => ({
+    ...q,
+    label: t("grill.pad", { tag: indexTag("question", i + 1), state: verdictWord(q.state) }),
+  })),
+);
+const strip = useTemplateRef("strip");
+function revealCurrent() {
+  const list = strip.value;
+  const pad = list?.querySelector("[aria-current]");
+  if (!list || !pad) return;
+  const frame = list.getBoundingClientRect();
+  const { left, right } = pad.getBoundingClientRect();
+  list.scrollLeft += Math.min(0, left - frame.left) + Math.max(0, right - frame.right);
+}
+onMounted(revealCurrent);
+watch(current, revealCurrent, { flush: "post" });
+function focusCurrent() {
+  strip.value?.querySelector<HTMLElement>("[aria-current]")?.focus();
+}
+defineExpose({ focusCurrent });
 function move(event: KeyboardEvent) {
   const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
   if (!step) return;
   event.preventDefault();
   current.value = Math.min(Math.max(current.value + step, 0), props.questions.length - 1);
-  const list = event.currentTarget as HTMLElement;
-  nextTick(() => list.querySelector<HTMLElement>("[aria-current]")?.focus());
+  nextTick(focusCurrent);
 }
 </script>
 <template>
-  <ol class="s-strip" :aria-label="label ?? $t('grill.questions')" @keydown="move">
-    <li v-for="(q, i) in questions" :key="q.id" class="s-strip__cell">
+  <ol ref="strip" class="s-strip" :aria-label="label ?? $t('grill.questions')" @keydown="move">
+    <li v-for="(q, i) in pads" :key="q.id" class="s-strip__cell">
       <button
         type="button"
         class="s-strip__pad"
         :class="['is-' + q.state, { 'is-current': current === i }]"
+        :title="q.label"
         :aria-current="current === i ? 'step' : undefined"
-        :aria-label="$t('grill.pad', { index: i + 1, state: verdictWord(q.state) })"
+        :aria-label="q.label"
         :tabindex="current === i ? 0 : -1"
         @click="current = i"
       >
         <UiVerdict :verdict="q.state" glyph-only aria-hidden="true" />
-        <span class="s-strip__number" aria-hidden="true">{{ String(i + 1).padStart(2, "0") }}</span>
       </button>
     </li>
   </ol>
@@ -44,7 +66,7 @@ function move(event: KeyboardEvent) {
 }
 .s-strip__cell {
   position: relative;
-  flex: 1 0 2rem;
+  flex: 1 0 var(--s-6);
   display: grid;
   justify-items: center;
 }
@@ -52,7 +74,7 @@ function move(event: KeyboardEvent) {
 .s-strip__cell::before {
   content: "";
   position: absolute;
-  top: 0.9375rem;
+  top: 50%;
   left: 0;
   right: 0;
   border-top: 1px solid var(--s-line-strong);
@@ -66,9 +88,9 @@ function move(event: KeyboardEvent) {
 .s-strip__pad {
   position: relative;
   display: grid;
-  justify-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.25rem 0.25rem;
+  place-items: center;
+  width: var(--s-6);
+  min-height: var(--s-control-sm);
   border-radius: var(--s-radius-xs);
   color: var(--s-ink-3);
 }
@@ -77,22 +99,13 @@ function move(event: KeyboardEvent) {
   border-radius: 50%;
   box-shadow: 0 0 0 3px var(--s-bg);
 }
-.s-strip__number {
-  font: 500 var(--s-text-2xs) / 1 var(--s-font-mono);
-  font-stretch: 75%;
-  font-variant-numeric: tabular-nums;
-}
-.s-strip__pad:hover .s-strip__number {
-  color: var(--s-ink);
-}
-.s-strip__pad.is-current .s-strip__number {
-  color: var(--s-ink);
-  font-weight: 700;
+.s-strip__pad:hover {
+  background: var(--s-sunken);
 }
 .s-strip__pad.is-current::after {
   content: "";
   position: absolute;
-  inset: auto 0.25rem -2px;
+  inset: auto var(--s-1) 0;
   height: 2px;
   background: var(--s-copper-fill);
 }

@@ -389,6 +389,27 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     expect(await bob.listDueReviews(future, 10)).toMatchObject([{ topicId: topic.id, box: 2 }]);
   });
 
+  test("only the Owner can rename an open or finished GrillSession", async () => {
+    const session = (await bob.startGrill({ title: "Original" }))!;
+    const question = (await bob.addGrillQuestion(session.id, { prompt: "Explain locks" }))!;
+    for (const id of [session.id, randomUUID()])
+      expect(await alice.updateGrill(id, "Foreign")).toBeUndefined();
+    expect((await bob.getGrill(session.id))?.title).toBe("Original");
+    expect(await bob.updateGrill(session.id, "Row locks")).toMatchObject({
+      id: session.id,
+      title: "Row locks",
+      status: "open",
+    });
+    const finished = await bob.finishGrill(session.id);
+    await bob.updateGrill(session.id, "Lock contention");
+    expect(await bob.getGrill(session.id)).toMatchObject({
+      title: "Lock contention",
+      status: "finished",
+      finishedAt: finished?.finishedAt,
+      questions: [question],
+    });
+  });
+
   test("only the Owner can add, answer, judge and finish Grill Questions and sessions", async () => {
     const topic = await bob.upsertTopic({ slug: "sql", title: "SQL" });
     const track = await bob.createTrack("Storage");

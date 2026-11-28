@@ -1,5 +1,18 @@
 import { expect, test } from "vite-plus/test";
 import { basePath, localizedPath, openGraphLocale, pageLocale } from "../shared/locale";
+import { createDisplayDate } from "../app/composables/useDisplayDate";
+
+test("Grill list dates show the day and month in UTC, adding the year outside the current year", () => {
+  const year = new Date().getUTCFullYear();
+  for (const [locale, current, previous] of [
+    ["en", "Nov 9", "Nov 9, " + (year - 1)],
+    ["ru", "9 ноября", "9 ноября " + (year - 1) + " г."],
+  ] as const) {
+    const format = createDisplayDate(locale, "short");
+    expect(format(year + "-11-10T01:00:00+02:00")).toBe(current);
+    expect(format(year - 1 + "-11-09T12:00:00Z")).toBe(previous);
+  }
+});
 
 test.each([
   ["/", "en", "/", "/", "/ru"],

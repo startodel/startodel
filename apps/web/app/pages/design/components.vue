@@ -9,7 +9,7 @@ import {
   sampleEdges,
   sampleLesson,
   sampleMasteryCounts,
-  sampleNav,
+  useSampleNav,
   sampleNavTracks,
   sampleQuestions,
   sampleReviews,
@@ -20,6 +20,7 @@ import {
   sampleWeek,
   screenPath,
 } from "../../components/showcase/sample";
+const sampleNav = useSampleNav();
 const indexTag = useIndexTag();
 const sampleTopics = sampleBoardTopics(indexTag);
 definePageMeta({ middleware: "design" });
@@ -143,7 +144,7 @@ const lessons = sampleTopicLessons.map((l, i) => ({
 }));
 
 const pads = sampleQuestions.map((q, i) => ({
-  id: q.tag,
+  id: indexTag("question", i + 1),
   state: i < 9 ? q.verdict : i === 9 ? ("pending" as const) : ("none" as const),
 }));
 const pad = ref(5);
@@ -648,7 +649,13 @@ const prompt =
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Toast · live">
         <UiButton
-          @click="notify({ tone: 'success', title: 'Answer saved', text: 'Question 7 of 15' })"
+          @click="
+            notify({
+              tone: 'success',
+              title: $t('grill.waiting'),
+              text: indexTag('question', 7) + ' / ' + $n(15),
+            })
+          "
           >Show success</UiButton
         >
         <UiButton @click="notify({ title: 'Copied to clipboard' })">Show neutral</UiButton>

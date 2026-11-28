@@ -31,7 +31,7 @@ export function checkMessages(ru, en, references) {
 
 // Runtime enums used by the learner UI. Enumerating values also catches missing translations.
 const families = {
-  "indexPrefix.": ["topic", "lesson", "block"],
+  "indexPrefix.": ["topic", "lesson", "block", "question"],
   "mastery.level": ["0", "1", "2", "3", "4"],
   "verdict.": ["strong", "partial", "weak"],
   "callout.": ["gotcha", "production", "tip"],
