@@ -619,6 +619,52 @@
     "emptyText": "When someone proposes a change from their Fork, it will show up here.",
     "none": "Nothing in this list."
   },
+  "trackVersions": {
+    "label": "Versions of the Track",
+    "current": "Current",
+    "forkBase": "Your Fork is based on {version}",
+    "lessonsAdded": "{n} new Lesson | {n} new Lessons",
+    "lessonsRemoved": "{n} Lesson removed | {n} Lessons removed",
+    "blocksChanged": "{n} Block changed | {n} Blocks changed",
+    "empty": "No versions yet",
+    "emptyText": "A version keeps the Track as it is now. Forks remember the version they were made from.",
+    "publishFirst": "Publish the first version",
+    "publish": "Publish {version}",
+    "formTitle": "New version {version}",
+    "formText": "It will keep the Track as it is now.",
+    "note": "What changed",
+    "noteHint": "A sentence or two for those who follow the Track.",
+    "noteMissing": "Say what changed",
+    "submit": "Publish"
+  },
+  "trackContents": {
+    "quizzes": "{n} Quiz | {n} Quizzes",
+    "exercises": "{n} Exercise | {n} Exercises",
+    "mediaLinks": "{n} media link | {n} media links"
+  },
+  "trackExport": {
+    "label": "Export of the Track",
+    "format": "Export format",
+    "file": "Single file",
+    "fileHint": "The whole Track in one JSON. Good for sending or keeping a copy.",
+    "folder": "Folder for Git",
+    "folderHint": "An archive with a folder, one file per Lesson. Good for keeping in a repository.",
+    "included": "What goes in",
+    "spec": "Format version",
+    "submit": "Export",
+    "again": "Export again",
+    "busy": "Building the file",
+    "done": "The file is ready"
+  },
+  "trackImport": {
+    "label": "Import of a Track",
+    "checking": "Checking the file",
+    "valid": "The file is valid",
+    "invalid": "{n} error in the file | {n} errors in the file",
+    "created": "This will create:",
+    "create": "Create the Track",
+    "another": "Choose another file"
+  },
   "topicState": {
     "complete": "live",
     "ready": "ready",

@@ -270,6 +270,42 @@ export function uniqueBy(items, key) {
       vacuum: "Что делает VACUUM",
     },
   },
+  versions: {
+    list: [
+      {
+        number: 3,
+        publishedAt: "2026-11-26T10:00:00Z",
+        note: "Добавил тему про покрывающие индексы и переписал урок про EXPLAIN: теперь в нём планы из PostgreSQL 17.",
+        changes: { lessonsAdded: 2, blocksChanged: 5 },
+      },
+      {
+        number: 2,
+        publishedAt: "2026-11-02T10:00:00Z",
+        note: "Исправил примеры в теме про соединения и убрал устаревший урок про hash-индексы.",
+        changes: { lessonsRemoved: 1, blocksChanged: 12 },
+      },
+      { number: 1, publishedAt: "2026-10-14T10:00:00Z", note: "Первая версия трека." },
+    ],
+    published: "Добавил задачу на чтение плана с Bitmap Heap Scan.",
+    fileName: "postgres-query-planning.startodel.json",
+    folderName: "postgres-query-planning.startodel.zip",
+    title: "Планирование запросов в PostgreSQL",
+    brokenName: "rust-ownership.startodel.zip",
+    errors: [
+      {
+        path: "topics[3].lessons[0].blocks[2].type",
+        message: "Неизвестный тип блока: diagram. Формат 1.0 такого не знает.",
+      },
+      {
+        path: "topics[1].prerequisites[0]",
+        message: "Тема ссылается на тему borrowing, которой нет в файле.",
+      },
+      {
+        path: "topics[4].lessons[2].blocks[5].options",
+        message: "В вопросе теста нет ни одного верного варианта.",
+      },
+    ],
+  },
 };
 
 const en: typeof ru = {
@@ -489,6 +525,42 @@ Check the plan with EXPLAIN.
       joins: "Join strategies",
       vacuum: "What VACUUM does",
     },
+  },
+  versions: {
+    list: [
+      {
+        number: 3,
+        publishedAt: "2026-11-26T10:00:00Z",
+        note: "Added a Topic on covering indexes and rewrote the EXPLAIN Lesson: it now shows plans from PostgreSQL 17.",
+        changes: { lessonsAdded: 2, blocksChanged: 5 },
+      },
+      {
+        number: 2,
+        publishedAt: "2026-11-02T10:00:00Z",
+        note: "Fixed the examples in the Topic on joins and removed the dated Lesson on hash indexes.",
+        changes: { lessonsRemoved: 1, blocksChanged: 12 },
+      },
+      { number: 1, publishedAt: "2026-10-14T10:00:00Z", note: "The first version of the Track." },
+    ],
+    published: "Added an Exercise on reading a plan with a Bitmap Heap Scan.",
+    fileName: "postgres-query-planning.startodel.json",
+    folderName: "postgres-query-planning.startodel.zip",
+    title: "Query planning in PostgreSQL",
+    brokenName: "rust-ownership.startodel.zip",
+    errors: [
+      {
+        path: "topics[3].lessons[0].blocks[2].type",
+        message: "Unknown Block type: diagram. Format 1.0 does not know it.",
+      },
+      {
+        path: "topics[1].prerequisites[0]",
+        message: "The Topic refers to the Topic borrowing, which is not in the file.",
+      },
+      {
+        path: "topics[4].lessons[2].blocks[5].options",
+        message: "The Quiz question has no correct option.",
+      },
+    ],
   },
 };
 
