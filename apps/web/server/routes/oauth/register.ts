@@ -20,7 +20,7 @@ export default oauthEndpoint("POST", true, async (event) => {
     throw new OAuthError("invalid_client_metadata");
   }
   const meta = registration(json);
-  const client = await registerOAuthClient(database(), {
+  const client = await registerOAuthClient(database(), secret, {
     name: meta.client_name,
     redirectUris: meta.redirect_uris,
     authMethod: meta.token_endpoint_auth_method,

@@ -10,7 +10,11 @@ export default oauthEndpoint("POST", false, async (event) => {
   const { allow, deny } = await form(event);
   if (!pending || (allow === undefined) === (deny === undefined) || (allow ?? deny) !== pending.id)
     throw new OAuthError("invalid_request", 403);
-  const decision = await data.connections.decide(pending.id, allow !== undefined);
+  const decision = await data.connections.decide(
+    useRuntimeConfig().appSecret,
+    pending.id,
+    allow !== undefined,
+  );
   if (!decision) throw new OAuthError("invalid_request");
   return sendRedirect(
     event,

@@ -83,6 +83,7 @@ export async function form(event: RequestEvent) {
 export async function clientAuthentication(
   event: RequestEvent,
   input: Record<string, string | undefined>,
+  appSecret: string,
 ) {
   let id = input.client_id;
   let secret = input.client_secret;
@@ -108,7 +109,7 @@ export async function clientAuthentication(
   if (
     !id ||
     !z.uuid().safeParse(id).success ||
-    !(await authenticateOAuthClient(database(), id, method, secret))
+    !(await authenticateOAuthClient(database(), appSecret, id, method, secret))
   )
     throw new OAuthError("invalid_client", 401);
   return id;

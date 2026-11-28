@@ -32,7 +32,7 @@ export default oauthEndpoint("GET", false, async (event) => {
       throw new OAuthError("invalid_request");
     scope(input.scope);
     const resource = resourceIndicator(issuer, input.resource);
-    const request = await beginAuthorization(database(), {
+    const request = await beginAuthorization(database(), useRuntimeConfig().appSecret, {
       clientId: client.id,
       redirectUri,
       challenge,

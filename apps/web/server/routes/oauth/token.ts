@@ -7,8 +7,9 @@ import { signAccess } from "../../lib/oauth-jwt";
 
 export default oauthEndpoint("POST", true, async (event) => {
   const issuer = publicOrigin(event);
+  const appSecret = useRuntimeConfig().appSecret;
   const input = await form(event);
-  const clientId = await clientAuthentication(event, input);
+  const clientId = await clientAuthentication(event, input, appSecret);
   const resource = resourceIndicator(issuer, input.resource);
   scope(input.scope);
   let grant;
@@ -16,7 +17,7 @@ export default oauthEndpoint("POST", true, async (event) => {
     const { code, redirect_uri: redirectUri, code_verifier: verifier } = input;
     if (!code || !redirectUri || !verifier || !/^[A-Za-z0-9._~-]{43,128}$/.test(verifier))
       throw new OAuthError("invalid_grant");
-    grant = await exchangeOAuthCode(database(), {
+    grant = await exchangeOAuthCode(database(), appSecret, {
       clientId,
       resource,
       code,
@@ -25,11 +26,11 @@ export default oauthEndpoint("POST", true, async (event) => {
     });
   } else if (input.grant_type === "refresh_token") {
     if (!input.refresh_token) throw new OAuthError("invalid_request");
-    grant = await refreshOAuthGrant(database(), clientId, resource, input.refresh_token);
+    grant = await refreshOAuthGrant(database(), appSecret, clientId, resource, input.refresh_token);
   } else throw new OAuthError("unsupported_grant_type");
   if (!grant) throw new OAuthError("invalid_grant");
   return OAuthTokensSchema.parse({
-    access_token: await signAccess(useRuntimeConfig().appSecret, issuer, grant),
+    access_token: await signAccess(appSecret, issuer, grant),
     token_type: "Bearer",
     expires_in: 3600,
     scope: "mcp",

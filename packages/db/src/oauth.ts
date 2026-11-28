@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { and, desc, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 import type { Connection, Database } from "./index.ts";
 import { ownedId } from "./owned.ts";
@@ -11,7 +11,19 @@ import {
 } from "./schema.ts";
 
 const opaque = () => randomBytes(32).toString("base64url");
-const hash = (value: string) => createHash("sha256").update(value).digest("hex");
+function oauthDigest(
+  appSecret: string,
+  purpose: "client_secret" | "request" | "code" | "refresh_token",
+  value: string,
+) {
+  if (!appSecret) throw new Error("NUXT_APP_SECRET is required");
+  const key = createHmac("sha256", appSecret).update("startodel:oauth:v1").digest();
+  return createHmac("sha256", key)
+    .update(purpose + "\0")
+    .update(value)
+    .digest("hex");
+}
+
 const active = and(
   isNull(grants.revokedAt),
   gt(grants.lastUsedAt, sql`now() - interval '90 days'`),
@@ -20,6 +32,7 @@ const usedNow = sql`clock_timestamp()`;
 
 export async function registerOAuthClient(
   db: Database,
+  appSecret: string,
   input: {
     name?: string;
     redirectUris: string[];
@@ -29,7 +42,7 @@ export async function registerOAuthClient(
   const secret = input.authMethod === "none" ? undefined : opaque();
   const [client] = await db
     .insert(clients)
-    .values({ ...input, secretHash: secret && hash(secret) })
+    .values({ ...input, secretHash: secret && oauthDigest(appSecret, "client_secret", secret) })
     .returning({ id: clients.id, createdAt: clients.createdAt });
   return { ...client!, secret };
 }
@@ -41,6 +54,7 @@ export async function oauthClient(db: Database, id: string) {
 
 export async function authenticateOAuthClient(
   db: Database,
+  appSecret: string,
   id: string,
   method: ClientAuthMethod,
   secret?: string,
@@ -51,7 +65,10 @@ export async function authenticateOAuthClient(
   return (
     !!secret &&
     !!client.secretHash &&
-    timingSafeEqual(Buffer.from(client.secretHash, "hex"), Buffer.from(hash(secret), "hex"))
+    timingSafeEqual(
+      Buffer.from(client.secretHash, "hex"),
+      Buffer.from(oauthDigest(appSecret, "client_secret", secret), "hex"),
+    )
   );
 }
 
@@ -59,40 +76,50 @@ type Authorization = Pick<
   typeof requests.$inferInsert,
   "clientId" | "redirectUri" | "resource" | "challenge" | "state"
 >;
-export async function beginAuthorization(db: Database, input: Authorization) {
+export async function beginAuthorization(db: Database, appSecret: string, input: Authorization) {
   const request = opaque();
   await db.transaction(async (tx) => {
     await tx.delete(requests).where(lt(requests.expiresAt, usedNow));
-    await tx.insert(requests).values({ ...input, hash: hash(request) });
+    await tx
+      .insert(requests)
+      .values({ ...input, hash: oauthDigest(appSecret, "request", request) });
   });
   return request;
 }
 
-function pending(request: string) {
-  return and(eq(requests.hash, hash(request)), gt(requests.expiresAt, usedNow));
+function pending(appSecret: string, request: string) {
+  return and(
+    eq(requests.hash, oauthDigest(appSecret, "request", request)),
+    gt(requests.expiresAt, usedNow),
+  );
 }
 
 export function connectionsForUser(db: Connection, userId: string) {
   return {
-    async preview(request: string) {
+    async preview(appSecret: string, request: string) {
       const [row] = await db
         .select({ name: clients.name, redirectUri: requests.redirectUri })
         .from(requests)
         .innerJoin(clients, eq(clients.id, requests.clientId))
-        .where(pending(request));
+        .where(pending(appSecret, request));
       if (row) return { name: row.name, host: new URL(row.redirectUri).host };
     },
-    decide(request: string, allow: boolean) {
+    decide(appSecret: string, request: string, allow: boolean) {
       return db.transaction(async (tx) => {
-        const [input] = await tx.delete(requests).where(pending(request)).returning();
+        const [input] = await tx.delete(requests).where(pending(appSecret, request)).returning();
         if (!input) return;
         const { clientId, redirectUri, resource, challenge, state } = input;
         let code: string | undefined;
         if (allow) {
           code = opaque();
-          await tx
-            .insert(grants)
-            .values({ clientId, redirectUri, resource, challenge, userId, codeHash: hash(code) });
+          await tx.insert(grants).values({
+            clientId,
+            redirectUri,
+            resource,
+            challenge,
+            userId,
+            codeHash: oauthDigest(appSecret, "code", code),
+          });
         }
         return { redirectUri, state, code };
       });
@@ -130,11 +157,13 @@ export function connectionsForUser(db: Connection, userId: string) {
 }
 
 type Grant = typeof grants.$inferSelect;
-async function issueRefresh(db: Connection, grant: Grant) {
+async function issueRefresh(db: Connection, appSecret: string, grant: Grant) {
   const refreshToken = opaque();
-  await db
-    .insert(tokens)
-    .values({ hash: hash(refreshToken), userId: grant.userId, connectionId: grant.id });
+  await db.insert(tokens).values({
+    hash: oauthDigest(appSecret, "refresh_token", refreshToken),
+    userId: grant.userId,
+    connectionId: grant.id,
+  });
   return {
     userId: grant.userId,
     clientId: grant.clientId,
@@ -146,6 +175,7 @@ async function issueRefresh(db: Connection, grant: Grant) {
 
 export function exchangeOAuthCode(
   db: Database,
+  appSecret: string,
   input: {
     clientId: string;
     resource: string;
@@ -161,7 +191,7 @@ export function exchangeOAuthCode(
       .from(grants)
       .where(
         and(
-          eq(grants.codeHash, hash(input.code)),
+          eq(grants.codeHash, oauthDigest(appSecret, "code", input.code)),
           eq(grants.clientId, input.clientId),
           eq(grants.redirectUri, input.redirectUri),
           eq(grants.resource, input.resource),
@@ -178,17 +208,18 @@ export function exchangeOAuthCode(
     }
     if (grant.codeExpiresAt.getTime() <= Date.now()) return;
     await tx.update(grants).set({ exchangedAt: usedNow, lastUsedAt: usedNow }).where(owned);
-    return issueRefresh(tx, grant);
+    return issueRefresh(tx, appSecret, grant);
   });
 }
 
 export function refreshOAuthGrant(
   db: Database,
+  appSecret: string,
   clientId: string,
   resource: string,
   refresh: string,
 ) {
-  const fingerprint = eq(tokens.hash, hash(refresh));
+  const fingerprint = eq(tokens.hash, oauthDigest(appSecret, "refresh_token", refresh));
   return db.transaction(async (tx) => {
     // Serialize every generation on the parent, then read rotation time in a fresh statement.
     const [row] = await tx
@@ -216,7 +247,7 @@ export function refreshOAuthGrant(
       .set({ rotatedAt: usedNow })
       .where(and(family, isNull(tokens.rotatedAt)));
     await tx.update(grants).set({ lastUsedAt: usedNow }).where(owned);
-    return issueRefresh(tx, grant);
+    return issueRefresh(tx, appSecret, grant);
   });
 }
 
@@ -248,7 +279,12 @@ export async function useOAuthAccess(db: Database, access: AccessGrant) {
 export async function revokeOAuthAccess(db: Database, access: AccessGrant) {
   await db.update(grants).set({ revokedAt: usedNow }).where(matchingGrant(access));
 }
-export async function revokeOAuthRefresh(db: Database, clientId: string, refresh: string) {
+export async function revokeOAuthRefresh(
+  db: Database,
+  appSecret: string,
+  clientId: string,
+  refresh: string,
+) {
   await db
     .update(grants)
     .set({ revokedAt: usedNow })
@@ -256,7 +292,7 @@ export async function revokeOAuthRefresh(db: Database, clientId: string, refresh
       and(
         eq(grants.clientId, clientId),
         sql`exists (
-    select 1 from ${tokens} where ${tokens.hash} = ${hash(refresh)} and ${tokens.userId} = ${grants.userId} and ${tokens.connectionId} = ${grants.id})`,
+    select 1 from ${tokens} where ${tokens.hash} = ${oauthDigest(appSecret, "refresh_token", refresh)} and ${tokens.userId} = ${grants.userId} and ${tokens.connectionId} = ${grants.id})`,
       ),
     );
 }
