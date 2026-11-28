@@ -1,3 +1,4 @@
+import { signInMethods } from "./sign-in.ts";
 import { ownedCatalogRow, type CatalogKey } from "./owned.ts";
 import { forkTrack } from "./fork.ts";
 import { trackWrites } from "./track-writes.ts";
@@ -31,6 +32,7 @@ export function forUser(db: Connection, userId: string) {
   const lessons = lessonsForUser(db, userId);
   const mastery = masteryForUser(db, userId);
   return {
+    ...signInMethods(db, userId),
     forkTrack: (login: string, slug: string) => forkTrack(db, userId, login, slug),
     ...catalog,
     ...publicProfileSettings(db, userId),

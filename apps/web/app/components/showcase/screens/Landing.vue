@@ -52,8 +52,12 @@ const facts = [
             the board: every Topic, what it depends on, and how well you hold it.
           </p>
           <div class="s-cluster hero__actions">
-            <UiButton variant="primary" size="lg" icon="github" :to="screenPath('onboarding')"
-              >Sign in with GitHub</UiButton
+            <UiButton
+              variant="primary"
+              size="lg"
+              icon-right="arrow-right"
+              :to="screenPath('signin')"
+              >{{ $t("nav.signIn") }}</UiButton
             >
             <UiButton
               size="lg"
@@ -131,8 +135,12 @@ const facts = [
       <div class="s-page cta__inner">
         <h2 class="s-title cta__title">Power up your first Topic.</h2>
         <div class="s-cluster">
-          <UiButton variant="primary" size="lg" icon="github" :to="screenPath('onboarding')"
-            >Sign in with GitHub</UiButton
+          <UiButton
+            variant="primary"
+            size="lg"
+            icon-right="arrow-right"
+            :to="screenPath('signin')"
+            >{{ $t("nav.signIn") }}</UiButton
           >
           <UiButton size="lg" href="https://github.com/startodel/startodel" icon-right="external"
             >Read the source</UiButton

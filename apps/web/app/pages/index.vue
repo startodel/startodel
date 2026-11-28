@@ -71,11 +71,11 @@ const route = useRoute();
             <UiButton
               variant="primary"
               size="lg"
-              icon="github"
-              href="/auth/github"
+              icon-right="arrow-right"
+              to="/signin"
               target="_self"
               @click="rememberLanguage"
-              >{{ $t("login.signIn") }}</UiButton
+              >{{ $t("nav.signIn") }}</UiButton
             >
             <UiButton
               size="lg"
@@ -158,11 +158,11 @@ const route = useRoute();
           <UiButton
             variant="primary"
             size="lg"
-            icon="github"
-            href="/auth/github"
+            icon-right="arrow-right"
+            to="/signin"
             target="_self"
             @click="rememberLanguage"
-            >{{ $t("login.signIn") }}</UiButton
+            >{{ $t("nav.signIn") }}</UiButton
           >
           <UiButton size="lg" href="https://github.com/startodel/startodel" icon-right="external">{{
             $t("login.source")

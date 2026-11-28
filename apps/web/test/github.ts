@@ -25,6 +25,7 @@ export async function localGitHub() {
       "dashboard",
       "hero",
       "hero-schedule",
+      "email-link",
     ].map((login, i) => ({
       id: id - 2 - i,
       login,
@@ -32,6 +33,7 @@ export async function localGitHub() {
       avatar_url: null,
     })),
   ];
+  const email = (login: string) => login + "." + Math.abs(id) + "@example.test";
   const server = createServer(async (req, res) => {
     res.setHeader("Content-Type", "application/json");
     if (req.url === "/token" && req.method === "POST") {
@@ -42,11 +44,34 @@ export async function localGitHub() {
       return;
     }
     const user = users.find(({ login }) => req.headers.authorization === `token ${login}`);
+    if (req.url?.startsWith("/user/emails?") && user) {
+      if (
+        user.login === "email-link" &&
+        new URL(req.url, "http://localhost").searchParams.get("page") === "1"
+      ) {
+        res.end(
+          JSON.stringify(
+            Array.from({ length: 100 }, (_, i) => ({
+              email: "unused" + i + "@example.test",
+              primary: false,
+              verified: true,
+            })),
+          ),
+        );
+        return;
+      }
+      res.end(
+        JSON.stringify([
+          { email: email(user.login), primary: true, verified: user.login !== "alice" },
+        ]),
+      );
+      return;
+    }
     if (req.url !== "/user" || !user) res.writeHead(404);
     res.end(JSON.stringify(user ?? {}));
   });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-  return { users, origin, close: () => server.close() };
+  return { users, origin, email, close: () => server.close() };
 }

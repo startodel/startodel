@@ -3,8 +3,8 @@ import { forUser, resolveMcpToken, signInWithGitHub, type GitHubIdentity } from 
 import { createError, getRequestURL, type RequestEvent } from "nuxt/server";
 import { requireUser } from "../utils/require-user";
 
-export function signIn(identity: GitHubIdentity) {
-  return signInWithGitHub(database(), identity);
+export function signIn(identity: GitHubIdentity, linkOwner?: string) {
+  return signInWithGitHub(database(), identity, linkOwner);
 }
 
 export async function userData(event: RequestEvent) {

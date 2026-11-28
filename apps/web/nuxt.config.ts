@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 
+import { emailTemplate } from "./build-email.mjs";
 import { ogAssets } from "./build-og-assets.mjs";
 
 export default defineNuxtConfig({
@@ -29,6 +30,7 @@ export default defineNuxtConfig({
   // Resolve the deployment's secret when the server starts, including after a build.
   runtimeConfig: {
     appSecret: "",
+    oauth: { github: { apiURL: "https://api.github.com" } },
     // NUXT_PUBLIC_DESIGN_SHOWCASE=true serves /design outside development.
     public: { designShowcase: false },
   },
@@ -42,7 +44,7 @@ export default defineNuxtConfig({
     },
   },
   nitro: {
-    rollupConfig: { plugins: [ogAssets] },
+    rollupConfig: { plugins: [ogAssets, emailTemplate] },
     externals: {
       external: ["@resvg/resvg-js"],
       traceInclude: [fileURLToPath(new URL("../../packages/db/migrate.mjs", import.meta.url))],

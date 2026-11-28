@@ -263,6 +263,9 @@ importers:
       markdown-it:
         specifier: 15.0.3
         version: 15.0.3
+      nodemailer:
+        specifier: 10.6.1
+        version: 10.6.1
       nuxt:
         specifier: 4.7.0
         version: 4.7.0(0236a47bbea432c45ca7004d1855fcfd)
@@ -275,10 +278,19 @@ importers:
       shiki:
         specifier: 4.6.0
         version: 4.6.0
+      vue:
+        specifier: 3.5.46
+        version: 3.5.46(typescript@6.0.3)
       zod:
         specifier: 4.6.7
         version: 4.6.7
     devDependencies:
+      '@types/nodemailer':
+        specifier: 8.0.2
+        version: 8.0.2
+      '@vue/compiler-sfc':
+        specifier: 3.5.46
+        version: 3.5.46
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -2466,6 +2478,9 @@ packages:
   '@types/node@26.6.6':
     resolution: {integrity: sha512-MzQj+8Kx3XI40OmUAE6Qoh58ZMNstNNMwn2nfd3qWsfe7nDNSqJNzes4njhz6AHwrSHOffSLwXU6yb474Q4aog==}
 
+  '@types/nodemailer@8.0.2':
+    resolution: {integrity: sha512-c7M5ox8p0nEOfbJ2E9Qcmt8/QCu/VzsiAhzBiZbvky2PhKZDHpKB3sQHBM5MEZNkCfBOaS6S9//AGPRTNB7IaA==}
+
   '@types/pg@8.23.1':
     resolution: {integrity: sha512-fKVHpikPdg4GKks3JuLEhvwSyvwzF23hnabPy6DD8ljVbC7+6J5dQzdv4arV6jqq57djnMgs1HKBxX4P8aBI3A==}
 
@@ -4286,6 +4301,10 @@ packages:
   node-releases@2.0.65:
     resolution: {integrity: sha512-PfvofsGQ+MiOQIPkX9fU8ELUWmy5zL74CdQaph/ismKszfFkfwXaw0cGiwbwym2hT9k5+mdyl8O5WQ1MD8EHmA==}
     engines: {node: '>=18'}
+
+  nodemailer@10.6.1:
+    resolution: {integrity: sha512-d7kfFfS/tR4Aca+SBvRaQ+MXKNv7d2JiRe5TxaRcFT/kYMh4GGPnW9aKksTIEvyEbA7d/7HYWE4YPDEHxzJj/g==}
+    engines: {node: '>=20.0.0'}
 
   nopt@8.1.0:
     resolution: {integrity: sha512-ieGu42u/Qsa4TFktmaKEwM6MQH0pOWnaB3htzh0JRtx84+Mebc0cbZYN5bC+6WTZ4+77xrL9Pn5m7CV6VIkV7A==}
@@ -7611,6 +7630,10 @@ snapshots:
     dependencies:
       undici-types: 8.9.0
 
+  '@types/nodemailer@8.0.2':
+    dependencies:
+      '@types/node': 26.6.6
+
   '@types/pg@8.23.1':
     dependencies:
       '@types/node': 26.6.6
@@ -9441,6 +9464,8 @@ snapshots:
   node-mock-http@1.0.5: {}
 
   node-releases@2.0.65: {}
+
+  nodemailer@10.6.1: {}
 
   nopt@8.1.0:
     dependencies:

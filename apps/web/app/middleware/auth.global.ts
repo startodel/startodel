@@ -23,6 +23,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
     navigateTo({ path: target(value), query: to.query, hash: to.hash });
   if (path === "/" && loggedIn.value) return redirectEntry("/dashboard");
   if (to.path === "/" && locale === "ru") return redirectEntry("/");
+  if (path === "/signin/link") return;
+  if (path === "/signin") return loggedIn.value ? redirectEntry("/dashboard") : undefined;
   if (isPublicPage(to.path)) {
     // Keep the sealed Session's contents out of public hydration payloads.
     if (import.meta.server) session.value = null;

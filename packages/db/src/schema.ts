@@ -37,22 +37,68 @@ function rowColumns() {
   };
 }
 
-export const users = pgTable("users", {
-  ...rowColumns(),
-  acceptedTermsVersion: text("accepted_terms_version"),
-  acceptedTermsAt: timestamp("accepted_terms_at", { withTimezone: true }),
-  githubId: bigint("github_id", { mode: "bigint" }).notNull().unique(),
-  handle: text("handle").notNull().unique(),
-  login: text("login").notNull(),
-  name: text("name"),
-  avatarUrl: text("avatar_url"),
-});
+export const users = pgTable(
+  "users",
+  {
+    ...rowColumns(),
+    acceptedTermsVersion: text("accepted_terms_version"),
+    acceptedTermsAt: timestamp("accepted_terms_at", { withTimezone: true }),
+    githubId: bigint("github_id", { mode: "bigint" }).unique(),
+    email: text("email").unique(),
+    handle: text("handle").notNull().unique(),
+    login: text("login").notNull(),
+    name: text("name"),
+    avatarUrl: text("avatar_url"),
+  },
+  (t) => [
+    check("users_sign_in_method", sql`${t.githubId} is not null or ${t.email} is not null`),
+    check("users_normalized_email", sql`${t.email} = lower(trim(${t.email}))`),
+  ],
+);
 
 const owner = () =>
   uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" });
 const time = (name: string) => timestamp(name, { withTimezone: true });
+export const emailChallenges = pgTable(
+  "email_challenges",
+  {
+    id: uuid("id").primaryKey(),
+    email: text("email").notNull(),
+    purpose: text("purpose").$type<"sign_in" | "change_email">().notNull(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    codeHash: text("code_hash").notNull(),
+    tokenHash: text("token_hash"),
+    attempts: smallint("attempts").notNull().default(0),
+    createdAt: time("created_at").notNull().defaultNow(),
+    expiresAt: time("expires_at")
+      .notNull()
+      .default(sql`now() + interval '15 minutes'`),
+    consumedAt: time("consumed_at"),
+  },
+  (t) => [
+    index("email_challenges_email_created").on(t.email, t.createdAt),
+    index("email_challenges_created").on(t.createdAt),
+    check(
+      "email_challenges_purpose",
+      sql`(${t.purpose}='sign_in' and ${t.userId} is null and ${t.tokenHash} is not null) or (${t.purpose}='change_email' and ${t.userId} is not null and ${t.tokenHash} is null)`,
+    ),
+  ],
+);
+
+export const authRateEvents = pgTable(
+  "auth_rate_events",
+  {
+    key: text("key").notNull(),
+    createdAt: time("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("auth_rate_events_key_created").on(t.key, t.createdAt),
+    index("auth_rate_events_created").on(t.createdAt),
+  ],
+);
+
 function ownedColumns() {
   return { ...rowColumns(), userId: owner() };
 }

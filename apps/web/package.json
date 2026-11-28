@@ -32,13 +32,17 @@
     "@vue-flow/core": "1.48.2",
     "@vue-flow/minimap": "1.5.4",
     "markdown-it": "15.0.3",
+    "nodemailer": "10.6.1",
     "nuxt": "4.7.0",
     "nuxt-auth-utils": "0.6.2",
     "reka-ui": "2.11.0",
     "shiki": "4.6.0",
+    "vue": "3.5.46",
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@types/nodemailer": "8.0.2",
+    "@vue/compiler-sfc": "3.5.46",
     "typescript": "6.0.3",
     "vue-tsc": "3.3.14",
     "wawoff2": "2.0.1"

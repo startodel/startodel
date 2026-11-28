@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. [ADR 0018](0018-email-sign-in.md) extends the sign-in and account-linking rules.
 
 ## Context
 

@@ -1,6 +1,7 @@
 // Run from the workspace root after building the app. PLAYWRIGHT_MODULE may point to a local installation.
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 import { checkLessonInteractions, checkSidebarProgress } from "./lesson-screenshots.mjs";
+import { checkSignIn, checkUnavailableSignIn } from "./signin-screenshots.mjs";
 import { checkProgress } from "./progress-screenshots.mjs";
 import { checkCascade } from "./cascade.mjs";
 import { icons } from "../app/components/ui/icons.ts";
@@ -26,6 +27,7 @@ const port = socket.address().port;
 await new Promise((r) => socket.close(r));
 const origin = "http://127.0.0.1:" + port;
 const cascade = process.argv.includes("--cascade");
+const signinOnly = process.argv.includes("--signin");
 const progressOnly = process.argv.includes("--progress");
 const command = cascade
   ? [
@@ -40,33 +42,52 @@ const command = cascade
       "--no-tui",
     ]
   : ["apps/web/.output/server/index.mjs"];
-const server = spawn(process.execPath, command, {
-  env: {
-    ...process.env,
-    ...(progressOnly && { NUXT_PUBLIC_DESIGN_SHOWCASE: "true" }),
-    NITRO_HOST: "127.0.0.1",
-    NITRO_PORT: String(port),
-    DATABASE_URL: dbUrl,
-    NUXT_APP_SECRET: randomBytes(32).toString("hex"),
-    NUXT_OAUTH_GITHUB: JSON.stringify({
-      clientId: "test-client",
-      clientSecret: "test-secret",
-      authorizationURL: github.origin + "/authorize",
-      tokenURL: github.origin + "/token",
-      apiURL: github.origin,
-    }),
-  },
-  stdio: "ignore",
-});
+const mail = new Map();
+function startServer(capture) {
+  const instance = spawn(
+    process.execPath,
+    ["--import", "./apps/web/test/mail-capture.mjs", ...command],
+    {
+      env: {
+        ...process.env,
+        SMTP_HOST: "",
+        MAIL_TRANSPORT: capture ? "capture" : "",
+        ...(!capture && { NODE_ENV: "production" }),
+        ...((progressOnly || signinOnly) && { NUXT_PUBLIC_DESIGN_SHOWCASE: "true" }),
+        NITRO_HOST: "127.0.0.1",
+        NITRO_PORT: String(port),
+        DATABASE_URL: dbUrl,
+        NUXT_APP_SECRET: randomBytes(32).toString("hex"),
+        NUXT_OAUTH_GITHUB: JSON.stringify({
+          clientId: "test-client",
+          clientSecret: "test-secret",
+          authorizationURL: github.origin + "/authorize",
+          tokenURL: github.origin + "/token",
+          apiURL: github.origin,
+        }),
+      },
+      stdio: ["ignore", "ignore", "ignore", "ipc"],
+    },
+  );
+  instance.on("message", (message) => {
+    if (message.mail) mail.set(message.mail.to, message.mail);
+  });
+  return instance;
+}
+let server = startServer(true);
 const directory = process.env.SCREENSHOT_DIR || "/home/coder/startodel-screens";
 let browser;
-async function exercise() {
+async function waitForServer() {
   for (let i = 0; i < (cascade ? 900 : 100); i++) {
     try {
-      if ((await fetch(origin + "/api/health")).ok) break;
+      if ((await fetch(origin + "/api/health")).ok) return;
     } catch {}
     await delay(100);
   }
+  throw new Error("Screenshot server did not become ready");
+}
+async function exercise() {
+  await waitForServer();
   browser = await chromium.launch({ executablePath: process.env.CHROME || undefined });
   const context = await browser.newContext({
     viewport: { width: 1280, height: 900 },
@@ -76,17 +97,12 @@ async function exercise() {
   async function signIn(login) {
     const start = await request.get(origin + "/auth/github", { maxRedirects: 0 });
     const state = new URL(start.headers().location).searchParams.get("state");
-    assert.equal(
-      (
-        await request.get(
-          origin + "/auth/github?code=" + login + "&state=" + encodeURIComponent(state),
-          {
-            maxRedirects: 0,
-          },
-        )
-      ).status(),
-      302,
+    const callback = await request.get(
+      origin + "/auth/github?code=" + login + "&state=" + encodeURIComponent(state),
+      { maxRedirects: 0 },
     );
+    assert.equal(callback.status(), 302);
+    assert.match(callback.headers().location, /^\/(?:ru\/)?dashboard$/);
   }
   await signIn("bob");
   const me = await (await request.get(origin + "/api/me")).json();
@@ -137,6 +153,15 @@ async function exercise() {
     } else await page.screenshot({ ...options, fullPage });
     console.log(name);
   };
+  if (cascade || signinOnly) {
+    await visit("/onboarding");
+    await checkSignIn({ page, visit, context, directory, cascade, mail, db, signIn });
+    if (signinOnly) {
+      assert.deepEqual(errors, []);
+      return;
+    }
+    await signIn("bob");
+  }
   if (cascade || progressOnly) {
     await checkProgress({
       page,
@@ -1492,6 +1517,14 @@ async function exercise() {
 }
 try {
   await exercise();
+  if (signinOnly && !cascade) {
+    const stopped = once(server, "exit");
+    server.kill();
+    await stopped;
+    server = startServer(false);
+    await waitForServer();
+    await checkUnavailableSignIn(browser, origin, directory);
+  }
 } finally {
   await browser?.close();
   server.kill();

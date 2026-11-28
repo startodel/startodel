@@ -336,3 +336,17 @@ test("Progress and its specimen render the same screen with sortable Topic heade
   }
   expect(sourceOf("components/ui/ProgressTopics.vue")).toContain("<UiTable");
 });
+
+test("the email steps, link result and Sign-in settings share their showcase components", () => {
+  for (const file of [
+    "pages/signin/index.vue",
+    "pages/signin/link.vue",
+    "components/showcase/screens/Signin.vue",
+  ])
+    expect(sourceOf(file)).toContain("<UiSignInPanel");
+  for (const file of ["pages/settings.vue", "components/showcase/screens/Settings.vue"])
+    expect(sourceOf(file)).toContain("<UiSignInMethods");
+  const challenge = sourceOf("components/ui/EmailChallenge.vue");
+  expect(challenge).toContain('autocomplete="one-time-code"');
+  expect(challenge).toContain('inputmode="numeric"');
+});
