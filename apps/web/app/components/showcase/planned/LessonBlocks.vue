@@ -57,7 +57,7 @@ const narrowUnified = ref<"split" | "unified">("unified");
     note="The split view stacks its sides"
     layout="row"
   >
-    <div style="flex: 1 1 18rem; min-width: 0; max-width: 23rem">
+    <div style="flex: 1 1 18rem; align-self: flex-start; min-width: 0; max-width: 23rem">
       <UiLessonDiff
         v-model:view="narrowSplit"
         language="typescript"
@@ -65,7 +65,7 @@ const narrowUnified = ref<"split" | "unified">("unified");
         :after="diff.refactor.after"
       />
     </div>
-    <div style="flex: 1 1 18rem; min-width: 0; max-width: 23rem">
+    <div style="flex: 1 1 18rem; align-self: flex-start; min-width: 0; max-width: 23rem">
       <UiLessonDiff
         v-model:view="narrowUnified"
         mode="bad-good"
