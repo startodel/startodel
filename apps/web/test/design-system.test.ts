@@ -309,6 +309,10 @@ test("the Grill session and its specimen use one bench for progress, summary and
     expect(view, file).not.toMatch(/<UiGrillStrip|<UiVerdictTally|bench__nav/);
   }
   const bench = sourceOf("components/ui/GrillBench.vue");
+  expect(css).toMatch(/--s-bench-measure:\s*54rem;/);
+  const column = bench.match(/\.s-bench\s*\{([^}]+)\}/)?.[1];
+  expect(column).toContain("max-width: var(--s-bench-measure)");
+  expect(column).toContain("margin-inline: auto");
   for (const tag of ["UiGrillStrip", "UiGrillSummary", "UiGrillQuestion"]) {
     expect(bench).toContain("<" + tag);
   }
@@ -322,4 +326,13 @@ test("the Grill list and sessions specimen share a linked row with its date and 
   }
   const row = sourceOf("components/ui/GrillRow.vue");
   for (const tag of ["NuxtLinkLocale", "time", "h2", "UiBadge"]) expect(row).toContain("<" + tag);
+});
+
+test("Progress and its specimen render the same screen with sortable Topic headers", () => {
+  for (const file of ["pages/progress.vue", "components/showcase/screens/Progress.vue"]) {
+    const view = sourceOf(file);
+    expect(view, file).toContain("<UiProgressOverview");
+    expect(view, file).not.toMatch(/<UiSelect|<UiTable|<style/);
+  }
+  expect(sourceOf("components/ui/ProgressTopics.vue")).toContain("<UiTable");
 });

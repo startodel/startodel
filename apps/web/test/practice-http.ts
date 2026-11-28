@@ -624,6 +624,10 @@ export function practiceHttpTests(
       masteryDistribution: [0, 0, 0, 0, 0],
       perTrack: [],
       perTopic: [],
+      edges: [],
+      grill: { answers: 0, strong: 0, partial: 0, weak: 0 },
+      reviews: { scheduled: 0, onTime: 0 },
+      recentVerdicts: { strong: 0, partial: 0, weak: 0 },
       activity: [],
     });
     expect((await (await request("/api/next-step", a.cookie)).json()).state).toMatchObject({
@@ -779,6 +783,7 @@ export function practiceHttpTests(
           read: 1,
           lessons: 1,
           lastActivity: expect.any(String),
+          nextReview: result.dueAt,
         },
       ],
     });

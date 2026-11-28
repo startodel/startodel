@@ -15,8 +15,16 @@ const props = defineProps<{
   note?: string;
   to?: LinkTarget;
 }>();
+const countArgs = useCountArgs();
+const { n, t } = useI18n();
 const complete = computed(
   () => props.completed ?? props.levels.filter((l) => l >= COMPLETE_LEVEL).length,
+);
+const mastered = computed(() =>
+  t("progress.masteredOf", {
+    ...countArgs(complete.value),
+    total: n(props.total ?? props.levels.length),
+  }),
 );
 </script>
 <template>
@@ -29,15 +37,10 @@ const complete = computed(
     <div class="s-trackstrip__head">
       <h3 class="s-trackstrip__title">{{ title }}</h3>
       <p class="s-trackstrip__count">
-        <strong>{{ complete }}</strong> {{ $t("board.liveOf", { total: total ?? levels.length }) }}
+        {{ mastered }}
       </p>
     </div>
-    <div
-      v-if="levels.length"
-      class="s-trackstrip__cells"
-      role="img"
-      :aria-label="$t('progress.ofTopics', { done: complete, total: total ?? levels.length })"
-    >
+    <div v-if="levels.length" class="s-trackstrip__cells" role="img" :aria-label="mastered">
       <i v-for="(level, i) in levels" :key="i" :class="'is-l' + Math.min(Math.max(level, 0), 4)" />
     </div>
     <p v-if="note || $slots.default" class="s-trackstrip__note"><slot>{{ note }}</slot></p>
@@ -78,10 +81,6 @@ const complete = computed(
   color: var(--s-ink-3);
   white-space: nowrap;
 }
-.s-trackstrip__count strong {
-  font-size: var(--s-text-sm);
-  color: var(--s-ink);
-}
 .s-trackstrip__note {
   text-transform: none;
   letter-spacing: 0.02em;
@@ -89,12 +88,13 @@ const complete = computed(
 }
 .s-trackstrip__cells {
   display: flex;
+  overflow: hidden;
   gap: 2px;
   height: 0.875rem;
 }
 .s-trackstrip__cells i {
   flex: 1;
-  min-width: 2px;
+  min-width: 0;
   max-width: 2rem;
   border-radius: 1px;
 }

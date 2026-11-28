@@ -10,6 +10,7 @@ import {
   mcpTokens,
   tracks,
   trackTopics,
+  topicEdges,
   topicMastery,
   topics,
   quizAttempts,
@@ -17,6 +18,43 @@ import {
   grillQuestions,
   reviewItems,
 } from "./schema.ts";
+
+async function progressMetrics(tx: Transaction, userId: string) {
+  const since = sql`now() - interval '30 days'`;
+  const {
+    rows: [grill],
+  } = await tx.execute<{
+    answers: number;
+    strong: number;
+    partial: number;
+    weak: number;
+  }>(sql`select count(answered_at)::int as answers,
+    count(*) filter (where verdict='strong')::int as strong,
+    count(*) filter (where verdict='partial')::int as partial,
+    count(*) filter (where verdict='weak')::int as weak
+    from grill_questions where user_id=${userId}`);
+  const {
+    rows: [recentVerdicts],
+  } = await tx.execute<{
+    strong: number;
+    partial: number;
+    weak: number;
+  }>(sql`select count(*) filter (where verdict='strong')::int as strong,
+    count(*) filter (where verdict='partial')::int as partial,
+    count(*) filter (where verdict='weak')::int as weak from (
+      select verdict from grill_questions where user_id=${userId} and judged_at >= ${since}
+      union all select verdict from review_results where user_id=${userId} and created_at >= ${since}
+    ) judgments`);
+  const {
+    rows: [reviews],
+  } = await tx.execute<{ scheduled: number; onTime: number }>(
+    sql`select count(*)::int as scheduled,
+      count(*) filter (where (created_at at time zone 'UTC')::date <=
+        (scheduled_for at time zone 'UTC')::date)::int as "onTime"
+      from review_results where user_id=${userId} and created_at >= ${since} and scheduled_for is not null`,
+  );
+  return { grill: grill!, recentVerdicts: recentVerdicts!, reviews: reviews! };
+}
 
 export function progressForUser(db: Connection, userId: string) {
   function openGrillCounts(tx: Transaction, trackId?: string) {
@@ -88,6 +126,7 @@ export function progressForUser(db: Connection, userId: string) {
         trackSlug: tracks.slug,
         language: tracks.language,
         title: tracks.title,
+        updatedAt: tracks.updatedAt,
         total: count(trackTopics.topicId),
         completed:
           sql<number>`count(*) filter (where ${topicMastery.level} >= ${COMPLETE_LEVEL} and ${fullyRead})`.mapWith(
@@ -189,7 +228,18 @@ export function progressForUser(db: Connection, userId: string) {
           const masteryDistribution = [0, 0, 0, 0, 0];
           for (const topic of perTopic)
             masteryDistribution[topic.level] = masteryDistribution[topic.level]! + 1;
-          return { perTrack, perTopic, masteryDistribution, activity };
+          const edges = await tx
+            .select({ from: topicEdges.fromTopicId, to: topicEdges.toTopicId })
+            .from(topicEdges)
+            .where(eq(topicEdges.userId, userId));
+          return {
+            perTrack,
+            perTopic,
+            edges,
+            masteryDistribution,
+            activity,
+            ...(await progressMetrics(tx, userId)),
+          };
         },
         { isolationLevel: "repeatable read", accessMode: "read only" },
       );

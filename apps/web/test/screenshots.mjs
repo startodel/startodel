@@ -1,6 +1,7 @@
 // Run from the workspace root after building the app. PLAYWRIGHT_MODULE may point to a local installation.
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 import { checkLessonInteractions, checkSidebarProgress } from "./lesson-screenshots.mjs";
+import { checkProgress } from "./progress-screenshots.mjs";
 import { checkCascade } from "./cascade.mjs";
 import { icons } from "../app/components/ui/icons.ts";
 import { localGitHub } from "./github.ts";
@@ -25,6 +26,7 @@ const port = socket.address().port;
 await new Promise((r) => socket.close(r));
 const origin = "http://127.0.0.1:" + port;
 const cascade = process.argv.includes("--cascade");
+const progressOnly = process.argv.includes("--progress");
 const command = cascade
   ? [
       "apps/web/node_modules/nuxt/bin/nuxt.mjs",
@@ -41,6 +43,7 @@ const command = cascade
 const server = spawn(process.execPath, command, {
   env: {
     ...process.env,
+    ...(progressOnly && { NUXT_PUBLIC_DESIGN_SHOWCASE: "true" }),
     NITRO_HOST: "127.0.0.1",
     NITRO_PORT: String(port),
     DATABASE_URL: dbUrl,
@@ -57,7 +60,7 @@ const server = spawn(process.execPath, command, {
 });
 const directory = process.env.SCREENSHOT_DIR || "/home/coder/startodel-screens";
 let browser;
-try {
+async function exercise() {
   for (let i = 0; i < (cascade ? 900 : 100); i++) {
     try {
       if ((await fetch(origin + "/api/health")).ok) break;
@@ -134,7 +137,24 @@ try {
     } else await page.screenshot({ ...options, fullPage });
     console.log(name);
   };
-  if (cascade) {
+  if (cascade || progressOnly) {
+    await checkProgress({
+      page,
+      visit,
+      directory: process.env.PROGRESS_SCREENSHOT_DIR || process.env.SCREENSHOT_DIR,
+      cascade,
+      signInOwner: async (login) => {
+        await signIn(login);
+        const { user } = await (await request.get(origin + "/api/me")).json();
+        return forUser(db, user.id);
+      },
+    });
+    if (progressOnly) {
+      assert.deepEqual(errors, []);
+      return;
+    }
+    await signIn("bob");
+    await page.setViewportSize({ width: 1280, height: 900 });
     await visit("/onboarding");
     await checkCascade(page, "/onboarding");
   }
@@ -764,8 +784,7 @@ try {
   await page.getByRole("heading", { name: "Progress", exact: true }).waitFor();
   assert.equal(await page.locator(".s-rail .is-current").getAttribute("href"), "/progress");
   assert.equal(await page.locator(".s-topbar__crumbs").innerText(), "Progress");
-  await page.getByRole("combobox", { name: "Sort by" }).click();
-  await page.getByRole("option", { name: "Mastery (lowest first)" }).click();
+  await page.getByRole("columnheader", { name: "Mastery" }).getByRole("button").click();
   const levels = await page.locator("tbody .s-mastery").evaluateAll((meters) =>
     meters.map((meter) => {
       const level = Number(meter.getAttribute("aria-label").match(/^Mastery ([0-4]) of 4,/)[1]);
@@ -780,7 +799,7 @@ try {
     levels.map(Number),
     levels.map(Number).sort((a, b) => a - b),
   );
-  await page.getByRole("tab", { name: /Recent activity/ }).click();
+  await page.getByRole("tab", { name: /Activity/ }).click();
   await page.locator(".s-timeline-item").first().waitFor();
   await shot("pr9-progress");
   const overview = "Read a browser trace alongside the HTML specification.";
@@ -812,13 +831,15 @@ try {
     }
     for (const width of [390, 1440]) {
       await page.setViewportSize({ width, height: 900 });
-      await visit("/lessons/" + lesson.id);
-      await page.evaluate(() => document.fonts.ready);
-      const lessonFrame = await frame(".lesson");
-      if (width === 1440) await capture("lesson-en-1440");
+      if (width === 1440 && process.env.SCREENSHOT_DIR) {
+        await visit("/lessons/" + lesson.id);
+        await page.evaluate(() => document.fonts.ready);
+        await capture("lesson-en-1440");
+      }
       for (const locale of ["en", "ru"]) {
         const prefix = locale === "en" ? "" : "/ru";
         let listFrame;
+        let sessionFrame;
         for (const specimen of [false, true]) {
           await visit(
             prefix + (specimen ? "/design/screens/grill?state=sessions&chrome=0" : "/grills"),
@@ -840,8 +861,34 @@ try {
           const path = specimen ? "/design/screens/grill?chrome=0" : "/grills/" + grill.id;
           await visit(prefix + path);
           await page.evaluate(() => document.fonts.ready);
-          assert.deepEqual(await frame(".s-bench__head"), lessonFrame);
-          assert.deepEqual(await frame(".s-strip"), lessonFrame);
+          const bench = await frame(".s-bench");
+          const shell = await page.locator(".s-shell__main").evaluate((main) => {
+            const bounds = main.getBoundingClientRect();
+            const style = getComputedStyle(main);
+            const left = parseFloat(style.paddingLeft);
+            const right = parseFloat(style.paddingRight);
+            return {
+              x: bounds.x + left,
+              width: bounds.width - left - right,
+              rem: parseFloat(getComputedStyle(document.documentElement).fontSize),
+            };
+          });
+          const expectedWidth = width === 390 ? shell.width : 54 * shell.rem;
+          assert.deepEqual(bench, {
+            x: shell.x + (shell.width - expectedWidth) / 2,
+            width: expectedWidth,
+          });
+          if (specimen) assert.deepEqual(bench, sessionFrame);
+          else sessionFrame = bench;
+          for (const part of [
+            ".s-bench__head",
+            ".s-strip",
+            ".s-question",
+            ".s-answer",
+            ".s-bench__nav",
+          ]) {
+            assert.deepEqual(await frame(part), bench, part + " must share the Grill column");
+          }
           const progress = page.locator(".s-bench").getByRole("status");
           if (!specimen) {
             assert.equal(
@@ -888,9 +935,7 @@ try {
           await first.click();
           assert.equal(await first.count(), 0);
           assert.ok(await currentPad.evaluate((el) => el === document.activeElement));
-          console.log(
-            name + " · matches Lesson at x=" + lessonFrame.x + ", width=" + lessonFrame.width,
-          );
+          console.log(name + " · centered bench at x=" + bench.x + ", width=" + bench.width);
         }
       }
     }
@@ -1444,6 +1489,9 @@ try {
   }
   await checkSidebarProgress(page, owner, origin);
   assert.deepEqual(errors, []);
+}
+try {
+  await exercise();
 } finally {
   await browser?.close();
   server.kill();

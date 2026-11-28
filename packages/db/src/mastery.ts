@@ -2,7 +2,7 @@ import { MasteryLevel, scheduleReview, Verdict } from "@startodel/core";
 import { and, eq, lte } from "drizzle-orm";
 import type { Connection } from "./index.ts";
 import { ownedId, referencedRow, type Transaction } from "./owned.ts";
-import { topics, topicMastery, reviewItems } from "./schema.ts";
+import { topics, topicMastery, reviewItems, reviewResults } from "./schema.ts";
 
 // ReviewItem fields returned by the agent-facing operations.
 export const reviewItemFields = {
@@ -24,6 +24,7 @@ export async function recordReview(
   topicId: string,
   verdict: Verdict,
   note?: string | { correct: number; total: number },
+  origin: "review" | "grill" = "review",
 ) {
   // Serialize even the first two reviews, when there is no ReviewItem to lock yet.
   const [topic] = await tx
@@ -33,7 +34,7 @@ export async function recordReview(
     .for("no key update");
   if (!topic) return undefined;
   const [previous] = await tx
-    .select({ box: reviewItems.box })
+    .select({ box: reviewItems.box, dueAt: reviewItems.dueAt })
     .from(reviewItems)
     .where(and(eq(reviewItems.userId, userId), eq(reviewItems.topicId, topicId)));
   const now = new Date();
@@ -49,6 +50,10 @@ export async function recordReview(
     practiceTotal: typeof note === "object" ? note.total : null,
     lastReviewedAt: now,
   };
+  if (origin === "review")
+    await tx
+      .insert(reviewResults)
+      .values({ userId, topicId, createdAt: now, scheduledFor: previous?.dueAt, verdict: result });
   return (
     await tx
       .insert(reviewItems)

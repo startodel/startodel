@@ -39,7 +39,7 @@ const families = {
   "block.": ["theory", "code", "callout", "link", "video", "quiz", "exercise"],
   "topicState.": ["complete", "ready", "blocked"],
 };
-// The design showcase is an English reference built from sample copy. The components it shows are checked.
+// Most showcase screens still use English sample copy. Check their catalog references too.
 const showcase = [
   "apps/web/app/pages/design/",
   "apps/web/app/pages/design.vue",
@@ -53,7 +53,8 @@ function inspect() {
   const web = createRequire(new URL("../apps/web/package.json", import.meta.url));
   const compiler = createRequire(web.resolve("@nuxtjs/i18n/package.json"))("@vue/compiler-sfc");
   for (const file of globSync("apps/web/{app,shared,server}/**/*.{vue,ts}")) {
-    if (showcase.some((path) => file.startsWith(path))) continue;
+    const reference = showcase.some((path) => file.startsWith(path));
+    const progressSpecimen = file === "apps/web/app/components/showcase/screens/Progress.vue";
     const source = readFileSync(file, "utf8");
     for (const match of source.matchAll(/(?:\b(?:t|translate)\(\s*|\bkeypath=)(["'])([^"'\n]*)\1/g))
       references.push(match[2]);
@@ -62,7 +63,7 @@ function inspect() {
       if (!values) errors.push(file + ": undocumented dynamic key " + match[1]);
       else for (const value of values) references.push(match[1] + value);
     }
-    if (!file.endsWith(".vue")) continue;
+    if (!file.endsWith(".vue") || (reference && !progressSpecimen)) continue;
     function visit(node) {
       if (
         node.type === 2 &&

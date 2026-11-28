@@ -389,6 +389,59 @@ describe.skipIf(!url)("two independent Topic Catalogs", () => {
     expect(await bob.listDueReviews(future, 10)).toMatchObject([{ topicId: topic.id, box: 2 }]);
   });
 
+  test("Progress counts scheduled reviews and judgments independently of the latest 30 activities", async () => {
+    const topic = await bob.upsertTopic({ slug: "locks", title: "Locks" });
+    await expect(
+      db.$client.query(
+        "insert into review_results(user_id,topic_id,verdict) values ($1,$2,'strong')",
+        [owners[0], topic.id],
+      ),
+    ).rejects.toMatchObject({ code: "23503" });
+    await bob.recordReviewResult(topic.id, "strong");
+    const grill = (await bob.startGrill({ title: "Locking" }))!;
+    const question = (await bob.addGrillQuestion(grill.id, {
+      topicId: topic.id,
+      prompt: "Why lock a row?",
+    }))!;
+    await bob.answerGrillQuestion(question.id, "To serialize writers", "ui");
+    await bob.judgeGrillQuestion(question.id, "partial");
+    const old = (await bob.addGrillQuestion(grill.id, { prompt: "What is a deadlock?" }))!;
+    await bob.answerGrillQuestion(old.id, "A cycle", "mcp");
+    await bob.judgeGrillQuestion(old.id, "strong");
+    await db.$client.query(
+      "update grill_questions set judged_at=now()-interval '31 days' where user_id=$1 and id=$2",
+      [owners[1], old.id],
+    );
+    await bob.recordReviewResult(topic.id, "partial");
+    await db.$client.query(
+      "update review_items set due_at=now()-interval '2 days' where user_id=$1",
+      [owners[1]],
+    );
+    const latest = await bob.recordReviewResult(topic.id, "weak");
+    await db.$client.query(
+      "update review_results set created_at=now()-interval '31 days' where user_id=$1 and scheduled_for is null",
+      [owners[1]],
+    );
+    const extraTopics = await bob.upsertTopics(
+      Array.from({ length: 32 }, (_, i) => ({ slug: "topic-" + i, title: "Topic " + i })),
+    );
+    for (const extra of extraTopics) await bob.setMastery(extra.id, 1);
+    const overview = await bob.getProgressOverview();
+    expect(overview.activity).toHaveLength(30);
+    expect(overview).toMatchObject({
+      grill: { answers: 2, strong: 1, partial: 1, weak: 0 },
+      recentVerdicts: { strong: 0, partial: 2, weak: 1 },
+      reviews: { onTime: 1, scheduled: 2 },
+    });
+    expect(overview.perTopic.find((t) => t.id === topic.id)?.nextReview).toEqual(latest!.dueAt);
+    expect(await alice.getProgressOverview()).toMatchObject({
+      grill: { answers: 0 },
+      recentVerdicts: { strong: 0, partial: 0, weak: 0 },
+      reviews: { onTime: 0, scheduled: 0 },
+      perTopic: [],
+    });
+  });
+
   test("only the Owner can rename an open or finished GrillSession", async () => {
     const session = (await bob.startGrill({ title: "Original" }))!;
     const question = (await bob.addGrillQuestion(session.id, { prompt: "Explain locks" }))!;

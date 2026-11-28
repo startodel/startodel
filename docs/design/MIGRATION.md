@@ -9,7 +9,7 @@ Read [the design concept](CONCEPT.md) and [ADR 0017](../adr/0017-design-system.m
 ## Product page rules
 
 - Every product page renders inside `UiRoot` and uses only `Ui*` components and `--s-*` tokens. Its token-based styles reproduce the composition of its showcase screen.
-- Keep every user-facing string in `ru.json` and `en.json`. The showcase copy is English sample text and is not a source of messages. Use the Russian terms in [CONTEXT.md](../CONTEXT.md#russian-ui-terms).
+- Keep every user-facing string in `ru.json` and `en.json`. The Progress specimen uses localized sample content. Other screens may use English sample text. Use the Russian terms in [CONTEXT.md](../CONTEXT.md#russian-ui-terms).
 - Link to app pages with `NuxtLinkLocale`. Components that take a link accept a `LinkTarget` and render it that way.
 - Keep the content safety rules of [ADR 0014](../adr/0014-review-practice-and-ui-answers.md). `UiProse`, `UiCodeBlock`, `UiResourceLink` and `UiVideoEmbed` call the same `renderMarkdown`, `codeTokens`, `httpUrl` and `youtubeEmbed` utilities as the components they replace. `apps/web/test/rendering.test.ts` covers those utilities and stays as it is.
 
@@ -59,7 +59,7 @@ The order goes from pages with the least data and risk to the ones with the most
 | 3   | `/settings`                                                               | `app`   | `settings`                                 | `McpTokens` → `UiTable`, `UiCopyField`, `UiModal`; `LanguageSwitcher` → `UiLanguageSwitcher`                                                                                         |
 | 4   | `/onboarding`, `/onboarding/connect`                                      | `focus` | `onboarding`, `connect`                    | `AgentConfig` → `UiTabs`, `UiCodeBlock`, `UiCopyField`; `AgentPrompt` → `UiAgentPrompt`                                                                                              |
 | 5   | `/dashboard`                                                              | `app`   | `dashboard`                                | `NextStep` → `UiNextUp`; Track rows → `UiTrackStrip`                                                                                                                                 |
-| 6   | `/progress`                                                               | `app`   | `progress`                                 | page markup → `UiMasteryHistogram`, `UiVerdictTally`, `UiTable`, `UiTimelineItem`                                                                                                    |
+| 6   | `/progress`                                                               | `app`   | `progress`                                 | page and specimen share `UiProgressOverview`, `UiProgressSummary` and `UiProgressTopics`                                                                                             |
 | 7   | `/reviews`, `/reviews/[topicId]/practice`                                 | `app`   | `reviews`                                  | `QuestionChoices` → `UiQuiz`; rows → `UiReviewCard`                                                                                                                                  |
 | 8   | `/lessons/[id]`                                                           | `app`   | `lesson`                                   | `LessonContent`, `LessonMarkdown`, `LessonCode`, `LessonQuiz` → `UiLessonBlock` with `UiProse`, `UiCodeBlock`, `UiCallout`, `UiResourceLink`, `UiVideoEmbed`, `UiQuiz`, `UiExercise` |
 | 9   | `/tracks/[slug]`, `/topics/[id]`                                          | `app`   | `track`                                    | `TrackGraph.client` → `UiTrackBoard`; `TopicPanel` → `UiTopicCard`, `UiLessonList`; `TrackVisibility` → `UiModal` with `UiCheckbox`                                                  |
@@ -70,9 +70,17 @@ Notes for single steps:
 
 - **Step 2.** The landing mock is the signed-out page. Anonymous visitors see it at `/` or `/ru`. Signed-in visitors go to their localized Dashboard. Legacy `/login` links redirect.
 - **Step 3.** The plaintext MCP Token is shown once, in `UiCopyField`. Keep it out of logs and out of any stored state.
+- **Step 6.** Progress and its specimen both fill the app shell’s content width. The page supplies Owner data and the specimen supplies localized sample data to the same screen. Track strips use prerequisite order. The Topic table sorts the entire catalog before pagination and keeps unscheduled reviews last in either direction. Set `PROGRESS_SCREENSHOT_DIR` when running the cascade audit to capture both screens in English and Russian at 390px and 1440px. After `pnpm build`, `node apps/web/test/screenshots.mjs --progress` repeats the browser checks against the production build.
 - **Step 7 and 8.** `UiQuiz` receives questions and options only. The correct option and the explanation arrive in the `result` prop after submission. `UiExercise` receives the solution only after `reveal`. Do not preload either.
 - **Step 9.** `UiTrackBoard` and `UiTrackMap` share `boardModel()` in `components/ui/board.ts`, so the interactive board and the server-rendered board are identical. `@vue-flow/core` and `@dagrejs/dagre` stay. The board falls back to `UiTrackList` in a narrow container.
+- **Step 10.** The Grill session and specimen center the entire `UiGrillBench` within the shell. The `--s-bench-measure` token caps the column at 54rem on desktop. It fills the available width at 390px. The header, progress strip, answer form and navigation share its edges.
 - **Step 11.** A Public Track has no Mastery. Pass `outline` to `UiTrackMap`. The public Lesson reuses the renderers of step 8 with the Quiz and Exercise in their read-only form.
+
+### Progress metrics
+
+The summary counts mastered Topics using the Track completion rule and counts Grill answers across all sessions. The assessment panel counts Grill judgments and review results from the last 30 days. A Grill judgment that schedules a review contributes one assessment.
+
+For reviews completed during those 30 days, the on-time percentage counts those completed on or before the scheduled UTC date, among completions with a known prior due date. The first result for an unscheduled Topic starts its schedule. Existing ReviewItems retain the next due date only. Migration 0010 preserves identifiable latest review results for the assessment panel. Timeliness can be measured from the next scheduled review onward.
 
 ### Data the mock screens assume
 
@@ -80,7 +88,7 @@ Some mock screens show more than the current handlers return. Decide for each it
 
 | Screen             | Element                                                          | Current source                                                                                               |
 | ------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Dashboard          | One cell per Topic in `UiTrackStrip`                             | `/api/dashboard` returns totals per Track. `/api/progress` has Mastery per Topic.                            |
+| Dashboard          | One cell per Topic in `UiTrackStrip`                             | `/api/progress` supplies Topic Mastery, Track membership and prerequisite edges.                             |
 | Dashboard, Reviews | `UiLeitnerRack` counts per Review Box, `UiWeekStrip` due per day | Derive from the ReviewItems of `/api/reviews`, which carry the Review Box and the due date.                  |
 | Dashboard          | Recent Activity                                                  | `/api/progress` returns Activity. `/api/dashboard` does not.                                                 |
 | Connect            | “Waiting” and “Connected” states                                 | `/api/mcp-tokens` returns when each MCP Token was last used. There is no push, so the page has to ask again. |

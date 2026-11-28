@@ -30,7 +30,6 @@ const indexTag = useIndexTag();
   display: grid;
   gap: var(--s-5);
   min-width: 0;
-  max-width: 44rem;
 }
 .s-question__head {
   display: flex;
@@ -66,6 +65,7 @@ const indexTag = useIndexTag();
   color: var(--s-ink-2);
 }
 .s-question__prompt {
+  max-width: 44rem;
   font: 500 clamp(var(--s-text-xl), 3.4cqi, var(--s-text-2xl)) / 1.35 var(--s-font-read);
   letter-spacing: -0.012em;
   text-wrap: pretty;

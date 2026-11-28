@@ -22,7 +22,9 @@ useEmptyDashboardRefresh(
     await Promise.all([retryProgress(), retryReviews()]);
   },
 );
-const levels = computed(() => trackLevels(progress.value?.perTopic ?? []));
+const levels = computed(() =>
+  trackLevels(progress.value?.perTopic ?? [], progress.value?.edges ?? []),
+);
 const { week, boxes, today } = useReviewSchedule(() => reviews.value);
 const step = computed(() => data.value?.nextStep);
 const hero = computed(() => {
