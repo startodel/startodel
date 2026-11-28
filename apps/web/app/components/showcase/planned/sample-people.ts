@@ -1,5 +1,14 @@
 import type { AccessGrant, AccessPending, SyllabusTopic } from "../../ui/access";
 import type { AgentFitSignal, AgentFitState } from "../../ui/agent";
+import type {
+  CohortLearner,
+  CohortSummary,
+  DropOffItem,
+  FunnelStep,
+  LearnerChange,
+  LearnerCounts,
+  MasteryTopic,
+} from "../../ui/analytics";
 import type { BlockComment, FeedbackLesson } from "../../ui/comments";
 import { screenPath } from "../sample";
 
@@ -332,4 +341,111 @@ export function useSampleAccess() {
     }),
   );
   return { title, visitor, learner, requests, grants, message, daysAgo };
+}
+
+/** 128 learners started the sample Track. Every number below is drawn from that cohort. */
+const cohort = {
+  reached: [128, 112, 97, 62, 51, 38],
+  mastery: [
+    [6, 22, 48, 37, 15],
+    [18, 26, 44, 30, 10],
+    [34, 31, 37, 20, 6],
+    [67, 24, 22, 11, 4],
+    [78, 19, 19, 9, 3],
+    [91, 14, 14, 7, 2],
+  ],
+  median: [2, 2, 1, 0, 0, 0],
+  quiz: [0.86, 0.74, 0.69, 0.41, 0.63, 0.58],
+  exercise: [0.72, 0.61, 0.55, 0.29, 0.38, null],
+};
+
+export function useSampleAnalytics() {
+  const pick = usePick();
+  const daysAgo = useDaysAgo();
+  const trackPath = screenPath("track");
+  const counts: LearnerCounts = { started: 128, active7: 41, active30: 86, completed: 29 };
+  const change: LearnerChange = { started: 14, active7: 5, active30: -3, completion: 2 };
+  const funnel = computed<FunnelStep[]>(() =>
+    track.topics.map((topic, i) => ({
+      id: String(i + 1),
+      title: pick(topic.title),
+      learners: cohort.reached[i]!,
+      to: trackPath,
+    })),
+  );
+  const mastery = computed<MasteryTopic[]>(() =>
+    track.topics.map((topic, i) => ({
+      id: String(i + 1),
+      title: pick(topic.title),
+      counts: cohort.mastery[i]!,
+      median: cohort.median[i]!,
+      quizAccuracy: cohort.quiz[i]!,
+      exerciseCompletion: cohort.exercise[i]!,
+      to: trackPath,
+    })),
+  );
+  const weakSpots = computed<DropOffItem[]>(() => [
+    {
+      id: "4-1",
+      ref: { topic: 4, lesson: 1 },
+      title: pick(track.topics[3]!.lessons[0]!),
+      to: lessonPath,
+      signals: [
+        { type: "dropoff", value: 0.34 },
+        { type: "accuracy", value: 0.41 },
+        { type: "comments", value: 9 },
+      ],
+      reading: pick({
+        ru: "Треть учеников бросает трек на этом уроке, а в тесте ошибается больше половины.",
+        en: "A third of the learners leave the Track at this Lesson, and more than half fail its Quiz.",
+      }),
+    },
+    {
+      id: "2-3",
+      ref: { topic: 2, lesson: 3 },
+      title: pick(track.topics[1]!.lessons[2]!),
+      to: lessonPath,
+      signals: [{ type: "accuracy", value: 0.48 }],
+      reading: pick({
+        ru: "Урок дочитывают, но тест после него проходит только половина.",
+        en: "Learners finish the Lesson, but only half of them pass the Quiz after it.",
+      }),
+    },
+    {
+      id: "5-2",
+      ref: { topic: 5, lesson: 2 },
+      title: pick(track.topics[4]!.lessons[1]!),
+      to: lessonPath,
+      signals: [
+        { type: "dropoff", value: 0.21 },
+        { type: "comments", value: 7 },
+      ],
+      reading: pick({
+        ru: "Каждый пятый останавливается здесь. В комментариях просят пример с work_mem.",
+        en: "One learner in five stops here. The comments ask for an example with work_mem.",
+      }),
+    },
+  ]);
+  const learner = (handle: string, read: number, level: number, days: number): CohortLearner => ({
+    id: handle,
+    handle,
+    read,
+    lessons: 16,
+    mastery: level,
+    lastActiveAt: daysAgo(days),
+  });
+  const learners = computed(() => [
+    learner("mira", 16, 3, 0),
+    learner("dkim", 14, 3, 2),
+    learner("nastya-v", 12, 2, 1),
+    learner("lev", 9, 2, 3),
+    learner("tim-r", 9, 1, 6),
+    learner("ilya-k", 7, 1, 4),
+    learner("anna-b", 5, 1, 9),
+    learner("oleg-s", 3, 0, 12),
+    learner("vera-m", 2, 0, 20),
+    learner("pavel-z", 1, 0, 31),
+  ]);
+  const summary: CohortSummary = { learners: 128, progress: 0.46, mastery: 1 };
+  return { counts, change, funnel, mastery, weakSpots, learners, summary };
 }

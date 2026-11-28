@@ -98,6 +98,7 @@ export const icons = {
   ),
   "lock-pad":
     path("M1.5 7.5h7v6h-7zM3 7.5V5.5a2 2 0 0 1 4 0v2M8.5 10.5h1.75") + dot(12.25, 10.5, 2),
+  steady: path("M3.5 8h9"),
 } as const;
 
 export type IconName = keyof typeof icons;
