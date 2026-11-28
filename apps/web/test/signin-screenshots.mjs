@@ -36,6 +36,10 @@ export async function checkSignIn({ page, visit, context, directory, cascade, ma
         await visit(prefix + "/design/screens/signin?chrome=0&state=unavailable");
         assert.equal(await page.locator("input[type=email]").count(), 0);
         await checkCascade(page);
+        for (const state of ["code", "wrong", "locked", "limited", "verifying", "expired"]) {
+          await visit(prefix + "/design/screens/signin?chrome=0&state=" + state);
+          await checkCascade(page);
+        }
       }
       await visit(prefix + "/signin");
       if (cascade) await checkCascade(page);
@@ -80,11 +84,11 @@ export async function checkSignIn({ page, visit, context, directory, cascade, ma
           await page.goto(message.text.match(/http:\/\/\S+/)[0]);
         } else {
           const digits = message.subject.match(/\d{6}$/)[0];
+          // The sixth digit submits the code. A wrong one clears the cells for the next try.
           await code.fill(digits === "000000" ? "000001" : "000000");
-          await page.locator(".s-challenge button[type=submit]").click();
           await page.getByRole("alert").getByText("Incorrect code. Attempts left: 4.").waitFor();
+          assert.equal(await code.inputValue(), "");
           await code.fill(digits);
-          await page.locator(".s-challenge button[type=submit]").click();
         }
         await page.waitForURL(origin + prefix + "/onboarding");
       }

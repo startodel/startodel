@@ -26,15 +26,16 @@ export function useEmailActions(change = false) {
   };
 }
 
+export type EmailFailure = { reason?: string; remaining?: number };
+
 export function emailFailure(error: unknown) {
-  return (error as { data?: { data?: { reason?: string; remaining?: number } } } | null)?.data
-    ?.data;
+  return (error as { data?: { data?: EmailFailure } } | null)?.data?.data;
 }
 
-export function useSignInError() {
+/** The message for a failure the email endpoints report. An unknown one asks to try again. */
+export function useSignInFailureText() {
   const { t } = useI18n();
-  return (error: unknown) => {
-    const data = emailFailure(error);
+  return (data?: EmailFailure) => {
     switch (data?.reason) {
       case "wrong":
         return t("signin.wrong", { remaining: data.remaining });
@@ -58,4 +59,9 @@ export function useSignInError() {
         return t("signin.retry");
     }
   };
+}
+
+export function useSignInError() {
+  const text = useSignInFailureText();
+  return (error: unknown) => text(emailFailure(error));
 }

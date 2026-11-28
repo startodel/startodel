@@ -112,6 +112,8 @@ The design entry point imports `reset.css` for element defaults. `UiRoot` retain
 - `apps/web/test/cascade.mjs` reports no order-dependent declarations for the page.
 - The page looks the same in `pnpm dev` and in the production build.
 
+`UiSignInPanel` owns every state of Sign-in: the email form with GitHub below it, the code step, its failures, the page a sign-in link opens, and GitHub alone when email delivery is not configured. `UiEmailChallenge` takes the code through `UiCodeInput` and submits it on the sixth digit. A wrong code is an error on the field. A rate limit or a dead Email Challenge is a notice with the next action. The `signin` screen has one state for each.
+
 Run `node apps/web/test/screenshots.mjs --signin --cascade` for the Sign-in flow at 390px and 1440px. After `pnpm build`, run with `--signin` to exercise code and link sign-in in the browser, capture both rendered emails, and check the GitHub-only page on a production server without SMTP. Set `SCREENSHOT_DIR` for the output directory.
 
 The focus-layout `/consent` route and `/design/screens/consent` share the consent panel. Settings and its specimen share the Connected apps list. Run `node apps/web/test/screenshots.mjs --oauth` for English and Russian screenshots and add `--cascade` for the two-width audit.

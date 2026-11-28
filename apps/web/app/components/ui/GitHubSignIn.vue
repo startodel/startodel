@@ -1,5 +1,6 @@
 <script setup lang="ts">
-defineProps<{ href?: string }>();
+/** The only filled control on the page when GitHub is the only Sign-in Method on offer. */
+defineProps<{ href?: string; primary?: boolean }>();
 const rememberLanguage = useSignInLanguage();
 </script>
 <template>
@@ -8,6 +9,7 @@ const rememberLanguage = useSignInLanguage();
     target="_self"
     icon="github"
     size="lg"
+    :variant="primary ? 'primary' : 'secondary'"
     @click="rememberLanguage"
     >{{ $t("login.signIn") }}</UiButton
   >

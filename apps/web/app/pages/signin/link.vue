@@ -28,6 +28,6 @@ onMounted(async () => {
 <template>
   <UiSignInPanel
     :link-state="unavailable ? undefined : message ? 'error' : 'pending'"
-    :message="message"
+    :message="unavailable ? undefined : message"
   />
 </template>
