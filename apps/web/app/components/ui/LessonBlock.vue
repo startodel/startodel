@@ -1,29 +1,36 @@
 <script setup lang="ts">
 import type { PublicBlock } from "@startodel/core";
+import type { IconName } from "./icons";
 import { blockIcon } from "./lesson";
 const indexTag = useIndexTag();
 const props = defineProps<{
   /** The Block's position in the Lesson, from 1. */
   index: number;
-  block: PublicBlock;
+  /** Names the kind and picks the icon. Optional when both kind and icon are given. */
+  block?: PublicBlock;
+  /** The word for a kind that is not a Block type yet. It replaces the one derived from block. */
+  kind?: string;
+  icon?: IconName;
   anchor?: string;
 }>();
 const { t } = useI18n();
 const designator = computed(() => indexTag("block", props.index));
-const word = computed(() =>
-  props.block.type === "callout"
+const word = computed(() => {
+  if (props.kind || !props.block) return props.kind ?? "";
+  return props.block.type === "callout"
     ? t(`callout.${props.block.variant}`)
-    : t(`block.${props.block.type}`),
-);
+    : t(`block.${props.block.type}`);
+});
+const glyph = computed(() => props.icon ?? (props.block && blockIcon(props.block)));
 </script>
 <template>
   <section :id="anchor" class="s-block" :aria-label="`${designator}, ${word}`">
     <p class="s-block__margin" aria-hidden="true">
       <span class="s-block__ref">{{ designator }}</span>
-      <span class="s-block__kind"><UiIcon :name="blockIcon(block)" :size="12" />{{ word }}</span>
+      <span class="s-block__kind"><UiIcon v-if="glyph" :name="glyph" :size="12" />{{ word }}</span>
     </p>
     <div class="s-block__body">
-      <UiCallout v-if="block.type === 'callout'" :kind="block.variant" :show-kind="false">
+      <UiCallout v-if="block?.type === 'callout'" :kind="block.variant" :show-kind="false">
         <slot />
       </UiCallout>
       <slot v-else />
