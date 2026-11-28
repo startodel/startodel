@@ -81,7 +81,7 @@ The board is the hero of the product and of the landing page.
 - A TopicEdge is a trace. It runs horizontally and vertically with 45-degree corners, as on a real board, and ends in a pad at each part.
 - A trace is live when its source Topic is complete, which the domain defines as Mastery 2 or higher. Live traces are solid copper. Other traces are dashed tin.
 - A Topic is ready when every incoming trace is live. Ready parts carry a copper outline. Blocked parts are dimmed and show a lock.
-- The dot grid appears behind the board and behind empty states only. Everywhere else the ground is plain.
+- The dot grid marks a drawing surface or an empty slot: the board, a diagram, an empty state, a drop zone. Everywhere else the ground is plain.
 
 On a narrow container the same data is shown as a list in topological order, because a wide graph on a phone is a poor way to choose what to study.
 
