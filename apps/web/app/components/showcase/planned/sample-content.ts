@@ -207,6 +207,27 @@ export function uniqueBy(items, key) {
     ],
     timeout: "Запрос остановлен: он выполнялся дольше 5 секунд.",
   },
+  media: {
+    formats: "MP4, PNG, PDF, ZIP",
+    videoFormats: "MP4, WebM",
+    quotaFull: "Хранилище заполнено. Удалите ненужные файлы, чтобы загрузить новые.",
+    kinds: { video: "Видео", files: "Файлы" },
+    failed: "Соединение прервалось на 41%.",
+    files: {
+      uploading: "event-loop-phases.mp4",
+      processing: "explain-analyze-walkthrough.mp4",
+      image: "nested-loop-plan.png",
+      document: "index-types-cheatsheet.pdf",
+      failed: "exercise-fixtures.zip",
+      overQuota: "conference-talk-full-recording.mp4",
+    },
+    video: {
+      ready: "Читаем план запроса с EXPLAIN ANALYZE",
+      processing: "Шесть фаз цикла событий Node.js",
+      expired: "Покрывающие индексы на живой таблице",
+      locked: "Разбор задачи про дедлок",
+    },
+  },
 };
 
 const en: typeof ru = {
@@ -363,6 +384,27 @@ export function uniqueBy(items, key) {
       { id: "order", name: "sorts the Lessons by their position in the Topic" },
     ],
     timeout: "The query was stopped: it ran longer than 5 seconds.",
+  },
+  media: {
+    formats: "MP4, PNG, PDF, ZIP",
+    videoFormats: "MP4, WebM",
+    quotaFull: "The storage is full. Remove the files you no longer need to upload new ones.",
+    kinds: { video: "Video", files: "Files" },
+    failed: "The connection dropped at 41%.",
+    files: {
+      uploading: "event-loop-phases.mp4",
+      processing: "explain-analyze-walkthrough.mp4",
+      image: "nested-loop-plan.png",
+      document: "index-types-cheatsheet.pdf",
+      failed: "exercise-fixtures.zip",
+      overQuota: "conference-talk-full-recording.mp4",
+    },
+    video: {
+      ready: "Reading a query plan with EXPLAIN ANALYZE",
+      processing: "The six phases of the Node.js event loop",
+      expired: "Covering indexes on a live table",
+      locked: "A deadlock, taken apart",
+    },
   },
 };
 

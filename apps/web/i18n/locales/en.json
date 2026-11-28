@@ -558,6 +558,43 @@
     "unsaved": "Unsaved changes",
     "saving": "Saving"
   },
+  "attachment": {
+    "uploading": "Uploading",
+    "processing": "Processing",
+    "ready": "Uploaded",
+    "failed": "Upload failed",
+    "overQuota": "Not enough storage",
+    "progress": "Uploading {name}",
+    "retry": "Retry",
+    "download": "Download {name}",
+    "remove": "Remove {name}"
+  },
+  "upload": {
+    "dropMany": "Drop files here",
+    "dropOne": "Drop a file here",
+    "release": "Release to add",
+    "chooseMany": "Choose files",
+    "chooseOne": "Choose a file",
+    "limit": "up to {size}"
+  },
+  "storageQuota": {
+    "title": "Storage",
+    "usage": "{used} of {total}",
+    "used": "{used} used",
+    "free": "{size} free",
+    "normal": "Space left",
+    "almost": "Almost full",
+    "full": "Full",
+    "fullNote": "New files will not upload until some space is freed.",
+    "unlimited": "No limit"
+  },
+  "videoFile": {
+    "play": "Play the video:",
+    "processing": "Processing the video",
+    "expired": "The link has expired",
+    "reload": "Reload",
+    "locked": "No access to this video"
+  },
   "topicState": {
     "complete": "live",
     "ready": "ready",
