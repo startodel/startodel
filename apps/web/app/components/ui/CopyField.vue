@@ -40,7 +40,9 @@ async function run() {
         <UiIcon :name="revealed ? 'eye-off' : 'eye'" />
       </button>
       <button type="button" class="s-copy__action s-copy__action--copy" @click="run">
-        <UiIcon :name="state === 'copied' ? 'check' : 'copy'" /><span>{{ $t("ui.copy") }}</span
+        <UiIcon :name="state === 'copied' ? 'check' : 'copy'" /><span class="s-copy__word">{{
+          $t("ui.copy")
+        }}</span
         ><span class="s-sr"> {{ label }}</span>
       </button>
     </div>
@@ -49,6 +51,7 @@ async function run() {
 </template>
 <style scoped>
 .s-copy {
+  container: s-copy / inline-size;
   display: grid;
   gap: 0.375rem;
   min-width: 0;
@@ -134,6 +137,17 @@ async function run() {
 }
 .s-copy.is-copied .s-copy__action--copy {
   color: var(--s-verdigris);
+}
+/* A narrow field keeps its room for the value: the action shows its glyph and is still named. */
+@container s-copy (max-width: 22rem) {
+  .s-copy__word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 .s-copy__hint {
   font-size: var(--s-text-sm);

@@ -41,8 +41,9 @@ const model = defineModel<T | undefined>({ required: true });
   display: grid;
   gap: var(--s-3);
 }
+/* --s-radio-card sets the narrowest card, and so how many fit in a row. */
 .s-root .s-radio--cards {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--s-radio-card, 11rem)), 1fr));
 }
 .s-root .s-radio__option {
   display: flex;
