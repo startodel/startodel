@@ -17,7 +17,8 @@ withDefaults(
     title: string;
     /** One sentence under the title. Screen readers announce it when the dialog opens. */
     description?: string;
-    size?: "sm" | "md";
+    /** lg gives room to a wide figure, such as an expanded diagram. */
+    size?: "sm" | "md" | "lg";
     /** Render the panel in the page flow. For documentation only. */
     inline?: boolean;
   }>(),
@@ -100,6 +101,9 @@ const layer = useLayer();
 }
 .s-root .s-modal--sm {
   --_w: 24rem;
+}
+.s-root .s-modal--lg {
+  --_w: 72rem;
 }
 .s-root .s-modal--inline {
   position: static;

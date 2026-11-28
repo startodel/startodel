@@ -76,7 +76,7 @@ const id = useId();
     >
       <UiCodeBlock :code="source" :language="sourceLanguage" />
     </UiCollapsible>
-    <UiModal v-model:open="expanded" :title="title" :description="description">
+    <UiModal v-model:open="expanded" size="lg" :title="title" :description="description">
       <div
         class="s-diagram__stage s-diagram__stage--expanded s-grid"
         :style="{ '--_min': minWidth }"
@@ -155,10 +155,7 @@ const id = useId();
   margin-inline: auto;
   overflow: visible;
 }
-/* The larger view fills the dialog, and the dialog takes the width a diagram needs. */
-.s-root .s-modal:has(.s-diagram__stage--expanded) {
-  --_w: 72rem;
-}
+/* The larger view fills the dialog. */
 .s-root .s-diagram__stage--expanded {
   border: 1px solid var(--s-line);
   border-radius: var(--s-radius-sm);
