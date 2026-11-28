@@ -18,6 +18,6 @@ const message = computed(() =>
   <UiSignInPanel
     :actions="emailStatus?.available ? actions : undefined"
     :message="message"
-    @verified="navigateTo(path('/dashboard'), { external: true })"
+    @verified="navigateTo(path(actions.destination.value), { external: true })"
   />
 </template>

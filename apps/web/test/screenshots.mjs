@@ -1,6 +1,7 @@
 // Run from the workspace root after building the app. PLAYWRIGHT_MODULE may point to a local installation.
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 import { checkLessonInteractions, checkSidebarProgress } from "./lesson-screenshots.mjs";
+import { checkOAuth } from "./oauth-screenshots.mjs";
 import { checkSignIn, checkUnavailableSignIn } from "./signin-screenshots.mjs";
 import { checkProgress } from "./progress-screenshots.mjs";
 import { checkCascade } from "./cascade.mjs";
@@ -27,6 +28,7 @@ const port = socket.address().port;
 await new Promise((r) => socket.close(r));
 const origin = "http://127.0.0.1:" + port;
 const cascade = process.argv.includes("--cascade");
+const oauthOnly = process.argv.includes("--oauth");
 const signinOnly = process.argv.includes("--signin");
 const progressOnly = process.argv.includes("--progress");
 const command = cascade
@@ -51,9 +53,10 @@ function startServer(capture) {
       env: {
         ...process.env,
         SMTP_HOST: "",
+        NUXT_SESSION_COOKIE: JSON.stringify({ secure: false }),
         MAIL_TRANSPORT: capture ? "capture" : "",
         ...(!capture && { NODE_ENV: "production" }),
-        ...((progressOnly || signinOnly) && { NUXT_PUBLIC_DESIGN_SHOWCASE: "true" }),
+        ...((progressOnly || signinOnly || oauthOnly) && { NUXT_PUBLIC_DESIGN_SHOWCASE: "true" }),
         NITRO_HOST: "127.0.0.1",
         NITRO_PORT: String(port),
         DATABASE_URL: dbUrl,
@@ -153,6 +156,13 @@ async function exercise() {
     } else await page.screenshot({ ...options, fullPage });
     console.log(name);
   };
+  if (oauthOnly || (cascade && !signinOnly && !progressOnly)) {
+    await checkOAuth({ page, visit, request, origin, directory, cascade, db });
+    if (oauthOnly) {
+      assert.deepEqual(errors, []);
+      return;
+    }
+  }
   if (cascade || signinOnly) {
     await visit("/onboarding");
     await checkSignIn({ page, visit, context, directory, cascade, mail, db, signIn });

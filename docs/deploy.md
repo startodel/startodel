@@ -26,6 +26,12 @@ On Dokploy, Traefik overwrites `X-Forwarded-For` with the real client IP. Keep t
 
 Register a GitHub OAuth App with homepage `https://<domain>` and authorization callback URL `https://<domain>/auth/github`. Configure your TLS-terminating proxy to preserve the public Host and set `X-Forwarded-Host` to that host and `X-Forwarded-Proto` to `https`. [GitHub OAuth App registration](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app)
 
+## Verify the MCP connector
+
+In ChatGPT, open **Settings → Connectors**, add `https://startodel.com/mcp`, sign in to Startodel and select **Allow**. To disconnect, open **Settings → Connected apps** in Startodel and select **Disconnect**. For a self-hosted installation, use `https://<domain>/mcp`. Set `NUXT_OAUTH_GITHUB_REDIRECT_URL` to the public callback and keep `NUXT_APP_SECRET` stable across restarts. Route `/.well-known/*`, `/oauth/*` and `/mcp` to the app.
+
+Run `node scripts/oauth-smoke.mjs https://<domain>` to check the Bearer challenge, both discovery documents and dynamic registration. Each run registers a permanent public client. It needs no Session and creates no Connection.
+
 ## Run with Docker
 
 Save the runtime values in a private `startodel.env` file outside the build context. From the repository root, run the following commands with its path. This example publishes the app on loopback for a reverse proxy on the host. If PostgreSQL runs on a private Docker network, also pass `--network <network>` to both the application and manual migration commands.

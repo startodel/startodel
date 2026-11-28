@@ -11,6 +11,7 @@ import { publicProfileSettings } from "./public-profile-settings.ts";
 import { ProfilePatch } from "@startodel/core";
 import { catalogForUser } from "./catalog.ts";
 import { tokensForUser } from "./mcp-tokens.ts";
+import { connectionsForUser } from "./oauth.ts";
 import { and, eq, getTableColumns } from "drizzle-orm";
 import type { Connection } from "./index.ts";
 import { grillSessions, profiles, tracks, users } from "./schema.ts";
@@ -58,6 +59,7 @@ export function forUser(db: Connection, userId: string) {
     ...lessons,
     ...mastery,
     mcpTokens: tokensForUser(db, userId),
+    connections: connectionsForUser(db, userId),
     async getPublicHandle() {
       const [owner] = await db
         .select({ handle: users.handle })

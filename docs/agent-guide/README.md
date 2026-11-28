@@ -6,6 +6,8 @@ order: 0
 
 # Agent guide
 
+In ChatGPT, open **Settings → Connectors**, add `https://startodel.com/mcp`, sign in to Startodel and select **Allow**. To disconnect, open **Settings → Connected apps** in Startodel and select **Disconnect**. On a self-hosted installation, use its public origin followed by `/mcp`.
+
 Call `get_guide` on connection and after each learning step. Use the Next Step and the learner’s goal to choose a workflow.
 
 1. **Start together.** Read [how Startodel works](01-platform.md), then [complete the Onboarding Questionnaire](02-first-steps.md). Finish with a first Topic the learner recognizes as relevant.

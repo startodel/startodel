@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. [ADR 0019](0019-mcp-oauth-authorization.md) adds OAuth Connections.
 
 ## Context
 

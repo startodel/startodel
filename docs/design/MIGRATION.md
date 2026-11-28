@@ -113,3 +113,5 @@ The design entry point imports `reset.css` for element defaults. `UiRoot` retain
 - The page looks the same in `pnpm dev` and in the production build.
 
 Run `node apps/web/test/screenshots.mjs --signin --cascade` for the Sign-in flow at 390px and 1440px. After `pnpm build`, run with `--signin` to exercise code and link sign-in in the browser, capture both rendered emails, and check the GitHub-only page on a production server without SMTP. Set `SCREENSHOT_DIR` for the output directory.
+
+The focus-layout `/consent` route and `/design/screens/consent` share the consent panel. Settings and its specimen share the Connected apps list. Run `node apps/web/test/screenshots.mjs --oauth` for English and Russian screenshots and add `--cascade` for the two-width audit.

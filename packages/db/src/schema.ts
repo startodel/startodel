@@ -24,6 +24,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -372,3 +373,77 @@ export const mcpTokens = pgTable("mcp_tokens", {
   lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
   revokedAt: timestamp("revoked_at", { withTimezone: true }),
 });
+
+export type ClientAuthMethod = "none" | "client_secret_post" | "client_secret_basic";
+
+export const oauthClients = pgTable("oauth_clients", {
+  id: uuid("id")
+    .default(sql`uuidv7()`)
+    .primaryKey(),
+  createdAt: time("created_at").notNull().defaultNow(),
+  name: text("name"),
+  redirectUris: text("redirect_uris").array().notNull(),
+  authMethod: text("auth_method").$type<ClientAuthMethod>().notNull(),
+  secretHash: text("secret_hash"),
+});
+
+const authorizationFields = () => ({
+  clientId: uuid("client_id")
+    .notNull()
+    .references(() => oauthClients.id),
+  redirectUri: text("redirect_uri").notNull(),
+  resource: text("resource").notNull(),
+  challenge: text("challenge").notNull(),
+});
+
+export const oauthRequests = pgTable(
+  "oauth_requests",
+  {
+    hash: text("hash").primaryKey(),
+    ...authorizationFields(),
+    state: text("state"),
+    expiresAt: time("expires_at")
+      .notNull()
+      .default(sql`now() + interval '15 minutes'`),
+  },
+  (t) => [index("oauth_requests_expiry").on(t.expiresAt)],
+);
+
+export const oauthConnections = pgTable(
+  "oauth_connections",
+  {
+    id: uuid("id")
+      .default(sql`uuidv7()`)
+      .primaryKey(),
+    userId: owner(),
+    ...authorizationFields(),
+    codeHash: text("code_hash").unique().notNull(),
+    codeExpiresAt: time("code_expires_at")
+      .notNull()
+      .default(sql`now() + interval '5 minutes'`),
+    exchangedAt: time("exchanged_at"),
+    createdAt: time("created_at").defaultNow().notNull(),
+    lastUsedAt: time("last_used_at").defaultNow().notNull(),
+    revokedAt: time("revoked_at"),
+  },
+  (t) => [unique().on(t.userId, t.id)],
+);
+
+export const oauthRefreshTokens = pgTable(
+  "oauth_refresh_tokens",
+  {
+    hash: text("hash").primaryKey(),
+    userId: owner(),
+    connectionId: uuid("connection_id").notNull(),
+    rotatedAt: time("rotated_at"),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.userId, t.connectionId],
+      foreignColumns: [oauthConnections.userId, oauthConnections.id],
+    }).onDelete("cascade"),
+    uniqueIndex("oauth_refresh_current")
+      .on(t.connectionId)
+      .where(sql`${t.rotatedAt} is null`),
+  ],
+);

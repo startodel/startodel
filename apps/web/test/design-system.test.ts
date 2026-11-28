@@ -350,3 +350,10 @@ test("the email steps, link result and Sign-in settings share their showcase com
   expect(challenge).toContain('autocomplete="one-time-code"');
   expect(challenge).toContain('inputmode="numeric"');
 });
+
+test("consent and connected apps use the same controls in the product and the showcase", () => {
+  for (const file of ["pages/consent.vue", "components/showcase/screens/Consent.vue"])
+    expect(sourceOf(file)).toContain("<UiConsentPanel");
+  for (const file of ["pages/settings.vue", "components/showcase/screens/Settings.vue"])
+    expect(sourceOf(file)).toContain("<UiConnectedApps");
+});

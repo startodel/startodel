@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
 import { createDatabase, forUser } from "@startodel/db";
 import en from "../i18n/locales/en.json";
 import ru from "../i18n/locales/ru.json";
+import { oauthHttpTests } from "./oauth-http";
 import { emailHttpTests, type CapturedMail } from "./email-http";
 import { localGitHub } from "./github";
 import { publicHttpTests } from "./public-http";
@@ -65,10 +66,8 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
     return cookie.split(";")[0];
   }
 
-  beforeAll(async () => {
-    github = await localGitHub();
-    db = createDatabase(url!);
-    app = fork(new URL("./serve.mjs", import.meta.url), {
+  async function startApp(built: boolean) {
+    app = fork(new URL("./serve.mjs", import.meta.url), built ? ["--built"] : [], {
       execArgv: [],
       env: {
         ...process.env,
@@ -98,6 +97,21 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
       }),
     ]);
     origin = `http://127.0.0.1:${port}`;
+  }
+  oauthHttpTests(
+    () => ({ db, origin, publicOrigin, mail }),
+    signIn,
+    async () => {
+      const stopped = once(app, "exit");
+      app.disconnect();
+      await stopped;
+      await startApp(true);
+    },
+  );
+  beforeAll(async () => {
+    github = await localGitHub();
+    db = createDatabase(url!);
+    await startApp(false);
   }, 120_000);
   afterAll(async () => {
     if (app?.connected) app.disconnect();
@@ -586,7 +600,9 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
         headers,
       );
       expect(response.status).toBe(401);
-      expect(response.headers.get("www-authenticate")).toBe("Bearer");
+      expect(response.headers.get("www-authenticate")).toBe(
+        `Bearer resource_metadata="${publicOrigin}/.well-known/oauth-protected-resource/mcp"`,
+      );
     }
     expect((await fetch(origin + "/mcp")).status).toBe(401);
     expect(await (await request("/api/profile", cookie)).json()).toEqual(profile);

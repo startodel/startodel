@@ -6,7 +6,16 @@ export default defineHandler((event) => {
   const { pathname } = getRequestURL(event);
   const path = basePath(pathname);
   const headers = event.res.headers;
-  if (pathname === "/sitemap.xml" || pathname === "/robots.txt" || pathname.startsWith("/og/")) {
+  if (/^\/consent\/?$/i.test(path)) {
+    headers.set("cache-control", "private, no-store");
+    headers.set("content-security-policy", "frame-ancestors 'none'");
+    headers.set("x-frame-options", "DENY");
+    headers.set("referrer-policy", "strict-origin");
+  } else if (
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
+    pathname.startsWith("/og/")
+  ) {
     headers.set("cache-control", "public, max-age=300, stale-while-revalidate=3600");
   } else if (isPublicPage(pathname) || /^\/login\/?$/.test(path)) {
     headers.append("vary", "Cookie, Accept-Encoding");

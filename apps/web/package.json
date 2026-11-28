@@ -31,6 +31,7 @@
     "@startodel/db": "workspace:*",
     "@vue-flow/core": "1.48.2",
     "@vue-flow/minimap": "1.5.4",
+    "jose": "6.2.18",
     "markdown-it": "15.0.3",
     "nodemailer": "10.6.1",
     "nuxt": "4.7.0",

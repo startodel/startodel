@@ -34,6 +34,14 @@ export default defineNuxtConfig({
     // NUXT_PUBLIC_DESIGN_SHOWCASE=true serves /design outside development.
     public: { designShowcase: false },
   },
+  serverHandlers: [
+    "oauth-authorization-server",
+    "oauth-protected-resource",
+    "oauth-protected-resource/mcp",
+  ].map((name) => ({
+    route: "/.well-known/" + name,
+    handler: fileURLToPath(new URL("./server/lib/oauth-metadata.ts", import.meta.url)),
+  })),
   hooks: {
     "nitro:config"(config) {
       const defaults = config.errorHandler ?? [];

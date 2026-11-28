@@ -55,6 +55,25 @@ async function saveProfile(patch: PublicProfilePatch) {
   await refreshSettings();
   me.value = await fetchMe();
 }
+const {
+  data: connections,
+  error: connectionsError,
+  refresh: refreshConnections,
+} = await useFetch("/api/connections");
+const disconnecting = ref(false);
+const disconnectFailed = ref(false);
+async function disconnect(id: string) {
+  disconnecting.value = true;
+  disconnectFailed.value = false;
+  try {
+    await $fetch("/api/connections/" + id, { method: "DELETE" });
+    await refreshConnections();
+  } catch {
+    disconnectFailed.value = true;
+  } finally {
+    disconnecting.value = false;
+  }
+}
 const displayDate = useDisplayDate();
 const animate = useBoardMotion();
 const logout = useLogout();
@@ -76,6 +95,25 @@ function confirmRevoke() {
 <template>
   <div class="settings">
     <UiPageHeader :title="$t('nav.settings')" :description="$t('settings.intro')" />
+    <section id="connected-apps" class="group">
+      <header class="group__head">
+        <h2 class="group__title">{{ $t("oauth.connections") }}</h2>
+        <p class="group__text">{{ $t("oauth.appsHint") }}</p>
+      </header>
+      <div class="group__body">
+        <UiConnectedApps
+          v-if="connections"
+          :connections="connections"
+          :busy="disconnecting"
+          @disconnect="disconnect"
+        />
+        <UiNotice
+          v-if="connectionsError || disconnectFailed"
+          tone="danger"
+          :title="$t('common.error')"
+        />
+      </div>
+    </section>
     <section class="group" id="sign-in-settings">
       <header class="group__head"><h2 class="group__title">{{ $t("signin.methods") }}</h2></header>
       <div class="group__body">

@@ -11,6 +11,13 @@ export interface ScreenInfo {
 }
 export const screens: ScreenInfo[] = [
   {
+    id: "consent",
+    title: "Connect an app",
+    group: "Account",
+    route: "/consent",
+    note: "Approve or deny an app’s request to access learning data.",
+  },
+  {
     id: "signin",
     title: "Sign in",
     group: "Getting started",

@@ -14,11 +14,11 @@ function digest(secret: string, context: string, value: string) {
 const quarterHour = sql`now() - interval '15 minutes'`;
 const day = sql`now() - interval '24 hours'`;
 
-export function allowEmailRequest(
+export function allowAuthRequest(
   db: Database,
   secret: string,
   ip: string,
-  action: "request" | "verify",
+  action: "request" | "verify" | "register",
 ) {
   const key = digest(secret, action, ip);
   return db.transaction(async (tx) => {
@@ -28,7 +28,7 @@ export function allowEmailRequest(
       (await tx.$count(
         authRateEvents,
         and(eq(authRateEvents.key, key), gt(authRateEvents.createdAt, quarterHour)),
-      )) >= (action === "request" ? 20 : 60)
+      )) >= (action === "verify" ? 60 : 20)
     )
       return false;
     await tx.insert(authRateEvents).values({ key });

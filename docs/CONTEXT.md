@@ -35,7 +35,9 @@
 | Verdict                  | A strong, partial or weak assessment. The external agent judges free text. A Practice Quiz derives its Verdict from the score.                                                                                                              |
 | Answer Source            | Where the learner submitted an answer, either the UI (`ui`) or an MCP client (`mcp`).                                                                                                                                                       |
 | MCP Token                | A personal credential that lets an external agent act for one User until revoked.                                                                                                                                                           |
-| Tool                     | A named operation an external agent can call with an MCP Token to work with the Owner's data.                                                                                                                                               |
+| OAuth Client             | An application registered to request access to Startodel on a learner’s behalf.                                                                                                                                                             |
+| Connection               | One User’s revocable authorization for an OAuth Client to work with their learning data.                                                                                                                                                    |
+| Tool                     | A named operation an external agent can call with a Connection or MCP Token to work with the Owner's data.                                                                                                                                  |
 | Practice Quiz            | A review using all Quiz questions from a Topic’s Lessons. All correct gives a strong Verdict, at least half gives partial, and fewer than half gives weak.                                                                                  |
 | Next Step                | The current learning action shared by the dashboard and the external agent. In priority order, complete onboarding, build a first Track, continue a GrillSession, review due Topics, study an eligible Topic or plan when nothing is ready. |
 | Activity                 | A dated observation of a Lesson read, Quiz Attempt, Grill answer or judgment, review result or Mastery assessment. Progress shows the latest 30 observations.                                                                               |
@@ -75,5 +77,7 @@ Each Quiz Attempt has its own row. A Grill Question retains its answer and judgm
 | Fork                     | форк                                                                          |
 | Profile                  | профиль                                                                       |
 | Onboarding Questionnaire | анкета при настройке профиля                                                  |
+| Connection               | подключение                                                                   |
+| OAuth Client             | OAuth-клиент                                                                  |
 | MCP Token                | MCP-токен                                                                     |
 | External agent           | агент                                                                         |
