@@ -595,6 +595,30 @@
     "reload": "Reload",
     "locked": "No access to this video"
   },
+  "changeProposal": {
+    "label": "Change proposal from {who}",
+    "open": "Open",
+    "accepted": "Accepted",
+    "declined": "Declined",
+    "outdated": "Outdated",
+    "stale": "The Block has changed since this proposal. The comparison shows its earlier text.",
+    "inSource": "in the source Track",
+    "inFork": "in the Fork",
+    "accept": "Accept",
+    "decline": "Decline",
+    "withdraw": "Withdraw",
+    "openLesson": "Open the Lesson"
+  },
+  "changeProposalList": {
+    "label": "Change proposals",
+    "open": "Open",
+    "accepted": "Accepted",
+    "declined": "Declined",
+    "outdated": "Outdated",
+    "empty": "No proposals yet",
+    "emptyText": "When someone proposes a change from their Fork, it will show up here.",
+    "none": "Nothing in this list."
+  },
   "topicState": {
     "complete": "live",
     "ready": "ready",

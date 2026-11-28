@@ -228,6 +228,48 @@ export function uniqueBy(items, key) {
       locked: "Разбор задачи про дедлок",
     },
   },
+  proposals: {
+    lesson: "Покрывающие индексы",
+    people: {
+      lin: { name: "Линь Вэй", login: "linwei" },
+      sofia: { name: "София Маркетти", login: "sofia-m" },
+      timur: { name: "Тимур Ахметов", login: "timur" },
+      dana: { login: "dana_k" },
+    },
+    index: {
+      note: "Запрос из этого блока сортирует по position и читает title. С таким индексом хватит index-only scan, в таблицу ходить не придётся.",
+      before: `create index lessons_topic_idx
+  on lessons (topic_id);
+`,
+      after: `create index lessons_topic_idx
+  on lessons (topic_id, position)
+  include (title);
+`,
+    },
+    like: {
+      note: "Уточнила про LIKE: с шаблоном '%abc' B-tree не поможет.",
+      before: `Индекс B-tree ускоряет запросы с LIKE.
+Проверьте план через EXPLAIN.
+`,
+      after: `Индекс B-tree ускоряет LIKE только с закреплённым началом шаблона: 'abc%'.
+Для поиска по середине строки нужен триграммный индекс.
+Проверьте план через EXPLAIN.
+`,
+    },
+    typo: {
+      note: "Опечатка в имени колонки.",
+      before: `select id, title from lessons where topik_id = $1;
+`,
+      after: `select id, title from lessons where topic_id = $1;
+`,
+    },
+    lessons: {
+      covering: "Покрывающие индексы",
+      plans: "Как читать план запроса",
+      joins: "Стратегии соединения",
+      vacuum: "Что делает VACUUM",
+    },
+  },
 };
 
 const en: typeof ru = {
@@ -404,6 +446,48 @@ export function uniqueBy(items, key) {
       processing: "The six phases of the Node.js event loop",
       expired: "Covering indexes on a live table",
       locked: "A deadlock, taken apart",
+    },
+  },
+  proposals: {
+    lesson: "Covering indexes",
+    people: {
+      lin: { name: "Lin Wei", login: "linwei" },
+      sofia: { name: "Sofia Marchetti", login: "sofia-m" },
+      timur: { name: "Timur Akhmetov", login: "timur" },
+      dana: { login: "dana_k" },
+    },
+    index: {
+      note: "The query in this Block sorts by position and reads title. With this index an index-only scan is enough, with no trip to the table.",
+      before: `create index lessons_topic_idx
+  on lessons (topic_id);
+`,
+      after: `create index lessons_topic_idx
+  on lessons (topic_id, position)
+  include (title);
+`,
+    },
+    like: {
+      note: "Made the LIKE claim precise: a B-tree does not help with a '%abc' pattern.",
+      before: `A B-tree index speeds up queries with LIKE.
+Check the plan with EXPLAIN.
+`,
+      after: `A B-tree index speeds up LIKE only when the pattern is anchored at the start: 'abc%'.
+A search in the middle of a string needs a trigram index.
+Check the plan with EXPLAIN.
+`,
+    },
+    typo: {
+      note: "A typo in the column name.",
+      before: `select id, title from lessons where topik_id = $1;
+`,
+      after: `select id, title from lessons where topic_id = $1;
+`,
+    },
+    lessons: {
+      covering: "Covering indexes",
+      plans: "How to read a query plan",
+      joins: "Join strategies",
+      vacuum: "What VACUUM does",
     },
   },
 };
