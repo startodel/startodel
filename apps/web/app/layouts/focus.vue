@@ -7,20 +7,15 @@ const logout = useLogout();
 </script>
 <template>
   <UiRoot>
-    <UiFocusLayout :home="user ? '/dashboard' : '/'" :width="connect ? 'md' : 'sm'">
-      <template #actions>
+    <UiFocusLayout
+      :home="user ? '/dashboard' : '/'"
+      :user="connect ? undefined : (user ?? undefined)"
+      @logout="logout"
+    >
+      <template v-if="connect || !user" #actions>
         <UiButton v-if="connect" variant="ghost" size="sm" to="/dashboard">{{
           $t("agent.skip")
         }}</UiButton>
-        <template v-else-if="user">
-          <span class="who"
-            ><UiAvatar :name="user.name || user.login" :src="user.avatarUrl" :size="24" />
-            {{ user.login }}</span
-          >
-          <UiButton variant="ghost" size="sm" icon="logout" @click="logout">{{
-            $t("nav.logout")
-          }}</UiButton>
-        </template>
         <UiLanguageSwitcher v-else />
       </template>
       <slot />
@@ -30,13 +25,3 @@ const logout = useLogout();
     </UiFocusLayout>
   </UiRoot>
 </template>
-<style scoped>
-.who {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
-  font: 500 var(--s-text-xs) / 1 var(--s-font-mono);
-  font-stretch: 75%;
-  color: var(--s-ink-2);
-}
-</style>

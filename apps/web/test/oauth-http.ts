@@ -141,7 +141,7 @@ export function oauthHttpTests(
       const request = new URL(path, publicOrigin).searchParams.get("request")!;
       const cookie = credential(callback);
       expect(await (await get(path, { headers: { cookie } })).text()).toContain(
-        "ChatGPT wants to connect",
+        "Connect ChatGPT to Startodel?",
       );
       const decide = (choice: string, id: string, session: string, origin = publicOrigin) =>
         post("/oauth/decision", { [choice]: id }, { cookie: session, origin });

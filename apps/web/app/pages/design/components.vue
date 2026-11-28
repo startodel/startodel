@@ -457,6 +457,34 @@ const prompt =
           :options="['TypeScript', 'Go', 'Rust']"
         />
       </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        id="specimen-question"
+        label="Question"
+        note="One question of a short form, in plain words, with its hint and error"
+        layout="grid"
+      >
+        <UiQuestion title="What do you want to achieve?" hint="Choose one or more.">
+          <UiChoiceChips
+            v-model="stack"
+            legend="What do you want to achieve?"
+            hide-legend
+            name="question-goals"
+            multiple
+            :options="['TypeScript', 'PostgreSQL', 'Rust']"
+          />
+        </UiQuestion>
+        <UiQuestion title="How experienced are you?" error="Choose your experience">
+          <UiRadioGroup v-model="none" label="Experience" name="question-grade" :options="grades" />
+        </UiQuestion>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        id="specimen-questionnaire"
+        label="Questionnaire"
+        note="The Onboarding Questionnaire as one form. Submit it empty to see what is missing"
+        layout="block"
+      >
+        <UiQuestionnaire @submit="notify({ title: 'Answers saved', tone: 'success' })" />
+      </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Chip">
         <UiChip
           v-for="chip in chips"
@@ -838,6 +866,40 @@ const prompt =
         layout="stack"
       >
         <UiStepper v-model="step" :steps="steps" label="Onboarding steps" />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        id="specimen-steps"
+        label="Steps"
+        note="Instructions in order. A step that is done carries signal"
+        layout="stack"
+      >
+        <UiSteps label="How to connect">
+          <UiStep title="Copy the URL." done>
+            <UiCopyField label="Connection URL" value="https://startodel.com/mcp" />
+          </UiStep>
+          <UiStep title="Open your agent’s connectors and paste the URL.">
+            <div><UiButton size="sm" icon-right="external">Open the agent</UiButton></div>
+          </UiStep>
+          <UiStep title="Select “Connect”. Startodel opens: select “Allow”." />
+        </UiSteps>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        id="specimen-connect-agent"
+        label="Connect an agent"
+        note="The MCP URL, the steps of each client and a personal token as the fallback"
+        layout="grid"
+      >
+        <UiConnectAgent
+          endpoint="https://startodel.com/mcp"
+          prompt="Call get_guide, then build me a Track for understanding internals."
+          :next="{ hash: '#navigation' }"
+        />
+        <UiConnectAgent
+          endpoint="https://startodel.com/mcp"
+          :connected="{ name: 'Claude' }"
+          prompt="Call get_guide, then build me a Track for understanding internals."
+          :next="{ hash: '#navigation' }"
+        />
       </ShowcaseSpecimen>
       <ShowcaseSpecimen label="Site header · signed out and signed in" layout="block" flush>
         <UiSiteHeader

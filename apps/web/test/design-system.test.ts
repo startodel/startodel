@@ -354,6 +354,26 @@ test("the email steps, link result and Sign-in settings share their showcase com
   expect(code).toContain('inputmode="numeric"');
 });
 
+test("onboarding and its specimens share the questionnaire and the connect step", () => {
+  for (const [page, screen, component] of [
+    ["pages/onboarding/index.vue", "components/showcase/screens/Onboarding.vue", "UiQuestionnaire"],
+    ["pages/onboarding/connect.vue", "components/showcase/screens/Connect.vue", "UiConnectAgent"],
+  ] as const) {
+    for (const file of [page, screen]) {
+      const view = sourceOf(file);
+      expect(view, file).toContain("<" + component);
+      expect(view, file).toContain("<UiFocusHeader");
+      expect(view, file).not.toContain("<style");
+    }
+  }
+  expect(sourceOf("layouts/focus.vue")).not.toContain("<style");
+  // Every client gets the same URL, and a token only backs up an agent that cannot sign in.
+  const connect = sourceOf("components/ui/ConnectAgent.vue");
+  for (const client of ["claude", "chatgpt", "other"]) expect(connect).toContain(`"${client}"`);
+  expect(connect.match(/<UiCopyField\b[^>]*:value="endpoint"/g)).toHaveLength(1);
+  expect(connect).toMatch(/<UiCollapsible v-if="client === 'other'"[\s\S]*token\.create/);
+});
+
 test("consent and connected apps use the same controls in the product and the showcase", () => {
   for (const file of ["pages/consent.vue", "components/showcase/screens/Consent.vue"])
     expect(sourceOf(file)).toContain("<UiConsentPanel");

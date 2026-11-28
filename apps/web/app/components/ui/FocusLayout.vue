@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import type { LinkTarget } from "./nav";
 /**
- * A page with one job and no navigation: onboarding, connecting an agent. The logo leads home,
- * the actions slot holds a way out, and the content sits in one centred column.
+ * A page with one job and no navigation: sign-in, onboarding, consent. The logo leads home and
+ * the content sits in one centred column. The bar shows who is signed in with a way out, or
+ * whatever the actions slot puts there instead.
  */
-withDefaults(defineProps<{ home?: LinkTarget; width?: "sm" | "md" }>(), {
-  home: "/",
-  width: "sm",
-});
+withDefaults(
+  defineProps<{
+    home?: LinkTarget;
+    width?: "sm" | "md";
+    user?: { login: string; name?: string | null; avatarUrl?: string | null };
+  }>(),
+  { home: "/", width: "sm" },
+);
+defineEmits<{ logout: [] }>();
 </script>
 <template>
   <div class="s-focus">
@@ -15,7 +21,20 @@ withDefaults(defineProps<{ home?: LinkTarget; width?: "sm" | "md" }>(), {
       <NuxtLinkLocale :to="home" class="s-focus__home" :aria-label="$t('nav.home')"
         ><UiLogo :size="22"
       /></NuxtLinkLocale>
-      <div class="s-focus__actions"><slot name="actions" /></div>
+      <div class="s-focus__actions">
+        <slot name="actions">
+          <template v-if="user">
+            <span class="s-focus__who"
+              ><UiAvatar :name="user.name || user.login" :src="user.avatarUrl" :size="24" /><bdi>{{
+                user.login
+              }}</bdi></span
+            >
+            <UiButton variant="ghost" size="sm" icon="logout" @click="$emit('logout')">{{
+              $t("nav.logout")
+            }}</UiButton>
+          </template>
+        </slot>
+      </div>
     </header>
     <main class="s-focus__main" :class="'s-focus__main--' + width"><slot /></main>
     <footer v-if="$slots.footer" class="s-focus__foot"><slot name="footer" /></footer>
@@ -46,6 +65,15 @@ withDefaults(defineProps<{ home?: LinkTarget; width?: "sm" | "md" }>(), {
   display: flex;
   align-items: center;
   gap: var(--s-3);
+}
+.s-focus__who {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  font: 500 var(--s-text-xs) / 1 var(--s-font-mono);
+  font-stretch: 75%;
+  color: var(--s-ink-2);
 }
 .s-focus__main {
   container: s-main / inline-size;

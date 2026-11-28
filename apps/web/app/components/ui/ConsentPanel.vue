@@ -1,51 +1,66 @@
 <script setup lang="ts">
+/**
+ * The decision an Owner makes when an OAuth Client asks for access: who asks, what it will be
+ * able to do, where the browser returns, and two answers. The name is the app's own claim.
+ */
 defineProps<{ name: string | null; host: string; request?: string }>();
 </script>
 <template>
   <section class="s-consent">
-    <UiPageHeader
-      :title="$t('oauth.wantsAccess', { name: name ?? $t('oauth.unnamed') })"
-      :description="$t('oauth.declared')"
-    />
-    <div class="s-consent__details">
-      <p class="s-consent__label">{{ $t("oauth.returnsTo") }}</p>
-      <p class="s-mono"><bdi>{{ host }}</bdi></p>
-    </div>
-    <div>
-      <h2 class="s-consent__title">{{ $t("oauth.permission") }}</h2>
-      <p>{{ $t("oauth.canDo") }}</p>
-    </div>
+    <UiFocusHeader :title="$t('oauth.wantsAccess', { name: name ?? $t('oauth.unnamed') })" />
+    <dl class="s-consent__facts">
+      <div class="s-consent__fact">
+        <dt class="s-label">{{ $t("oauth.permission") }}</dt>
+        <dd>{{ $t("oauth.canDo") }}</dd>
+      </div>
+      <div class="s-consent__fact">
+        <dt class="s-label">{{ $t("oauth.returnsTo") }}</dt>
+        <dd class="s-mono"><bdi>{{ host }}</bdi></dd>
+      </div>
+    </dl>
     <form
-      class="s-cluster"
+      class="s-consent__actions"
       action="/oauth/decision"
       method="post"
       @submit="!request && $event.preventDefault()"
     >
-      <UiButton variant="primary" type="submit" name="allow" :value="request">{{
+      <UiButton variant="primary" size="lg" type="submit" name="allow" :value="request">{{
         $t("oauth.allow")
       }}</UiButton>
-      <UiButton type="submit" name="deny" :value="request">{{ $t("oauth.deny") }}</UiButton>
+      <UiButton size="lg" type="submit" name="deny" :value="request">{{
+        $t("oauth.deny")
+      }}</UiButton>
     </form>
+    <p class="s-consent__note">{{ $t("oauth.declared") }}</p>
   </section>
 </template>
 <style scoped>
 .s-consent {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--s-6);
+  max-width: 30rem;
+  margin-inline: auto;
   overflow-wrap: anywhere;
 }
-.s-consent__details {
-  padding: var(--s-4);
-  background: var(--s-sunken);
-  border-inline-start: 2px solid var(--s-line-strong);
+.s-consent__facts {
+  display: grid;
+  border-top: 1px solid var(--s-line);
 }
-.s-consent__label {
-  color: var(--s-ink-2);
+.s-consent__fact {
+  display: grid;
+  gap: var(--s-1);
+  padding-block: var(--s-4);
+  border-bottom: 1px solid var(--s-line);
+}
+.s-consent__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: var(--s-3);
+}
+.s-consent__note {
   font-size: var(--s-text-sm);
-  margin-bottom: var(--s-1);
-}
-.s-consent__title {
-  font-size: var(--s-text-lg);
-  margin-bottom: var(--s-2);
+  color: var(--s-ink-3);
+  text-wrap: pretty;
 }
 </style>
