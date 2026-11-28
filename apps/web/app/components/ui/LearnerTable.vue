@@ -124,7 +124,6 @@ watch(sort, () => (page.value = 1));
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--s-4);
-  container: s-learner-table / inline-size;
 }
 .s-learner-table__learner {
   display: inline-flex;

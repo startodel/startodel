@@ -80,7 +80,6 @@ const counts = computed(() => {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--s-4);
-  container: s-syllabus / inline-size;
 }
 .s-syllabus__head {
   display: grid;
