@@ -303,7 +303,7 @@ const prompt = (group: (typeof groups.value)[number], comment: FeedbackComment) 
   line-clamp: 3;
 }
 .s-inbox__row.is-resolved .s-inbox__text {
-  color: var(--s-ink-3);
+  color: var(--s-ink-2);
 }
 .s-inbox__meta {
   display: flex;
