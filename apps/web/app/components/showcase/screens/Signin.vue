@@ -1,6 +1,21 @@
 <script setup lang="ts">
 import { specimenEmailActions } from "../signin";
-defineProps<{ state?: string }>();
+const props = defineProps<{ state?: string }>();
+const email = "learner@example.org";
+const initial = computed(() => {
+  switch (props.state) {
+    case "code":
+      return { id: "sample", email };
+    case "wrong":
+      return { id: "sample", email, failure: { reason: "wrong", remaining: 4 } };
+    case "locked":
+      return { id: "sample", email, failure: { reason: "locked" } };
+    case "limited":
+      return { email, failure: { reason: "limited" } };
+    default:
+      return undefined;
+  }
+});
 </script>
 <template>
   <UiFocusLayout
@@ -8,8 +23,8 @@ defineProps<{ state?: string }>();
     <UiSignInPanel
       :actions="state === 'unavailable' ? undefined : specimenEmailActions"
       github-href="#github"
-      :initial="state === 'code' ? { id: 'sample', email: 'learner@example.org' } : undefined"
-      :link-state="state === 'expired' ? 'error' : undefined"
+      :initial="initial"
+      :link-state="state === 'expired' ? 'error' : state === 'verifying' ? 'pending' : undefined"
       :message="state === 'expired' ? $t('signin.expired') : undefined"
     />
   </UiFocusLayout>

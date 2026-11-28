@@ -42,6 +42,8 @@ const sections = [
 ];
 const { push: notify } = useToast();
 const text = ref("PostgreSQL");
+const oneTimeCode = ref("204");
+const noCode = ref("");
 const empty = ref("");
 const answer = ref(
   "A timer callback is queued as a task once its delay elapses. It runs only after the current task and all microtasks finish.",
@@ -258,6 +260,22 @@ const prompt =
         </UiField>
         <UiField label="Large">
           <UiInput v-model="text" size="lg" icon="search" />
+        </UiField>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        id="specimen-code-input"
+        label="Code input"
+        note="One field drawn as cells. Paste and autofill work. The last digit emits complete"
+        layout="grid"
+      >
+        <UiField label="Code from the email" hint="Type or paste six digits.">
+          <UiCodeInput v-model="oneTimeCode" />
+        </UiField>
+        <UiField label="Wrong code" error="Incorrect code. Attempts left: 4.">
+          <UiCodeInput v-model="noCode" />
+        </UiField>
+        <UiField label="Disabled">
+          <UiCodeInput model-value="2048" disabled />
         </UiField>
       </ShowcaseSpecimen>
       <ShowcaseSpecimen
@@ -588,6 +606,18 @@ const prompt =
             ><UiButton variant="primary" icon="play">Start practice</UiButton></template
           >
         </UiPageHeader>
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
+        id="specimen-focus-header"
+        label="Focus header"
+        note="The head of a page with one job: sign-in, onboarding, consent"
+        layout="block"
+      >
+        <UiFocusHeader
+          kicker="Step 2 of 2"
+          title="Connect your AI agent"
+          lead="Your agent can be Claude, ChatGPT or another AI assistant. It builds the Track and Lessons around your goals."
+        />
       </ShowcaseSpecimen>
       <ShowcaseSpecimen
         label="Page header · content voice"
