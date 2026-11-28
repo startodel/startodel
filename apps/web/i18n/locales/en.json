@@ -715,11 +715,11 @@
     "ignore": "If you didn’t request this email, you can ignore it."
   },
   "oauth": {
-    "wantsAccess": "{name} wants to connect to your Startodel account",
-    "declared": "The app supplied this name when it registered.",
-    "returnsTo": "After authorization, you’ll return to",
-    "permission": "App permissions",
-    "canDo": "Read and change your learning data, including Tracks, Lessons, Grills and Reviews.",
+    "wantsAccess": "Connect {name} to Startodel?",
+    "declared": "The app chose this name itself. Allow only if you started this connection.",
+    "returnsTo": "After your answer you return to",
+    "permission": "What the app can do",
+    "canDo": "Read and change your learning data: Tracks, Lessons, Grills and Reviews.",
     "allow": "Allow",
     "deny": "Deny",
     "expired": "This request has expired. Start the connection again in the app.",
