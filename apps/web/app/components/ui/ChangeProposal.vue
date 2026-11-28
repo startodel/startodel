@@ -169,8 +169,9 @@ const withdraws = computed(
   gap: 0 var(--s-3);
 }
 .s-root .s-proposal__tags {
+  font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--s-copper);
+  color: var(--s-ink-2);
 }
 .s-root .s-proposal__lesson {
   font: 400 var(--s-text-sm) / 1.4 var(--s-font-ui);

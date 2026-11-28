@@ -128,7 +128,7 @@ const rows = (id: ProposalStatus) =>
 }
 .s-root .s-proposals__tags {
   letter-spacing: 0.04em;
-  color: var(--s-copper);
+  color: var(--s-ink-2);
 }
 .s-root .s-proposals__lesson {
   color: var(--s-ink-2);
