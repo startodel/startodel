@@ -608,6 +608,18 @@ const prompt =
         </UiPageHeader>
       </ShowcaseSpecimen>
       <ShowcaseSpecimen
+        id="specimen-focus-header"
+        label="Focus header"
+        note="The head of a page with one job: sign-in, onboarding, consent"
+        layout="block"
+      >
+        <UiFocusHeader
+          kicker="Step 2 of 2"
+          title="Connect your AI agent"
+          lead="Your agent can be Claude, ChatGPT or another AI assistant. It builds the Track and Lessons around your goals."
+        />
+      </ShowcaseSpecimen>
+      <ShowcaseSpecimen
         label="Page header · content voice"
         note="Titles written for the learner use the reading face"
         layout="block"

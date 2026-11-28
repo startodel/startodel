@@ -24,12 +24,10 @@ const title = computed(() =>
 </script>
 <template>
   <section class="s-signin">
-    <header class="s-signin__head">
-      <h1 class="s-title s-signin__title">{{ title }}</h1>
-      <p v-if="actions && !linkState && step === 'email'" class="s-signin__lead">
-        {{ t("signin.lead") }}
-      </p>
-    </header>
+    <UiFocusHeader
+      :title="title"
+      :lead="actions && !linkState && step === 'email' ? t('signin.lead') : undefined"
+    />
     <UiNotice v-if="message" tone="danger" :title="message" />
     <template v-if="linkState">
       <p v-if="linkState === 'pending'" class="s-signin__wait">
@@ -63,14 +61,6 @@ const title = computed(() =>
   gap: var(--s-5);
   max-width: 24rem;
   margin-inline: auto;
-}
-.s-signin__head {
-  display: grid;
-  gap: var(--s-2);
-}
-.s-signin__lead {
-  color: var(--s-ink-2);
-  text-wrap: pretty;
 }
 .s-signin__or {
   display: flex;
