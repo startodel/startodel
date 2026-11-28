@@ -24,9 +24,12 @@ export function scope(value?: string) {
   if (value?.trim() && value.trim() !== "mcp") throw new OAuthError("invalid_scope");
   return "mcp";
 }
+// The MCP endpoint is the only protected resource, so an omitted indicator means it (RFC 8707).
 export function resourceIndicator(issuer: string, value?: string) {
-  if (value !== issuer + "/mcp") throw new OAuthError("invalid_target");
-  return value;
+  const resource = issuer + "/mcp";
+  if (value !== undefined && value !== "" && value !== resource)
+    throw new OAuthError("invalid_target");
+  return resource;
 }
 function safeRedirect(value: string) {
   const url = new URL(value);

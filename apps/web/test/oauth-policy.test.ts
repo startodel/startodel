@@ -22,6 +22,8 @@ test("scope defaults to mcp and the resource indicator identifies the exact MCP 
   for (const value of [undefined, "", "  ", "mcp"]) expect(scope(value)).toBe("mcp");
   expect(() => scope("mcp other")).toThrow();
   expect(() => resourceIndicator("https://example.org", "https://other.test/mcp")).toThrow();
+  for (const value of [undefined, "", "https://example.org/mcp"])
+    expect(resourceIndicator("https://example.org", value)).toBe("https://example.org/mcp");
 });
 
 test("access JWT verification pins the issuer, audience, signature, scope and expiration", async () => {
