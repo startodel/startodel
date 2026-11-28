@@ -55,7 +55,6 @@ const meta = computed(() =>
         /></span>
         <span class="s-sr">{{ t("videoFile.play") }}</span>
         <span class="s-video-file__title">{{ title }}</span>
-        <span v-if="meta" class="s-video-file__meta">{{ meta }}</span>
       </button>
       <div v-else class="s-video-file__poster">
         <span class="s-video-file__pad">
@@ -63,7 +62,7 @@ const meta = computed(() =>
           <UiIcon v-else :name="state === 'expired' ? 'clock' : 'lock'" :size="20" />
         </span>
         <span class="s-video-file__title">{{ title }}</span>
-        <span class="s-video-file__meta s-video-file__meta--state" role="status">
+        <span class="s-video-file__state" role="status">
           {{
             state === "processing"
               ? t("videoFile.processing")
@@ -77,7 +76,7 @@ const meta = computed(() =>
         }}</UiButton>
       </div>
     </div>
-    <figcaption v-if="playing || state !== 'ready'" class="s-video-file__note">
+    <figcaption v-if="playing || meta" class="s-video-file__note">
       <strong v-if="playing">{{ title }}</strong>
       <span v-if="meta">{{ meta }}</span>
     </figcaption>
@@ -136,7 +135,7 @@ const meta = computed(() =>
   font: 500 var(--s-text-xl) / 1.25 var(--s-font-read);
   text-wrap: balance;
 }
-.s-video-file__meta,
+.s-video-file__state,
 .s-video-file__note {
   font: 500 var(--s-text-2xs) / 1.4 var(--s-font-mono);
   font-stretch: 75%;
@@ -145,10 +144,10 @@ const meta = computed(() =>
   text-transform: uppercase;
   color: var(--s-ink-3);
 }
-.s-video-file.is-processing .s-video-file__meta--state {
+.s-video-file.is-processing .s-video-file__state {
   color: var(--s-copper);
 }
-.s-video-file.is-expired .s-video-file__meta--state {
+.s-video-file.is-expired .s-video-file__state {
   color: var(--s-brass);
 }
 .s-video-file__note {
