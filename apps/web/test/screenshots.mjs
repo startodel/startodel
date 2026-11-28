@@ -194,17 +194,16 @@ async function exercise() {
     await checkCascade(page, "/onboarding");
   }
   await visit("/dashboard");
-  await page.getByText("TypeScript", { exact: true }).click();
-  await page.getByLabel("Other technologies").fill("SQL,");
-  await page.getByLabel("Other technologies").press("Enter");
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByText("Understand internals", { exact: true }).click();
+  await page.getByText("TypeScript", { exact: true }).click();
+  await page.getByLabel("Your own option").fill("SQL,");
+  await page.getByLabel("Your own option").press("Enter");
+  await page.getByRole("radio", { name: /Senior/ }).click();
+  await page.getByRole("button", { name: "More details" }).click();
   await page.getByLabel("Notes for your agent").fill("Browser internals");
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await page.getByRole("radio", { name: "Senior", exact: true }).click();
   await page.getByLabel("Years of experience").fill("8");
   await shot("onboarding");
-  await page.getByRole("button", { name: "Continue to connect your agent" }).click();
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.waitForURL(origin + "/onboarding/connect");
   const profile = await owner.getProfile();
   assert.deepEqual(profile.stack, ["TypeScript", "SQL"]);
@@ -212,10 +211,20 @@ async function exercise() {
   assert.equal(profile.experience, "senior");
   assert.equal(profile.yearsOfExperience, 8);
   assert.equal(profile.notes, "Browser internals");
-  await page.getByRole("heading", { name: "First prompt", exact: true }).waitFor();
+  await page.getByRole("heading", { name: "Connect your agent", exact: true }).waitFor();
   if (cascade) await checkCascade(page, "/onboarding/connect");
   assert((await page.locator("main").innerText()).includes(origin + "/mcp"));
   await shot("connect");
+  // A personal MCP Token is the way in for an agent that cannot sign in through a browser.
+  for (const [client, step] of [
+    ["ChatGPT", "Add custom MCP server"],
+    ["Another agent", "Add an MCP server with this URL"],
+  ]) {
+    await page.getByRole("radio", { name: new RegExp(client) }).click();
+    await page.getByText(step).waitFor();
+    if (cascade) await checkCascade(page, "/onboarding/connect");
+  }
+  await page.getByRole("button", { name: "Your agent can’t open a browser to sign in?" }).click();
   await page.getByLabel("Token name").fill("Local demo");
   await page.getByRole("button", { name: "Create token" }).click();
   await page.getByRole("button", { name: "Copy MCP Token" }).waitFor();
@@ -284,7 +293,7 @@ async function exercise() {
   await page.getByRole("button", { name: "Copy prompt" }).click();
   await page
     .getByRole("status")
-    .filter({ hasText: "Copied — paste it into your agent's chat" })
+    .filter({ hasText: "Copied. Paste it into your agent’s chat" })
     .waitFor();
   const docs = [
     "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Event_loop",

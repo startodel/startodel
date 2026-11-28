@@ -644,7 +644,7 @@ export const sampleGrades = [
   { value: "lead", label: "Lead", hint: "You set direction for a team." },
 ] as const;
 
-export const sampleMcpUrl = "https://startodel.ru/mcp";
+export const sampleMcpUrl = "https://startodel.com/mcp";
 export const sampleToken = "stm_4f1c9a7be2d04c6f8a3b5d1e7c9f2a6b";
 export const sampleConfig = JSON.stringify(
   {

@@ -225,7 +225,8 @@ describe.skipIf(!url)("HTTP authentication and Owner isolation", () => {
     expect((await request("/onboarding", cookie)).status).toBe(200);
     const html = await (await request("/ru/onboarding", cookie)).text();
     expect(html).toContain("Alice");
-    expect(html).toContain("С какими технологиями вы работаете?");
+    expect(html).toContain("Расскажите о себе");
+    expect(html).toContain("Чего хотите достичь?");
     const { user } = await (await request("/api/_auth/session", cookie)).json();
     expect(user).toEqual({
       id: expect.any(String),
