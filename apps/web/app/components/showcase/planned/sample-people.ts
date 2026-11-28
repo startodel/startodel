@@ -10,6 +10,7 @@ import type {
   MasteryTopic,
 } from "../../ui/analytics";
 import type { BlockComment, FeedbackLesson } from "../../ui/comments";
+import type { LeaderboardPeriod, LeaderboardRow, PointsBreakdown } from "../../ui/ranking";
 import { screenPath } from "../sample";
 
 /**
@@ -448,4 +449,42 @@ export function useSampleAnalytics() {
   ]);
   const summary: CohortSummary = { learners: 128, progress: 0.46, mastery: 1 };
   return { counts, change, funnel, mastery, weakSpots, learners, summary };
+}
+
+const ranking: [handle: string, points: number, move: number | null][] = [
+  ["mira", 460, 0],
+  ["dkim", 415, 2],
+  ["nastya-v", 390, -1],
+  ["lev", 320, 1],
+  ["tim-r", 285, -2],
+  ["ilya-k", 240, null],
+  ["anna-b", 215, 3],
+  ["oleg-s", 190, 0],
+  ["vera-m", 170, -1],
+  ["pavel-z", 150, 1],
+];
+// A longer period has more points on the same ranking. The sample keeps the order.
+const periodScale: Record<LeaderboardPeriod, number> = { week: 1, month: 4, all: 11 };
+
+export function useSamplePoints() {
+  const profile = screenPath("public-profile");
+  const breakdown: PointsBreakdown = { lessons: 520, quizzes: 360, grills: 240, reviews: 120 };
+  const points = { total: 1240, week: 180, breakdown };
+  const board = (period: LeaderboardPeriod) =>
+    ranking.map<LeaderboardRow>(([handle, earned, move], i) => ({
+      id: handle,
+      rank: i + 1,
+      handle,
+      points: earned * periodScale[period],
+      move,
+      to: profile,
+    }));
+  const outside: LeaderboardRow = {
+    id: "sergey-p",
+    rank: 27,
+    handle: "sergey-p",
+    points: 64,
+    move: 4,
+  };
+  return { points, board, outside };
 }
