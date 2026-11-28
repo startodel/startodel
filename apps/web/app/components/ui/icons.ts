@@ -96,6 +96,8 @@ export const icons = {
   "link-off": path(
     "M7 4.5l1-1a2.8 2.8 0 0 1 4 4l-1 1M9 11.5l-1 1a2.8 2.8 0 0 1-4-4l1-1M2.5 2.5l11 11",
   ),
+  "lock-pad":
+    path("M1.5 7.5h7v6h-7zM3 7.5V5.5a2 2 0 0 1 4 0v2M8.5 10.5h1.75") + dot(12.25, 10.5, 2),
 } as const;
 
 export type IconName = keyof typeof icons;

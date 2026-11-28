@@ -238,7 +238,10 @@ const prompt = (group: (typeof groups.value)[number], comment: FeedbackComment) 
   color: var(--s-ink);
 }
 .s-inbox__title {
-  font: 600 var(--s-text-lg) / 1.3 var(--s-font-read);
+  font-size: var(--s-text-md);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--s-ink);
   overflow-wrap: anywhere;
 }
 .s-inbox__link:hover {

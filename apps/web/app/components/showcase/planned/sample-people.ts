@@ -1,3 +1,4 @@
+import type { AccessGrant, AccessPending, SyllabusTopic } from "../../ui/access";
 import type { AgentFitSignal, AgentFitState } from "../../ui/agent";
 import type { BlockComment, FeedbackLesson } from "../../ui/comments";
 import { screenPath } from "../sample";
@@ -269,4 +270,66 @@ export function useSampleComments() {
     }),
   );
   return { thread, inbox, draft, block };
+}
+
+export function useSampleAccess() {
+  const pick = usePick();
+  const daysAgo = useDaysAgo();
+  const title = computed(() => pick(track.title));
+  const previews = new Set(["1-1", "1-2", "2-1"]);
+  const syllabus = (granted: boolean) =>
+    track.topics.map<SyllabusTopic>((topic, i) => ({
+      id: String(i + 1),
+      title: pick(topic.title),
+      lessons: topic.lessons.map((lesson, j) => {
+        const id = `${i + 1}-${j + 1}`;
+        const open = granted || previews.has(id);
+        return {
+          id,
+          title: pick(lesson),
+          to: open ? lessonPath : undefined,
+          locked: !open,
+          preview: !granted && open,
+          // A learner with access has read the first Topic and a half.
+          read: granted ? i * 3 + j < 5 : undefined,
+        };
+      }),
+    }));
+  const visitor = computed(() => syllabus(false));
+  const learner = computed(() => syllabus(true));
+  const requests = computed<AccessPending[]>(() => [
+    {
+      id: "r1",
+      learner: { handle: "anna-b" },
+      message: pick({
+        ru: "Два года пишу бэкенд на Go. Хочу наконец понимать планы запросов, а не гадать по ним.",
+        en: "Two years of backend work in Go. I want to read query plans instead of guessing at them.",
+      }),
+      requestedAt: daysAgo(1),
+    },
+    {
+      id: "r2",
+      learner: { handle: "oleg-s" },
+      message: pick({
+        ru: "Готовлюсь к собеседованию, нужен системный разбор индексов.",
+        en: "Preparing for an interview and need a systematic walk through indexes.",
+      }),
+      requestedAt: daysAgo(2),
+    },
+    { id: "r3", learner: { handle: "pavel-z" }, requestedAt: daysAgo(4) },
+  ]);
+  const grants = computed<AccessGrant[]>(() => [
+    { id: "g1", learner: { handle: "mira" }, grantedAt: daysAgo(21), lastActiveAt: daysAgo(0) },
+    { id: "g2", learner: { handle: "dkim" }, grantedAt: daysAgo(18), lastActiveAt: daysAgo(2) },
+    { id: "g3", learner: { handle: "nastya-v" }, grantedAt: daysAgo(14), lastActiveAt: daysAgo(1) },
+    { id: "g4", learner: { handle: "lev" }, grantedAt: daysAgo(9), lastActiveAt: daysAgo(3) },
+    { id: "g5", learner: { handle: "tim-r" }, grantedAt: daysAgo(6), lastActiveAt: null },
+  ]);
+  const message = computed(() =>
+    pick({
+      ru: "Перехожу с MySQL, хочу разобраться с планировщиком.",
+      en: "Moving over from MySQL and want to understand the planner.",
+    }),
+  );
+  return { title, visitor, learner, requests, grants, message, daysAgo };
 }
