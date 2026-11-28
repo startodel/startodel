@@ -513,6 +513,29 @@
     "quiz": "Quiz",
     "exercise": "Exercise"
   },
+  "lessonDiff": {
+    "kind": "Comparison",
+    "before": "Before",
+    "after": "After",
+    "bad": "Bad",
+    "good": "Good",
+    "label": "Comparison: {before} and {after}",
+    "view": "Comparison view",
+    "split": "Split",
+    "unified": "Unified",
+    "removed": "Removed:",
+    "added": "Added:",
+    "copy": "Copy the “{side}” version"
+  },
+  "lessonDiagram": {
+    "kind": "Diagram",
+    "expand": "Expand",
+    "loading": "Loading the diagram",
+    "failed": "The diagram could not be drawn",
+    "failedSource": "Its source is below.",
+    "failedPlain": "The caption below says what it shows.",
+    "source": "Source"
+  },
   "topicState": {
     "complete": "live",
     "ready": "ready",
